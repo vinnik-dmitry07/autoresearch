@@ -11,15 +11,13 @@
 // branch, and do not add persistent/global state, I/O, clocks, or randomness.
 //
 // MANIFEST (keep in sync with the constants below):
-//   H1  min_non_trump_attack        -- attack/throw-in with the lowest non-trump card
-//   H2  near_rank_group_attack       -- start a low pair/triple when its rank <= min_nt + kDelta
-// Parameters: kDelta
+//   H1  min_non_trump_attack        -- attack/throw-in/defend with the lowest non-trump card
+// Parameters: (none)
 // ============================================================================
 namespace durak {
 
-constexpr int kDelta = 2;
-constexpr int kHeuristicCount = 2;
-constexpr int kParameterCount = 1;
+constexpr int kHeuristicCount = 1;
+constexpr int kParameterCount = 0;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
 const char* strategy_name() { return "B2_heuristic_nomem"; }
@@ -30,11 +28,6 @@ int complexity_score() { return kComplexity; }
 namespace {
 
 bool is_trump(Card c, int trump) { return suit_of(c) == trump; }
-
-int min_non_trump_rank(CardMask hand, int trump) {
-    const CardMask nt = hand & ~SUIT_MASK[trump];
-    return nt ? rank_of(lowest(nt)) : NUM_RANKS;
-}
 
 // Lower is better. Trumps are heavily penalized so non-trump dumps win; the
 // memory term is a small prior favoring ranks that are still mostly unseen.
@@ -59,33 +52,11 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
     }
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
 
-    const int mnt = min_non_trump_rank(L.hand, L.trump_suit);
+    // H1: initial attack leads the lowest non-trump (trump only if no choice).
+    if (!has_done) return legal.moves[best];
 
-    if (!has_done) {
-        // Initial attack (mandatory). H2: prefer to open a low non-trump group.
-        int group = -1;
-        for (int r = 0; r < NUM_RANKS; ++r) {
-            const int cnt = popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]);
-            if (cnt >= 2) {
-                if (r <= mnt + kDelta) group = r;
-                break;  // lowest non-trump pair found
-            }
-        }
-        if (group >= 0) {
-            for (int i = 0; i < legal.count; ++i) {
-                const Move& m = legal.moves[i];
-                if (m.type == MoveType::AttackPlay && rank_of(m.card) == group &&
-                    !is_trump(m.card, L.trump_suit))
-                    return m;
-            }
-        }
-        return legal.moves[best];  // H1: lowest non-trump (trump only if no choice)
-    }
-
-    // Optional throw-in / pile-on: keep dumping low non-trump cards (continues a
-    // started group), but never throw trumps and never go above min_nt + kDelta.
-    const Card c = legal.moves[best].card;
-    if (!is_trump(c, L.trump_suit) && rank_of(c) <= mnt + kDelta) return legal.moves[best];
+    // Optional throw-in / pile-on: keep dumping the lowest non-trump card, never a trump.
+    if (!is_trump(legal.moves[best].card, L.trump_suit)) return legal.moves[best];
     return {MoveType::AttackDone, NO_CARD, 0};
 }
 
