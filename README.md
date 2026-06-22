@@ -1,91 +1,119 @@
-# autoresearch
+# autoresearch: local heuristics vs memory in Durak
 
-![teaser](progress.png)
+An autonomous-research lab for a single question in an imperfect-information card game.
 
-*One day, frontier AI research used to be done by meat computers in between eating, sleeping, having other fun, and synchronizing once in a while using sound wave interconnect in the ritual of "group meeting". That era is long gone. Research is now entirely the domain of autonomous swarms of AI agents running across compute cluster megastructures in the skies. The agents claim that we are now in the 10,205th generation of the code base, in any case no one could tell if that's right or wrong as the "code" is now a self-modifying binary that has grown beyond human comprehension. This repo is the story of how it all began. -@karpathy, March 2026*.
+## What are we testing?
 
-The idea: give an AI agent a small but real LLM training setup and let it experiment autonomously overnight. It modifies the code, trains for 5 minutes, checks if the result improved, keeps or discards, and repeats. You wake up in the morning to a log of experiments and (hopefully) a better model. The training code here is a simplified single-GPU implementation of [nanochat](https://github.com/karpathy/nanochat). The core idea is that you're not touching any of the Python files like you normally would as a researcher. Instead, you are programming the `program.md` Markdown files that provide context to the AI agents and set up your autonomous research org. The default `program.md` in this repo is intentionally kept as a bare bones baseline, though it's obvious how one would iterate on it over time to find the "research org code" that achieves the fastest research progress, how you'd add more agents to the mix, etc. A bit more context on this project is here in this [tweet](https://x.com/karpathy/status/2029701092347630069) and [this tweet](https://x.com/karpathy/status/2031135152349524125).
+Can a **memoryless** local heuristic policy compete with a fixed **memory-counting**
+baseline in two-player *podkidnoy* Durak? The challenger strategy may look only at its own
+hand and the cards currently on the table — it is forbidden from remembering the discard
+pile or any history. The benchmark opponent (B4) tracks what has left play and what the
+opponent is known to hold.
 
-## How it works
+## Why is it interesting?
 
-The repo is deliberately kept small and only really has three files that matter:
+It isolates how much of the strength in two-player Durak comes from **local hand/table
+structure** (which suit to break, when to take, which trump to spend) versus
+**belief-state inference over hidden cards**. An LLM agent searches the space of small
+heuristic rules, and we measure the result against a ladder of fixed baselines plus a
+direct memory ablation.
 
-- **`prepare.py`** — fixed constants, one-time data prep (downloads training data, trains a BPE tokenizer), and runtime utilities (dataloader, evaluation). Not modified.
-- **`train.py`** — the single file the agent edits. Contains the full GPT model, optimizer (Muon + AdamW), and training loop. Everything is fair game: architecture, hyperparameters, optimizer, batch size, etc. **This file is edited and iterated on by the agent**.
-- **`program.md`** — baseline instructions for one agent. Point your agent here and let it go. **This file is edited and iterated on by the human**.
+This project is not trying to solve Durak globally. It tests whether a memoryless local
+heuristic policy can approach or beat fixed memory-based baselines under a locked rules
+engine.
 
-By design, training runs for a **fixed 5-minute time budget** (wall clock, excluding startup/compilation), regardless of the details of your compute. The metric is **val_bpb** (validation bits per byte) — lower is better, and vocab-size-independent so architectural changes are fairly compared.
+## What counts as a win?
 
-If you are new to neural networks, this ["Dummy's Guide"](https://x.com/hooeem/status/2030720614752039185) looks pretty good for a lot more context.
+- **Reporting metric**: paired `point_rate` of the challenger (B2) against the
+  memory-counting baseline (B4). Around 0.50 is parity; `lower_ci > 0.52` is a real edge.
+- **Search metric**: a composite ladder score across B0/B1/B4 to give the agent a smoother
+  gradient.
+- **Simplicity**: fewer rules win ties. The strategy declares a `complexity_score`
+  (`100 * heuristics + 10 * parameters`); among near-equal strategies the simpler one is
+  preferred.
+- **Memory value**: measured separately (post-keep) as B3 vs B2 — the *same* policy core
+  with memory enabled vs disabled.
+
+## The baseline ladder
+
+| Level | Strategy | Role |
+|-------|----------|------|
+| B0 | random legal | sanity floor |
+| B1 | basic no-memory (lowest card, minimal defense) | "are the heuristics doing anything?" |
+| B2 | heuristic no-memory (`strategy_heuristic.cpp`) | the agent-edited challenger |
+| B3 | B2's core + memory features | memory ablation (fixed wrapper) |
+| B4 | independent memory-counting baseline | reporting opponent |
+
+B2 and B3 share one function, `choose_move_core`: B2 calls it with no memory, B3 with
+memory. So the only difference between them is access to memory, which makes the ablation
+honest no matter how the agent rewrites the core.
+
+## Rules (locked)
+
+Two-player *podkidnoy*, no transfer (perevod). 36 cards (6–A), 6-card hands, trump is the
+bottom card. The holder of the lowest trump attacks first. Throw-ins must match a rank
+already on the table (attack *or* defense card); total attack cards per battle are capped
+at `min(6, defender's hand size at battle start)`. A successful defense sends the table to
+the discard and passes the attack to the defender; taking keeps the attacker and the
+defender skips its attack. After each battle both draw to six, attacker first. The player
+left holding cards once the deck is empty is the loser; simultaneous empty hands is a draw.
 
 ## Quick start
 
-**Requirements:** A single NVIDIA GPU (tested on H100), Python 3.10+, [uv](https://docs.astral.sh/uv/).
+Requirements: a C++23 compiler and CMake. On Windows the bundled Visual Studio toolchain is
+used by the helper script.
 
-```bash
+```bat
+:: Windows: configure, build, and run the test suite
+durak\build.bat test
 
-# 1. Install uv project manager (if you don't already have it)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 2. Install dependencies
-uv sync
-
-# 3. Download data and train tokenizer (one-time, ~2 min)
-uv run prepare.py
-
-# 4. Manually run a single training experiment (~5 min)
-uv run train.py
+:: Run the baseline ladder (challenger B2 vs B4 / B1 / B0)
+durak\build\simulate.exe --mode ladder --eval full --batch 500000 > durak\run.log 2>&1
 ```
 
-If the above commands all work ok, your setup is working and you can go into autonomous research mode.
+Generic CMake (any platform):
+
+```bash
+cmake -S durak -B durak/build -DCMAKE_BUILD_TYPE=Release
+cmake --build durak/build
+ctest --test-dir durak/build --output-on-failure
+./durak/build/simulate --mode ladder --eval full
+```
+
+`simulate` modes: `ladder` (B2 vs the ladder + search_score), `match --challenger X
+--opponent Y`, `ablate` (B3 vs B2), `selfplay --strategy X`. Eval sizes: `--eval quick`
+(100k seeds) or `--eval full` (5M seeds); override with `--seeds N`.
 
 ## Running the agent
 
-Simply spin up your Claude/Codex or whatever you want in this repo (and disable all permissions), then you can prompt something like:
+Point your agent at `program.md` and let it iterate:
 
 ```
-Hi have a look at program.md and let's kick off a new experiment! let's do the setup first.
+Have a look at program.md and let's kick off a new Durak experiment. Do the setup first.
 ```
 
-The `program.md` file is essentially a super lightweight "skill".
+The agent edits only `durak/src/strategy_heuristic.cpp`, rebuilds, evaluates, and keeps or
+reverts based on the protocol in `program.md`.
 
 ## Project structure
 
 ```
-prepare.py      — constants, data prep + runtime utilities (do not modify)
-train.py        — model, optimizer, training loop (agent modifies this)
-program.md      — agent instructions
-pyproject.toml  — dependencies
+durak/
+  include/        cards.hpp, move.hpp, engine.hpp, policy_core.hpp, strategies.hpp, eval.hpp
+  src/            engine.cpp, strategies.cpp, strategy_*.cpp, simulate.cpp
+  tests/          engine_tests.cpp, simulation_tests.cpp (golden + sanity), test_util.hpp
+  cmake/          check_forbidden.cmake (no static/IO/clock/random in the heuristic file)
+  CMakeLists.txt
+  build.bat       Windows build/test helper
+program.md        agent instructions and the experiment loop
+results.tsv       experiment log (untracked)
 ```
 
-## Design choices
+## Legacy LLM experiment
 
-- **Single file to modify.** The agent only touches `train.py`. This keeps the scope manageable and diffs reviewable.
-- **Fixed time budget.** Training always runs for exactly 5 minutes, regardless of your specific platform. This means you can expect approx 12 experiments/hour and approx 100 experiments while you sleep. There are two upsides of this design decision. First, this makes experiments directly comparable regardless of what the agent changes (model size, batch size, architecture, etc). Second, this means that autoresearch will find the most optimal model for your platform in that time budget. The downside is that your runs (and results) become not comparable to other people running on other compute platforms.
-- **Self-contained.** No external dependencies beyond PyTorch and a few small packages. No distributed training, no complex configs. One GPU, one file, one metric.
-
-## Platform support
-
-This code currently requires that you have a single NVIDIA GPU. In principle it is quite possible to support CPU, MPS and other platforms but this would also bloat the code. I'm not 100% sure that I want to take this on personally right now. People can reference (or have their agents reference) the full/parent nanochat repository that has wider platform support and shows the various solutions (e.g. a Flash Attention 3 kernels fallback implementation, generic device support, autodetection, etc.), feel free to create forks or discussions for other platforms and I'm happy to link to them here in the README in some new notable forks section or etc.
-
-Seeing as there seems to be a lot of interest in tinkering with autoresearch on much smaller compute platforms than an H100, a few extra words. If you're going to try running autoresearch on smaller computers (Macbooks etc.), I'd recommend one of the forks below. On top of this, here are some recommendations for how to tune the defaults for much smaller models for aspiring forks:
-
-1. To get half-decent results I'd use a dataset with a lot less entropy, e.g. this [TinyStories dataset](https://huggingface.co/datasets/karpathy/tinystories-gpt4-clean). These are GPT-4 generated short stories. Because the data is a lot narrower in scope, you will see reasonable results with a lot smaller models (if you try to sample from them after training).
-2. You might experiment with decreasing `vocab_size`, e.g. from 8192 down to 4096, 2048, 1024, or even - simply byte-level tokenizer with 256 possibly bytes after utf-8 encoding.
-3. In `prepare.py`, you'll want to lower `MAX_SEQ_LEN` a lot, depending on the computer even down to 256 etc. As you lower `MAX_SEQ_LEN`, you may want to experiment with increasing `DEVICE_BATCH_SIZE` in `train.py` slightly to compensate. The number of tokens per fwd/bwd pass is the product of these two.
-4. Also in `prepare.py`, you'll want to decrease `EVAL_TOKENS` so that your validation loss is evaluated on a lot less data.
-5. In `train.py`, the primary single knob that controls model complexity is the `DEPTH` (default 8, here). A lot of variables are just functions of this, so e.g. lower it down to e.g. 4.
-6. You'll want to most likely use `WINDOW_PATTERN` of just "L", because "SSSL" uses alternating banded attention pattern that may be very inefficient for you. Try it.
-7. You'll want to lower `TOTAL_BATCH_SIZE` a lot, but keep it powers of 2, e.g. down to `2**14` (~16K) or so even, hard to tell.
-
-I think these would be the reasonable hyperparameters to play with. Ask your favorite coding agent for help and copy paste them this guide, as well as the full source code.
-
-## Notable forks
-
-- [miolini/autoresearch-macos](https://github.com/miolini/autoresearch-macos) (MacOS)
-- [trevin-creator/autoresearch-mlx](https://github.com/trevin-creator/autoresearch-mlx) (MacOS)
-- [jsegov/autoresearch-win-rtx](https://github.com/jsegov/autoresearch-win-rtx) (Windows)
-- [andyluo7/autoresearch](https://github.com/andyluo7/autoresearch) (AMD)
+This repo began as a single-GPU LLM training autoresearch loop. Those files (`train.py`,
+`prepare.py`, `pyproject.toml`, `analysis.ipynb`) remain for reference but are not part of
+the Durak experiment.
 
 ## License
 

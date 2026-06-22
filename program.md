@@ -1,114 +1,179 @@
-# autoresearch
+# autoresearch: Durak local-heuristics lab
 
-This is an experiment to have the LLM do its own research.
+This is an experiment to have an LLM autonomously search for a strong **memoryless**
+strategy for two-player *podkidnoy* Durak, under a locked rules engine, and measure how
+far simple local heuristics can go against fixed baselines — including a memory-counting
+opponent.
+
+You edit exactly one file: `durak/src/strategy_heuristic.cpp` (the no-memory policy core
+`choose_move_core` and its manifest). Everything else is the fixed harness.
 
 ## Setup
 
 To set up a new experiment, work with the user to:
 
-1. **Agree on a run tag**: propose a tag based on today's date (e.g. `mar5`). The branch `autoresearch/<tag>` must not already exist — this is a fresh run.
+1. **Agree on a run tag**: propose a tag based on today's date (e.g. `jun22`). The branch
+   `autoresearch/<tag>` must not already exist — this is a fresh run.
 2. **Create the branch**: `git checkout -b autoresearch/<tag>` from current master.
-3. **Read the in-scope files**: The repo is small. Read these files for full context:
-   - `README.md` — repository context.
-   - `prepare.py` — fixed constants, data prep, tokenizer, dataloader, evaluation. Do not modify.
-   - `train.py` — the file you modify. Model architecture, optimizer, training loop.
-4. **Verify data exists**: Check that `~/.cache/autoresearch/` contains data shards and a tokenizer. If not, tell the human to run `uv run prepare.py`.
-5. **Initialize results.tsv**: Create `results.tsv` with just the header row. The baseline will be recorded after the first run.
-6. **Confirm and go**: Confirm setup looks good.
+3. **Read the in-scope files**: The project is small. Read these for full context:
+   - `README.md` — research framing.
+   - `durak/include/policy_core.hpp` — the fixed B2/B3 interface you implement against.
+   - `durak/src/strategy_heuristic.cpp` — **the only file you modify**.
+   - `program.md` — this file.
+4. **Build and test**: run `durak\build.bat test` (Windows). All three tests
+   (`engine_tests`, `simulation_tests`, `forbidden_check`) must pass before you start.
+5. **Initialize results.tsv**: if it does not exist, create `results.tsv` with just the
+   header row (see "Logging results"). The baseline is recorded after the first run.
+6. **Confirm and go**: confirm setup looks good, then kick off the experiment loop.
 
-Once you get confirmation, kick off the experimentation.
+## What you CAN and CANNOT do
 
-## Experimentation
+**You CAN** edit `durak/src/strategy_heuristic.cpp`:
+- Change the body of `choose_move_core` (add, remove, reorder heuristics; tune parameters).
+- Update the manifest (`kHeuristicCount`, `kParameterCount`, `kComplexity`) to match.
+- Use only `LocalFeatures` (always) and the optional `MemoryFeatures*` (memory branch).
 
-Each experiment runs on a single GPU. The training script runs for a **fixed time budget of 5 minutes** (wall clock training time, excluding startup/compilation). You launch it simply as: `uv run train.py`.
+**You CANNOT**:
+- Change `policy_core.hpp` (the signature), the engine, the simulator, the RNG, the
+  baselines (B0/B1/B3/B4), the tests, the CMake flags, or the stopping criteria.
+- Use `static`/global mutable state to remember turns, cards, seeds, games, or opponent
+  actions. The strategy must be a pure function of the current observation.
+- Add I/O, files, networking, clock access, threading, or randomness inside
+  `strategy_heuristic.cpp`. (`forbidden_check` enforces this; it must keep passing.)
+- Add a new heuristic class that fires only when `memory != nullptr`. The memory branch
+  (B3) may only refine tie-breaks/priors of the same heuristics the no-memory path uses.
 
-**What you CAN do:**
-- Modify `train.py` — this is the only file you edit. Everything is fair game: model architecture, optimizer, hyperparameters, training loop, batch size, model size, etc.
+## The metric
 
-**What you CANNOT do:**
-- Modify `prepare.py`. It is read-only. It contains the fixed evaluation, data loading, tokenizer, and training constants (time budget, sequence length, etc).
-- Install new packages or add dependencies. You can only use what's already in `pyproject.toml`.
-- Modify the evaluation harness. The `evaluate_bpb` function in `prepare.py` is the ground truth metric.
+The harness reports **paired** scores over deal seeds. For each seed the challenger plays
+both seats against the opponent on the same deck; per-game scoring is win=1, draw=0.5,
+loss=0, and `pair_score` is the mean challenger points across the two games. The headline
+number is `point_rate = mean(pair_score)`.
 
-**The goal is simple: get the lowest val_bpb.** Since the time budget is fixed, you don't need to worry about training time — it's always 5 minutes. Everything is fair game: change the architecture, the optimizer, the hyperparameters, the batch size, the model size. The only constraint is that the code runs without crashing and finishes within the time budget.
+- **Reporting / final claim**: `point_rate(B2 vs B4)`.
+- **Search objective** (drives keep/discard, smoother gradient):
 
-**VRAM** is a soft constraint. Some increase is acceptable for meaningful val_bpb gains, but it should not blow up dramatically.
+```
+search_score = 0.50 * point_rate(B2 vs B4)
+             + 0.30 * point_rate(B2 vs B1)
+             + 0.20 * point_rate(B2 vs B0)
+             - complexity_score / 10000
+```
 
-**Simplicity criterion**: All else being equal, simpler is better. A small improvement that adds ugly complexity is not worth it. Conversely, removing something and getting equal or better results is a great outcome — that's a simplification win. When evaluating whether to keep a change, weigh the complexity cost against the improvement magnitude. A 0.001 val_bpb improvement that adds 20 lines of hacky code? Probably not worth it. A 0.001 val_bpb improvement from deleting code? Definitely keep. An improvement of ~0 but much simpler code? Keep.
+B4 is the primary benchmark for reporting; the composite ladder score only stabilizes
+search. `complexity_score = 100 * heuristics + 10 * parameters` (the Occam term).
 
-**The first run**: Your very first run should always be to establish the baseline, so you will run the training script as is.
+**Simplicity (Occam) criterion**: if two variants have `point_rate` within 0.005, prefer
+the one with the lower `complexity_score`. Removing a heuristic for equal-or-better score
+is a win. A tiny gain that adds an extra heuristic or parameter is usually not worth it.
+
+## Evaluation protocol (no peeking)
+
+Two stages. Do not stop on the first time a confidence interval crosses a threshold during
+a batch — that is sequential peeking. Decide keep/discard **only** on the full stage.
+
+- `quick_eval`: `--eval quick` (100k seeds). Smoke test / crash detection / rough signal.
+- `full_eval`: `--eval full` (5M seeds). The only stage used for keep/discard.
+
+Confidence intervals are normal-approximation by default (`--ci normal`); `--ci bootstrap`
+is available but unnecessary at 5M seeds.
+
+**keep vs current best** (full_eval only):
+
+```
+search_score_full      >= best_search_score + 0.005
+AND lower_ci(search)    >= best_lower_ci
+```
+
+When within 0.005, prefer lower `complexity_score`.
+
+**dominates B4** (a reporting claim, not required to keep):
+
+```
+lower_ci(point_rate vs B4) > 0.52
+```
+
+**Memory ablation** (run after a `keep`, not every step):
+
+```
+durak\build\simulate.exe --mode ablate --eval full
+```
+
+This runs B3 (the same core with memory enabled) vs B2 (same core, no memory). A
+`point_rate` near 0.5 means memory adds nothing to this logic; the value of memory for the
+current heuristics is roughly `point_rate(B3 vs B2) - 0.5` scaled to your interpretation.
 
 ## Output format
 
-Once the script finishes it prints a summary like this:
+`simulate` prints progress lines per batch and a summary, e.g.:
 
 ```
----
-val_bpb:          0.997900
-training_seconds: 300.1
-total_seconds:    325.9
-peak_vram_mb:     45060.2
-mfu_percent:      39.80
-total_tokens_M:   499.6
-num_steps:        953
-num_params_M:     50.3
-depth:            8
+--- ladder results ---
+B2 vs B4           point_rate=0.49151  ci95=[0.49079, 0.49224]  win=0.0372 loss=0.0624 split=0.9004  ...
+B2 vs B1           point_rate=0.92294  ci95=[0.92141, 0.92447]  ...
+B2 vs B0           point_rate=0.96037  ci95=[0.95918, 0.96155]  ...
+search_score=0.68334  (0.5*B4 + 0.3*B1 + 0.2*B0 - complexity/10000)
+reporting_point_rate_vs_B4=0.49078  lower_ci=0.48976  complexity=310
 ```
 
-Note that the script is configured to always stop after 5 minutes, so depending on the computing platform of this computer the numbers might look different. You can extract the key metric from the log file:
+Run the loop's evaluation with output redirected to a log (do NOT flood your context):
 
 ```
-grep "^val_bpb:" run.log
+durak\build\simulate.exe --mode ladder --eval full --batch 500000 > durak\run.log 2>&1
 ```
+
+Then read the summary lines from the log.
 
 ## Logging results
 
-When an experiment is done, log it to `results.tsv` (tab-separated, NOT comma-separated — commas break in descriptions).
+When an experiment finishes, append a row to `results.tsv` (tab-separated; do NOT use
+commas — they break in descriptions). Leave `results.tsv` untracked by git.
 
-The TSV has a header row and 5 columns:
-
-```
-commit	val_bpb	memory_gb	status	description
-```
-
-1. git commit hash (short, 7 chars)
-2. val_bpb achieved (e.g. 1.234567) — use 0.000000 for crashes
-3. peak memory in GB, round to .1f (e.g. 12.3 — divide peak_vram_mb by 1024) — use 0.0 for crashes
-4. status: `keep`, `discard`, or `crash`
-5. short text description of what this experiment tried
-
-Example:
+Columns:
 
 ```
-commit	val_bpb	memory_gb	status	description
-a1b2c3d	0.997900	44.0	keep	baseline
-b2c3d4e	0.993200	44.2	keep	increase LR to 0.04
-c3d4e5f	1.005000	44.0	discard	switch to GeLU activation
-d4e5f6g	0.000000	0.0	crash	double model width (OOM)
+commit	opponent	point_rate	search_score	lower_ci	games	complexity	status	description
 ```
+
+1. git commit short hash (7 chars)
+2. opponent: `B4` for the headline row; optionally also `B1`, `B0`, or `B3vsB2` (ablation)
+3. point_rate achieved (e.g. 0.491510) — use 0.000000 for crashes
+4. search_score (composite; for non-B4 rows you may repeat the run's search_score)
+5. lower_ci of the relevant metric
+6. number of games (= 2 * seeds)
+7. complexity_score from the manifest
+8. status: `keep`, `discard`, `crash`, or `timeout`
+9. short text description of what this experiment tried
 
 ## The experiment loop
 
-The experiment runs on a dedicated branch (e.g. `autoresearch/mar5` or `autoresearch/mar5-gpu0`).
+The loop runs on a dedicated branch (e.g. `autoresearch/jun22`).
 
 LOOP FOREVER:
 
-1. Look at the git state: the current branch/commit we're on
-2. Tune `train.py` with an experimental idea by directly hacking the code.
-3. git commit
-4. Run the experiment: `uv run train.py > run.log 2>&1` (redirect everything — do NOT use tee or let output flood your context)
-5. Read out the results: `grep "^val_bpb:\|^peak_vram_mb:" run.log`
-6. If the grep output is empty, the run crashed. Run `tail -n 50 run.log` to read the Python stack trace and attempt a fix. If you can't get things to work after more than a few attempts, give up.
-7. Record the results in the tsv (NOTE: do not commit the results.tsv file, leave it untracked by git)
-8. If val_bpb improved (lower), you "advance" the branch, keeping the git commit
-9. If val_bpb is equal or worse, you git reset back to where you started
+1. Look at the git state: the branch/commit you are on.
+2. Edit `durak/src/strategy_heuristic.cpp` with one experimental idea (and update the
+   manifest). Keep changes minimal and Occam-friendly.
+3. Rebuild: `durak\build.bat` (and `durak\build.bat test` if you touched anything subtle —
+   the forbidden check and engine tests must pass).
+4. `git commit` the change.
+5. `quick_eval` first: `simulate --mode ladder --eval quick > durak\run.log 2>&1`. If it
+   crashed or is clearly worse, discard early.
+6. If promising, `full_eval`: `simulate --mode ladder --eval full > durak\run.log 2>&1`.
+7. Read the summary from `durak\run.log`.
+8. Record the row(s) in `results.tsv` (do NOT commit results.tsv).
+9. Apply the keep rule. If improved, keep the commit and advance the branch. If equal or
+   worse, `git reset --hard` back to where you started this step.
+10. After any `keep`, run the memory ablation (`--mode ablate --eval full`) and log the
+    `B3vsB2` row.
 
-The idea is that you are a completely autonomous researcher trying things out. If they work, keep. If they don't, discard. And you're advancing the branch so that you can iterate. If you feel like you're getting stuck in some way, you can rewind but you should probably do this very very sparingly (if ever).
+**Crashes**: if a run produces no summary, read the tail of `durak\run.log`. If it is a
+trivial bug you introduced, fix it and re-run. If the idea is fundamentally broken, log
+`crash` and move on.
 
-**Timeout**: Each experiment should take ~5 minutes total (+ a few seconds for startup and eval overhead). If a run exceeds 10 minutes, kill it and treat it as a failure (discard and revert).
-
-**Crashes**: If a run crashes (OOM, or a bug, or etc.), use your judgment: If it's something dumb and easy to fix (e.g. a typo, a missing import), fix it and re-run. If the idea itself is fundamentally broken, just skip it, log "crash" as the status in the tsv, and move on.
-
-**NEVER STOP**: Once the experiment loop has begun (after the initial setup), do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or gone from a computer and expects you to continue working *indefinitely* until you are manually stopped. You are autonomous. If you run out of ideas, think harder — read papers referenced in the code, re-read the in-scope files for new angles, try combining previous near-misses, try more radical architectural changes. The loop runs until the human interrupts you, period.
-
-As an example use case, a user might leave you running while they sleep. If each experiment takes you ~5 minutes then you can run approx 12/hour, for a total of about 100 over the duration of the average human sleep. The user then wakes up to experimental results, all completed by you while they slept!
+**NEVER STOP**: once the loop has begun, do NOT pause to ask the human whether to continue.
+The human may be away and expects you to keep iterating indefinitely until manually
+stopped. If you run out of ideas, think harder: re-read the heuristics, try removing one
+to simplify, try combining near-misses, reconsider the take/throw-in trade-offs, study
+where B4's memory actually helps (via the ablation and the win/loss/split breakdown). The
+loop runs until the human interrupts you.
