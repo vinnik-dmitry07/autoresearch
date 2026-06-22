@@ -13,13 +13,12 @@
 // MANIFEST (keep in sync with the constants below):
 //   H1  min_non_trump_attack        -- attack/throw-in with the lowest non-trump card
 //   H2  near_rank_group_attack       -- start a low pair/triple when its rank <= min_nt + kDelta
-//   H3  same_rank_trump_defense      -- when forced to trump, prefer a trump of the attacker's rank
 // Parameters: kDelta
 // ============================================================================
 namespace durak {
 
 constexpr int kDelta = 2;
-constexpr int kHeuristicCount = 3;
+constexpr int kHeuristicCount = 2;
 constexpr int kParameterCount = 1;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
@@ -110,12 +109,8 @@ Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const Leg
         const Move& m = legal.moves[i];
         if (m.type != MoveType::DefendPlay) continue;
         const Card d = m.card;
-        const Card a = L.atk[m.target];
         double cost = double(rank_of(d));
-        if (is_trump(d, L.trump_suit)) {
-            cost += 50.0;
-            if (rank_of(d) == rank_of(a)) cost -= 25.0;  // H3: same-rank trump when forced
-        }
+        if (is_trump(d, L.trump_suit)) cost += 50.0;  // prefer non-trump (rational base)
         if (mem) cost -= 0.001 * double(mem->unknown_rank_count[rank_of(d)]);
         if (cost < best_c) {
             best_c = cost;
