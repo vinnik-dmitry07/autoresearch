@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-60 — ABLATE confirms CZ stack minimal (pile −0.059, strip −0.010, pair −0.005, void −0.001); HD COMBO second-axis hunt closed (batch 56–59)
-- Next batch type: PIVOT attack geometry unrelated to HD strip / pile pass / pair cap / defense cost
+- Mode: **EXPLORE**
+- Since: batch-64 — PIVOT attack geometry closed (OA–PB); HD+new-suit bonus (OY) ties HD search +0.0042, no keep lift
+- Next batch type: EXPLORE defense-side timing (attack geometry exhausted; HD sub-gate archived)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 61 — attack geometry):
+Next 5 experiment ideas (**EXPLORE** batch 65 — defense timing):
 
-1. **Open from longest non-trump suit when deck>=7** — delayed suit-pressure open (MA failed at deck>=4).
-2. **Pile prefer lowest rank matching any table card** — rank-aware throw-in (not soft rank-match).
-3. **AttackDone when n_table>=5 and no non-trump pile legal** — table-depth pass without full trump-only guard.
-4. **Skip trump-strip when only one trump remains** — conserve last trump in endgame open.
-5. **Throw-in suit diversity penalty** — deprioritize repeating a suit already on table during pile phase.
+1. **Take when covering requires trump and deck<=3** — conserve trumps mid-endgame defense.
+2. **Defend with lowest trump only when attack card is trump** — targeted trump spend.
+3. **Defend cost += rank gap to attack** — penalize overkill covers.
+4. **Take when n_table>=4 and any cover needs trump** — table-depth trump conservation.
+5. **Defend prefer same-color non-trump when rank sufficient** — suit-following without new heuristic class.
 
 Rules for selecting ideas:
 
@@ -833,6 +833,18 @@ Append failed idea classes here so they are not retried.
 - direction: ABLATE batch-60 CZ/HD simplification (NQ–NU)
   evidence: NQ pile off −0.059; NR pair off −0.005; NS void off −0.001; NT strip off −0.010; NU HD+pile off −0.052 — stack minimal
   do not retry unless: new keep candidate on different base
+
+- direction: PIVOT batch-61 attack geometry (OA–OE)
+  evidence: OA longest suit deck>=7 −0.025; OB rank-match pile −0.079; OC/OD/OE neutral or regress
+  do not retry unless: rank-match with deck gate only
+
+- direction: PIVOT batch-62–63 refinements (OF–OO)
+  evidence: OF rank-match atk −0.058; OG/OK/OM/OO neutral; OL deck>=4 −0.005; ON opp<=3 −0.030
+  do not retry unless: —
+
+- direction: HD + new-suit pile bonus SWEEP (OY/PE–PG)
+  evidence: −2/−3/−5/−8 all ~+0.0056 quick B4; medium search +0.00418 — ties HD, no search lift
+  do not retry unless: combined with search-lifting third axis
 ```
 
 ## Loop notes
@@ -1388,4 +1400,31 @@ date/window: jun22 batch-60 (NQ–NU) ABLATE
 - what changed: confirmed pile −0.059, strip −0.010, pair −0.005, void −0.001; HD without pile −0.052
 - result: 167b02d unchanged; HD ~0.0008 below search keep bar is structural not fixable by second-axis COMBO
 - next bias: PIVOT batch-61 attack geometry (longest suit deck>=7, rank-match pile, table-depth pass)
+```
+
+```text
+date/window: jun22 batch-61 (OA–OE) PIVOT
+- attempts: 5 quick; 0 keeps
+- bottleneck: rank-match pile −0.079; longest suit −0.025; table-depth pass / diversity / strip-gate neutral
+- what changed: closed batch-61 attack geometry plan
+- result: 167b02d unchanged
+- next bias: batch-62 refinements
+```
+
+```text
+date/window: jun22 batch-62–63 (OF–OO) PIVOT
+- attempts: 10 quick; 0 keeps
+- bottleneck: all neutral (±0.003) or regress; rank-match variants −0.058
+- what changed: closed strip>=2, pair deck>=4, void tweak, pile opp narrow, defend same-suit
+- result: 167b02d unchanged
+- next bias: HD COMBO search-lift batch-64
+```
+
+```text
+date/window: jun22 batch-64 (OX–PB, OY sweep) COMBO/SWEEP
+- attempts: 5 b4 + OY medium/dual + new-suit −2/−5/−8; 0 keeps
+- bottleneck: OY (HD+new-suit −3) medium search +0.00418 — ties HD, ~0.0008 below keep bar; PA skip pile trump −0.050
+- what changed: closed HD+new-suit bonus sweep; table-depth pass on HD +0.0053 B4 only
+- result: 167b02d unchanged; HD remains top unkept probe
+- next bias: EXPLORE batch-65 defense timing
 ```
