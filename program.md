@@ -382,7 +382,7 @@ The sections below are editable by the agent during meta mode.
 ## Open questions
 
 - Which local situations does B4 exploit most? Likely midgame when B2 opens pairs too early or hoards trumps before finish window — open-strip widening regressed sharply (AK).
-- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack/finish** — pile trump dump axis drives all keeps since exp P; defense/take tweaks regressed (−0.01 B4).
+- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack/finish** — pile trump dump axis drives all keeps since exp P; defense trump ±5 (BJ/BK) and take tweaks regressed or neutral.
 - Are B1/B0 gains misleading relative to B4? Yes — B1/B0 ~0.945/0.969 flat while B4 moved 0.49→0.61; search_score tracks B4 for keeps.
 - Does complexity reduction improve B4 parity? Already at complexity 100 (H1-only); further simplification neutral; widening open strip hurts.
 
@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold AQ baseline** — `deck<=5`, `opp<=5`, pile `>=1` trump; do not narrow deck or opp.
-2. **deck<=6 regression check** — one b4 quick only (expect regression vs AQ); close deck sweep.
-3. **Global void −9** — not phase-split (BD/BF neutral); single b4 if retrying void axis.
-4. **Open strip** — frozen at `deck==0`, `opp<=3`; no widening.
-5. **Qualitative new axis** — e.g. defense trump cost tuning (+45 vs +50) with b4 gate only.
+1. **Hold AQ baseline** — no further deck/opp/void micro-tweaks on current H1.
+2. **Win/loss/split diagnostic** — read full-eval W/L/S from logs; target split→win without defense changes.
+3. **Finish combo** — void pile −8 unchanged + test pile dump only when `opp_hand<=3` (between AS −0.009 and AQ 5).
+4. **Midgame pair cap** — pair-open only when `deck>=8` (delay pairs until later midgame).
+5. **Trump conservation on open** — raise attack trump penalty to +105 (discourage trump opens midgame).
 
 Rules for selecting ideas:
 
@@ -444,6 +444,22 @@ Append failed idea classes here so they are not retried.
   evidence: exp BC/BG medium +0.003 B4, dual disagree, below full gate
   do not retry unless: dual agrees on two seeds AND medium >= +0.005 B4
 
+- direction: defense trump cost +45/+55
+  evidence: exp BJ/BK b4 neutral vs AQ
+  do not retry unless: —
+
+- direction: attack trump penalty +95 (vs +100)
+  evidence: exp BL b4 neutral
+  do not retry unless: —
+
+- direction: global void pile -9
+  evidence: exp BI/AL b4 neutral vs AQ
+  do not retry unless: —
+
+- direction: pile deck>=6 (widen finish window)
+  evidence: exp BH b4 −0.007 vs AQ; prior Y/AM neutral at wider deck
+  do not retry unless: —
+
 - direction: pile deck>=9
   evidence: exp Z/Z2 quick worse than deck<=6
   do not retry unless: —
@@ -489,4 +505,13 @@ date/window: jun22 batch-4 (BC–BG)
 - what changed: none
 - result: d5bca3c B4 0.61938 search 0.77742
 - next bias: hold AQ; close deck/void sweeps; need qualitative new axis for next keep
+```
+
+```text
+date/window: jun22 batch-5 (BH–BL)
+- attempts: 5 discards (1 regression BH deck<=6, 4 neutral); 0 full evals; 0 keeps
+- bottleneck: AQ plateau — all single-knob tweaks within b4 noise (±0.0003)
+- what changed: closed deck sweep (6 regresses, 5 best); void/defense/attack knobs neutral
+- result: d5bca3c B4 0.61938 search 0.77742
+- next bias: W/L/S guided ideas; finish combo opp<=3; delayed pair-open
 ```
