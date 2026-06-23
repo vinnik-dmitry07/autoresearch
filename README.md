@@ -93,7 +93,17 @@ Have a look at program.md and let's kick off a new Durak experiment. Do the setu
 ```
 
 The agent edits only `durak/src/strategy_heuristic.cpp`, rebuilds, evaluates, and keeps or
-reverts based on the protocol in `program.md`.
+reverts based on the protocol in `program.md`. After logging rows in `results.tsv`,
+refresh charts:
+
+```bash
+jupyter nbconvert --execute analysis.ipynb
+```
+
+Or on Windows: `scripts\run_analysis.bat`
+
+Or open `analysis.ipynb` in Jupyter and run all cells. Outputs: `progress.png`,
+`occam.png`.
 
 ## Project structure
 
@@ -106,14 +116,15 @@ durak/
   CMakeLists.txt
   build.bat       Windows build/test helper
 program.md        agent instructions and the experiment loop
+analysis.ipynb    visualize experiment progress from results.tsv (point_rate, search_score)
 results.tsv       experiment log (untracked)
 ```
 
 ## Legacy LLM experiment
 
 This repo began as a single-GPU LLM training autoresearch loop. Those files (`train.py`,
-`prepare.py`, `pyproject.toml`, `analysis.ipynb`) remain for reference but are not part of
-the Durak experiment.
+`prepare.py`, `pyproject.toml`) remain for reference but are not part of the Durak
+experiment. `analysis.ipynb` was updated for the Durak `results.tsv` schema.
 
 ## License
 

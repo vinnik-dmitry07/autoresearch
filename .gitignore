@@ -24,3 +24,7 @@ results.tsv
 
 # Run logs (simulate output)
 *.log
+
+# Analysis notebook outputs
+progress.png
+occam.png

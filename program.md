@@ -161,7 +161,8 @@ LOOP FOREVER:
    crashed or is clearly worse, discard early.
 6. If promising, `full_eval`: `simulate --mode ladder --eval full > durak\run.log 2>&1`.
 7. Read the summary from `durak\run.log`.
-8. Record the row(s) in `results.tsv` (do NOT commit results.tsv).
+8. Record the row(s) in `results.tsv` (do NOT commit results.tsv). Re-run or execute
+   `analysis.ipynb` to refresh `progress.png` and the Occam scatter plot.
 9. Apply the keep rule. If improved, keep the commit and advance the branch. If equal or
    worse, `git reset --hard` back to where you started this step.
 10. After any `keep`, run the memory ablation (`--mode ablate --eval full`) and log the
