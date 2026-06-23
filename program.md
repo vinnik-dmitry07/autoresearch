@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-53 — KZ third-axis combos don't beat HD on search; HD medium +0.0042 stable; KZ B4-optimal but search-suboptimal
-- Next batch type: max 3 HD exploit attempts OR PIVOT qualitatively new axis; do not re-run KZ COMBOs
+- Mode: **PIVOT**
+- Since: batch-54 — HD medium stable (+0.0042); MA/MB/MC regress; split-strip neutral; 30+ zero-keep batches
+- Next batch type: qualitatively new axis (not HD re-run, not rank-match pile, not suit diversity)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT/PIVOT** batch 54):
+Next 5 experiment ideas (**PIVOT** batch 55 — fresh axes):
 
-1. **HD strip deck<=2** — apply + dual + full (keep candidate; search +0.0042).
-2. **HD + pair min+3** — skip unless new evidence; search regression confirmed.
-3. **PIVOT: open-phase suit diversity** — prefer spreading suits when deck>=4 (new axis).
-4. **PIVOT: pile throw-in rank table-match banned** — JK −0.079; skip.
-5. **Analysis refresh** — `scripts\run_analysis.bat` if plateau persists.
+1. **Pile pass when defender took last round** — not observable without memory; skip.
+2. **Open lowest card when hand size==1** — endgame single-card open timing.
+3. **Defend cost scales with n_table** — prefer take on large tables (new defense axis).
+4. **AttackDone when cannot add non-trump to pile** — legal-move aware pass.
+5. **Archive HD** — do not re-run unless COMBO clears +0.006 quick with search >= +0.0045 medium.
 
 Rules for selecting ideas:
 
@@ -805,6 +805,10 @@ Append failed idea classes here so they are not retried.
 - direction: COMBO batch-53 KZ third-axis (LG–LL)
   evidence: void/pile/trump on KZ none beat HD search +0.0042; KZ B4 +0.0066 search +0.0039
   do not retry unless: mechanism lifts medium search >= +0.0045
+
+- direction: PIVOT batch-54 open/split-strip (MA–MD)
+  evidence: MA longest suit −0.031; MB soft rank-match −0.079; MC trump>=2 −0.016; MD split neutral
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1297,4 +1301,13 @@ date/window: jun22 batch-53 (LG–LL) COMBO
 - what changed: closed KZ search-lift COMBOs; KZ B4-optimal (+0.0066 full), HD search-optimal (+0.0042)
 - result: 167b02d unchanged
 - next bias: EXPLOIT HD keep candidate or PIVOT new axis
+```
+
+```text
+date/window: jun22 batch-54 (MA–LO) EXPLOIT/PIVOT
+- attempts: 4 b4 + HD medium + LM prior; 0 keeps
+- bottleneck: HD search +0.0042 stable ~0.0008 below keep bar; all new pivots regress
+- what changed: closed open longest suit, soft rank-match, split-strip, trump>=2 strip gates
+- result: 167b02d unchanged; HD remains archived keep candidate
+- next bias: PIVOT batch-55 fresh axes (defense table-size, legal pile pass)
 ```
