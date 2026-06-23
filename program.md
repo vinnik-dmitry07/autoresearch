@@ -372,12 +372,12 @@ The sections below are editable by the agent during meta mode.
 
 ## Current best
 
-- Commit: `f86282d`
-- B4 point_rate: 0.61206
-- Search score: 0.77341
-- Lower CI: 0.61180
+- Commit: `d5bca3c`
+- B4 point_rate: 0.61938
+- Search score: 0.77742
+- Lower CI: 0.61913
 - Complexity: 100
-- Why it is best: H1-only finish-mode pile trump dump (`deck<=6`, `opp<=5`, `>=1` trump); best B4 in series after pile-only widening (AC/AD). Memory ablation still 0.500.
+- Why it is best: Narrowed finish pile trump dump window to `deck<=5` (was 6); +0.007 B4 vs AD. Pile-only; open strip unchanged.
 
 ## Open questions
 
@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Pile deck sweep** — `deck<=5` vs `6` vs `7` with medium gate (micro window around sweet spot).
-2. **Pile opp sweep** — `opp<=4` vs `5` vs `6` on pile only (AE/AK show open widen bad; pile narrow may help).
-3. **Void pile penalty sweep** — `-7`/`-8`/`-9` with `triage.bat b4` only (AL neutral at −9).
-4. **Finish combo** — void pile −8 + pile dump only when `>=2` trumps AND `opp<=4` (combine near-misses without open strip).
-5. **Endgame attack** — when `deck=0` and `opp<=2`, prefer lowest non-trump pile over trump dump (inverse strip test).
+1. **deck<=5 sweep** — try `deck<=4` (neutral) and `deck<=3` (AU maybe +0.003); medium gate before full.
+2. **deck<=5 + opp<=5** — hold; do not narrow opp (AS opp<=4 regressed −0.009).
+3. **void pile −8** — keep at −8 (AT −7 slightly worse vs AQ).
+4. **deck<=5 + >=2 trumps for pile dump** — keep one trump for defense in late finish.
+5. **Inverse strip** — when `deck=0` and `opp<=2`, prefer non-trump pile over trump dump.
 
 Rules for selecting ideas:
 
@@ -420,6 +420,10 @@ Append failed idea classes here so they are not retried.
   evidence: exp AE probe regression; quick B4 drop
   do not retry unless: paired with deck<=5 narrow window
 
+- direction: pile opp<=4 (when best is opp<=5)
+  evidence: exp AS quick B4 −0.009 vs AQ
+  do not retry unless: —
+
 - direction: pile deck>=9
   evidence: exp Z/Z2 quick worse than deck<=6
   do not retry unless: —
@@ -438,4 +442,13 @@ date/window: jun22 batch-1 (5 attempts AK–AP)
 - what changed: (prior session) triage medium/dual/full gates, post_keep.bat, analysis diagnostics
 - result: best unchanged f86282d B4 0.61206 search 0.77341
 - next bias: pile-only parameter sweeps via b4 gate; avoid open strip; batch combos only after single-axis sweep
+```
+
+```text
+date/window: jun22 batch-2 (AQ–AV)
+- attempts: 1 keep (AQ deck<=5), 4 discards; 1 full eval
+- bottleneck: deck window sensitive — 5 beats 6; 4/3 neutral/maybe
+- what changed: exp AQ committed d5bca3c
+- result: B4 0.61938 search 0.77742 (+0.007 B4 vs AD)
+- next bias: refine deck<=5 only; medium gate for AU deck<=3; skip opp narrow
 ```
