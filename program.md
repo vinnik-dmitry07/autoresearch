@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-30 SWEEP — trump penalty 92–108 all B4 0.63607 on b4 gate (axis inert)
-- Next batch type: void-stripped simplification + one CZ timing tweak; or void/pile bonus SWEEP
+- Mode: **SWEEP**
+- Since: batch-31 — void-stripped COMBO flat; GK medium −0.00012 best (no simplification keep); GO strip opp==2 −0.002
+- Next batch type: void bonus SWEEP open −3..−6 and pile −6..−10 on CZ base via b4
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 31):
+Next 5 experiment ideas (**SWEEP** batch 32 — void bonus grid on CZ, b4 gate):
 
-1. **Void remove + hold CZ** — FQ void strip (−0.001 alone); medium confirm if simplification keep possible.
-2. **Void remove + pair deck>=6** — FV re-test at medium (was −0.001 quick).
-3. **Open void −4** — reduce open void bonus from −5 (single knob on open path).
-4. **Pile void −9** — increase pile void from −8 (single knob on pile path).
-5. **COMBO void remove + strip opp==2 only** — exact opp gate on strip (not <=2 window).
+1. **Open void −3** — `attack_value` open path void bonus 3 (pile stays −8).
+2. **Open void −6** — open path void bonus 6.
+3. **Pile void −6** — pile path void bonus 6 (open stays −5).
+4. **Pile void −10** — pile path void bonus 10.
+5. **Open −4 / pile −9 split** — asymmetric void (GM/GN combo as one cell).
 
 Rules for selecting ideas:
 
@@ -736,6 +736,10 @@ Append failed idea classes here so they are not retried.
 - direction: SWEEP batch-30 attack trump penalty 92–108
   evidence: GF–GJ all b4 B4 0.63607 (−0.0007 vs full best); axis inert on CZ stack
   do not retry unless: paired with pile-phase separate penalty
+
+- direction: COMBO batch-31 void-stripped (GK–GO)
+  evidence: GK medium −0.00012; GL medium −0.00024; GM/GN neutral; GO opp==2 strip −0.002
+  do not retry unless: void remove paired with new axis showing quick >= +0.003
 ```
 
 ## Loop notes
@@ -1021,4 +1025,13 @@ date/window: jun22 batch-30 (GF–GJ) SWEEP
 - what changed: closed attack trump penalty sweep on CZ stack
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: COMBO batch-31 void-stripped + timing; void/pile bonus knobs
+```
+
+```text
+date/window: jun22 batch-31 (GK–GO) COMBO
+- attempts: 7 rows (GK medium, GL medium); 5 discards; 0 full evals; 0 keeps
+- bottleneck: 7th zero-keep batch; void remove medium −0.00012 best — no simplification keep
+- what changed: GK/GL medium reconfirm void-stripped sub-gate; GO opp==2 strip −0.002
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: SWEEP batch-32 void bonus open/pile grid via b4
 ```
