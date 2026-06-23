@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-93 — pile opp<=5 sharp optimum (VC/VD regress −0.016..−0.022; VE/VF widen −0.0014); deck<=3 beats deck<=2 (VG)
-- Next batch type: PIVOT qualitatively new — e.g. rank-match throw-in, table-depth gates; no pile opp/deck re-sweeps on CZ
+- Mode: **COMBO**
+- Since: batch-95 — VM/TQ medium 0.79376 reconfirmed (+0.00435); n_table pass axis closed (VP −0.060, VN −0.025, VJ −0.014)
+- Next batch type: COMBO on TQ base (deck==2 pair + total≤16); no bare TQ/SD re-runs without new axis
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-92):** CZ stack locally optimal; TQ unkept ceiling 0.79376 medium; 62+ zero-keep batches.
+- **Plateau (batch-95):** TQ medium 0.79376 stable; ~0.00065 below keep bar; 65+ zero-keep batches; CZ locally optimal.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 94 — table-depth / rank-match):
+Next 5 experiment ideas (**COMBO** batch 96 — TQ base second axis):
 
-1. **Throw-in rank-match only** — pile prefer cards matching lowest table rank.
-2. **Open rank-match when pair exists** — open same rank as table if legal (transfer-like).
-3. **Pile pass when n_table>=4** — AttackDone early on deep tables.
-4. **Strip when n_table==0 only** — forbid strip if table non-empty (sanity).
-5. **Defense trump only when attacked card is trump** — narrow trump spend.
+1. **TQ + pile rank-match** — VH bonus on TQ endgame base.
+2. **TQ + pile opp<=4** — narrow pile window on TQ base.
+3. **TQ + midgame pair deck>=6** — VB gate on TQ base.
+4. **TQ + strip opp==1** — sharpen strip on TQ base.
+5. **TQ dual medium seed 1** — stability check if any quick COMBO ≥ +0.003.
 
 Rules for selecting ideas:
 
@@ -949,6 +949,14 @@ Append failed idea classes here so they are not retried.
 
 - direction: SWEEP batch-93 pile opp threshold (VC–VG)
   evidence: opp<=5 optimum; opp<=4 −0.016; opp<=3 −0.022; opp>=6 −0.0014; deck<=2 −0.00065
+  do not retry unless: —
+
+- direction: PIVOT batch-94 rank-match/table-depth (VH–VL)
+  evidence: VH/VI/VK/VL neutral; VJ n_table>=4 pass −0.014
+  do not retry unless: —
+
+- direction: n_table early pile pass (VJ–VP batch-94/95)
+  evidence: n_table>=2 −0.060; >=3 −0.025; >=4 −0.014; >=5 −0.0023; throw-in depth essential
   do not retry unless: —
 ```
 
@@ -1748,4 +1756,22 @@ date/window: jun22 batch-93 (VC–VG) SWEEP pile opp/deck
 - what changed: closed pile opp 3–7 sweep on CZ; confirms CQ pile window
 - result: 167b02d unchanged
 - next bias: PIVOT batch-94 table-depth / rank-match throw-in
+```
+
+```text
+date/window: jun22 batch-94 (VH–VL) PIVOT rank-match/table-depth
+- attempts: 5 quick; 0 keeps
+- bottleneck: VH/VI/VK/VL neutral; VJ n_table>=4 −0.014
+- what changed: closed rank-match throw-in and table pass axis on CZ
+- result: 167b02d unchanged
+- next bias: TQ reconfirm + n_table pass fine sweep
+```
+
+```text
+date/window: jun22 batch-95 (VM–VP) TQ reconfirm + n_table sweep
+- attempts: VM quick/medium + 3 quick; 0 keeps
+- bottleneck: TQ medium 0.79376 stable; n_table pass catastrophic below keep
+- what changed: closed n_table 2–5 pass sweep; TQ still best unkept
+- result: 167b02d unchanged
+- next bias: COMBO batch-96 on TQ base
 ```
