@@ -381,7 +381,7 @@ The sections below are editable by the agent during meta mode.
 
 ## Open questions
 
-- Which local situations does B4 exploit most? Likely midgame when B2 opens pairs too early or hoards trumps before finish window — open-strip widening regressed sharply (AK).
+- Which local situations does B4 exploit most? Likely midgame when B2 opens pairs too early or hoards trumps before finish window — open-strip widening regressed sharply (AK). **Full-eval W/L/S at AQ:** win=0.379 loss=0.113 split=0.509 — ~51% split games; next gains need split→win via attack timing, not defense.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack/finish** — pile trump dump axis drives all keeps since exp P; defense trump ±5 (BJ/BK) and take tweaks regressed or neutral.
 - Are B1/B0 gains misleading relative to B4? Yes — B1/B0 ~0.945/0.969 flat while B4 moved 0.49→0.61; search_score tracks B4 for keeps.
 - Does complexity reduction improve B4 parity? Already at complexity 100 (H1-only); further simplification neutral; widening open strip hurts.
@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold AQ baseline** — no further deck/opp/void micro-tweaks on current H1.
-2. **Win/loss/split diagnostic** — read full-eval W/L/S from logs; target split→win without defense changes.
-3. **Finish combo** — void pile −8 unchanged + test pile dump only when `opp_hand<=3` (between AS −0.009 and AQ 5).
-4. **Midgame pair cap** — pair-open only when `deck>=8` (delay pairs until later midgame).
-5. **Trump conservation on open** — raise attack trump penalty to +105 (discourage trump opens midgame).
+1. **Hold AQ baseline** — pile finish stays `deck<=5 opp<=5`; opp<=3 strongly regresses (BM).
+2. **Skip midgame pair-open** — remove deck>0 pair loop entirely; rely on singleton open + endgame pair path only.
+3. **Narrow finish pile** — pile trump dump only when `deck<=4` (between BB regression and AQ 5).
+4. **Open trump strip tighter** — endgame open strip when `opp<=2` instead of 3.
+5. **Void pile -7** — global void pile bonus (exp AT neutral; retest as single axis post-plateau).
 
 Rules for selecting ideas:
 
@@ -463,6 +463,18 @@ Append failed idea classes here so they are not retried.
 - direction: pile deck>=9
   evidence: exp Z/Z2 quick worse than deck<=6
   do not retry unless: —
+
+- direction: pile opp<=3 (finish combo)
+  evidence: exp BM quick B4 0.590 (−0.030 vs AQ); worse than opp<=4 AS −0.009
+  do not retry unless: paired with different deck window
+
+- direction: attack trump penalty +105
+  evidence: exp BO quick neutral vs AQ (same as BL +95)
+  do not retry unless: —
+
+- direction: void open -6 / pair deck>=8 / pair cap min+1
+  evidence: exp BP/BQ/BR quick neutral vs AQ
+  do not retry unless: combined with measurable quick delta >= +0.003
 ```
 
 ## Loop notes
@@ -514,4 +526,13 @@ date/window: jun22 batch-5 (BH–BL)
 - what changed: closed deck sweep (6 regresses, 5 best); void/defense/attack knobs neutral
 - result: d5bca3c B4 0.61938 search 0.77742
 - next bias: W/L/S guided ideas; finish combo opp<=3; delayed pair-open
+```
+
+```text
+date/window: jun22 batch-6 (BM–BR)
+- attempts: 5 discards (1 regression BM opp<=3 −0.030, 4 neutral); 0 full evals; 0 keeps
+- bottleneck: AQ hard plateau — open/pair/trump/void knobs all within quick noise; W/L/S shows ~51% split
+- what changed: W/L/S diagnostic logged; closed finish opp<=3 and trump +105 / pair-delay axes
+- result: d5bca3c B4 0.61938 search 0.77742
+- next bias: skip midgame pairs; narrow pile deck<=4; tighter open strip opp<=2; split→win attack timing
 ```
