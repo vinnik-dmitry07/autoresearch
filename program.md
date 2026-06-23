@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Pair delay sweep** — BY showed +0.002 at `deck>=6`; try `deck>=5` and `deck>=7` (quick then medium on best).
-2. **Pair delay + hold finish** — combine BY `deck>=6` with unchanged AQ pile window (confirm no interaction).
-3. **Pair delay medium/full** — if deck threshold crosses +0.003 on medium, run dual then full on best threshold only.
-4. **Late-midgame singleton** — when `deck<=5` skip pair-open loop (inverse of BY: pairs early only via deck>=6).
-5. **Hold AQ baseline** — do not commit sub-gate deltas; full gate still search +0.005 and B4 +0.005 with lower_ci.
+1. **Pair delay deck>=5 vs 6** — CD medium 0.62160 vs BY 0.62155; pick one via medium/dual only (no new knobs).
+2. **Full eval gate** — run `triage.bat full` on deck>=5 only if willing to spend ~1.7m to confirm sub-gate +0.002 (likely discard).
+3. **Pair delay + pile unchanged** — manifest-only confirm; no code change (skip as experiment).
+4. **Split diagnostic on CD** — compare W/L/S vs AQ on medium logs (split ~0.501 vs 0.509).
+5. **Hold AQ** — do not keep sub +0.002 without full gate; pile finish window still locked.
 
 Rules for selecting ideas:
 
@@ -487,6 +487,14 @@ Append failed idea classes here so they are not retried.
 - direction: void open -7 / void -8 global / skip pile deck>5 / pair cap min+3
   evidence: exp BZ/CA/CB/CC quick neutral vs AQ
   do not retry unless: —
+
+- direction: pair-open deck>=4 / deck>=3
+  evidence: exp CF/CH quick B4 −0.001..−0.002 vs AQ
+  do not retry unless: —
+
+- direction: pair-open deck>=8 / deck>=10 alone
+  evidence: exp CG/BQ/BX quick +0.002 but below gate; deck>=5/6/7/8 cluster similar
+  do not retry unless: combined with second axis OR full eval shows >= +0.005
 ```
 
 ## Loop notes
@@ -565,4 +573,13 @@ date/window: jun22 batch-8 (BY–CC)
 - what changed: closed void-open / pile-pass / pair-cap / void-8 axes; opened pair-delay deck threshold sweep
 - result: d5bca3c B4 0.61938 search 0.77742 (BY best probe 0.62155 medium)
 - next bias: sweep deck>=5/6/7 for pair-open; medium/full only if >= +0.003 B4 on quick
+```
+
+```text
+date/window: jun22 batch-9 (CD–CH)
+- attempts: 5 discards (3 maybe +0.002 at deck>=5/7/8, 2 mild regressions deck>=3/4); 0 full evals; 0 keeps
+- bottleneck: pair-delay cluster stable +0.002 medium but below +0.003 escalate and +0.005 keep gates
+- what changed: deck threshold mapped — best CD deck>=5 medium 0.62160 (+0.0022 B4); split ~0.501
+- result: d5bca3c B4 0.61938 search 0.77742 unchanged
+- next bias: deck>=5 vs 6 tie-break on medium; optional full on CD only; no keep without gate
 ```
