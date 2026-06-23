@@ -794,6 +794,10 @@ Append failed idea classes here so they are not retried.
   evidence: void/trump/pair-cap/pile-window all flat or regress; JT pile deck<=2 opp<=4 −0.018
   do not retry unless: —
 
+- direction: PIVOT batch-49 endgame opp-hand (JW–JZ)
+  evidence: JW opp==1 −0.012; JX pile deck<=1 −0.045; JY HD opp==1 −0.006; JZ −0.001
+  do not retry unless: —
+
 - direction: SWEEP batch-52 pair cap on HD (LC–LF)
   evidence: min+3 best B4 +0.0064; min+2 = HD search-best; min+4 decline; axis closed
   do not retry unless: combined with search-lift third axis
