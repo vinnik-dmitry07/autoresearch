@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **KZ** = HD strip `deck<=2` + pair cap `min+3` — full B4 **0.64337** (+0.0066), search **0.79335** (+0.0039). exp **HD** alone — full B4 0.64318, search **0.79358** (+0.0042, closer to keep bar). LB: pair cap min+3 alone neutral.
+- **Top probe (unkept):** exp **HD** strip `deck<=2` — medium search **0.79365 (+0.0042)**, full B4 0.64318; closest to keep bar (~0.0008). exp **KZ** = HD + pair cap `min+3` (midgame only) — full B4 **0.64337** (+0.0066) but search **0.79335 (+0.0039)**; B4/search tradeoff.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-52 SWEEP — pair cap min+3 optimal for B4 on HD base; HD min+2 still best for search (+0.0042 vs KZ +0.0040)
-- Next batch type: COMBO HD strip + pair min+3 + third axis only if lifts search; else hold HD as keep candidate
+- Mode: **EXPLOIT**
+- Since: batch-53 — KZ third-axis combos don't beat HD on search; HD medium +0.0042 stable; KZ B4-optimal but search-suboptimal
+- Next batch type: max 3 HD exploit attempts OR PIVOT qualitatively new axis; do not re-run KZ COMBOs
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 53 — lift search on best B4 stack):
+Next 5 experiment ideas (**EXPLOIT/PIVOT** batch 54):
 
-1. **HD strip + pair min+3 + void remove** — simplification test on KZ.
-2. **HD strip + pair min+3 + pile opp<=5 unchanged** — control.
-3. **HD strip only (min+2)** — search-optimized keep candidate; medium/full if policy allows.
-4. **HD + pair min+3 dual seed** — reconfirm KZ B4; skip if search < HD.
-5. **Do not sweep pair cap again** — grid closed min+3 best B4, min+2 best search.
+1. **HD strip deck<=2** — apply + dual + full (keep candidate; search +0.0042).
+2. **HD + pair min+3** — skip unless new evidence; search regression confirmed.
+3. **PIVOT: open-phase suit diversity** — prefer spreading suits when deck>=4 (new axis).
+4. **PIVOT: pile throw-in rank table-match banned** — JK −0.079; skip.
+5. **Analysis refresh** — `scripts\run_analysis.bat` if plateau persists.
 
 Rules for selecting ideas:
 
@@ -801,6 +801,10 @@ Append failed idea classes here so they are not retried.
 - direction: SWEEP batch-52 pair cap on HD (LC–LF)
   evidence: min+3 best B4 +0.0064; min+2 = HD search-best; min+4 decline; axis closed
   do not retry unless: combined with search-lift third axis
+
+- direction: COMBO batch-53 KZ third-axis (LG–LL)
+  evidence: void/pile/trump on KZ none beat HD search +0.0042; KZ B4 +0.0066 search +0.0039
+  do not retry unless: mechanism lifts medium search >= +0.0045
 ```
 
 ## Loop notes
@@ -1284,4 +1288,13 @@ date/window: jun22 batch-52 (LC–LF) SWEEP
 - what changed: closed pair cap grid on HD; B4 vs search tradeoff (KZ vs HD)
 - result: 167b02d unchanged
 - next bias: COMBO batch-53 search lift on KZ/HD stack
+```
+
+```text
+date/window: jun22 batch-53 (LG–LL) COMBO
+- attempts: 5 b4 + LG medium + HD dual/medium + LP; 0 keeps
+- bottleneck: KZ third-axis (void/pile/trump) none beat HD search; HD medium +0.0042 best keep proximity
+- what changed: closed KZ search-lift COMBOs; KZ B4-optimal (+0.0066 full), HD search-optimal (+0.0042)
+- result: 167b02d unchanged
+- next bias: EXPLOIT HD keep candidate or PIVOT new axis
 ```
