@@ -12,8 +12,9 @@
 //
 // MANIFEST (keep in sync with the constants below):
 //   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame pair
-//                                       deck>=5 within min+2; endgame pair-open + trump-strip;
-//                                       finish deck<=3 pile trump opp<=5 / open strip opp<=2; >=1 trump
+//                                       deck>=5 within min+2; endgame pair-open deck<=2 + total gate;
+//                                       trump-strip deck==0 opp<=2; finish deck<=3 pile trump opp<=5
+//                                       hand>=opp; >=1 trump
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -90,15 +91,18 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
                     break;
                 }
             }
-        } else if (mnt < NUM_RANKS && L.deck_count == 0 &&
+        } else if (mnt < NUM_RANKS && L.deck_count <= 2 &&
                    popcount(L.hand & RANK_MASK[mnt] & ~SUIT_MASK[L.trump_suit]) == 1) {
-            for (int r = mnt + 1; r < NUM_RANKS; ++r) {
-                if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
-                    open_rank = r;
-                    break;
+            const int total = L.deck_count + popcount(L.hand) + L.opponent_hand_count + L.n_table;
+            if (L.deck_count != 2 || total <= 16) {
+                for (int r = mnt + 1; r < NUM_RANKS; ++r) {
+                    if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
+                        open_rank = r;
+                        break;
+                    }
                 }
             }
-            if (open_rank == mnt && L.opponent_hand_count <= 2 &&
+            if (open_rank == mnt && L.deck_count == 0 && L.opponent_hand_count <= 2 &&
                 popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 1) {
                 Move low_trump{MoveType::AttackDone, NO_CARD, 0};
                 for (int i = 0; i < legal.count; ++i) {
@@ -120,6 +124,7 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
     const Card pile_card = legal.moves[best].card;
     if (!is_trump(pile_card, L.trump_suit)) return legal.moves[best];
     if (L.deck_count <= 3 && L.opponent_hand_count <= 5 &&
+        popcount(L.hand) >= L.opponent_hand_count &&
         popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 1) {
         Move low_trump{MoveType::AttackDone, NO_CARD, 0};
         for (int i = 0; i < legal.count; ++i) {
