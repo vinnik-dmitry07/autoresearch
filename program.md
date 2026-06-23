@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Combo refinement on load-bearing paths** — pile deck==3 exact vs <=3; strip only after pair fails (CZ order).
-2. **AttackDone vs trump throw-in** — when deck>3 refuse pile trump (inverse of pile dump window).
-3. **Endgame pair cap** — min+3 at deck==0 only (midgame cap min+2 fixed).
-4. **Hold CZ stack** — all three paths confirmed load-bearing via DR/DS/DZ ablations.
-5. **Qualitative defense** — take when table trump count high (new mechanism, not cost tweak).
+1. **Endgame pair unbounded** — keep wide promotion search; ED confirms cap hurts.
+2. **Midgame pile-ons required** — EG confirms deck>=4 throw-ins load-bearing; no early AttackDone guards.
+3. **Pile window locked** — deck<=3 not ==3; deck==0 pile dump matters (EC).
+4. **Attack-phase only novelties** — pile-phase trump penalty, strip without singleton at medium (DM +0.001).
+5. **Simplification probe** — drop endgame pair loop keep strip only (risk DS-class −0.010 if strip mistimed).
 
 Rules for selecting ideas:
 
@@ -591,6 +591,18 @@ Append failed idea classes here so they are not retried.
 - direction: skip midgame pair-open (ablation)
   evidence: exp DZ medium −0.005 B4; DN quick neutral (resolution-dependent)
   do not retry unless: —
+
+- direction: pile dump deck 1-3 / deck==3 only / no pile-on deck>=4
+  evidence: exp EC −0.034; EE −0.058; EG −0.116 vs CZ; deck<=3 window load-bearing
+  do not retry unless: —
+
+- direction: endgame pair cap min+3 (narrow unbounded search)
+  evidence: exp ED quick −0.005; endgame pair promotion wants wide rank search
+  do not retry unless: —
+
+- direction: defense voluntary take (table trump count)
+  evidence: exp EF quick −0.025 B4
+  do not retry unless: new take trigger unrelated to trump count
 ```
 
 ## Loop notes
@@ -759,4 +771,13 @@ date/window: jun22 batch-18 (DW–EB)
 - what changed: closed defense cost +40/+55 and void pile -10; confirmed DZ ablation vs DN quick neutral
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: refine load-bearing path ordering/windows; attackDone early-trump guard; endgame-only pair cap
+```
+
+```text
+date/window: jun22 batch-19 (EC–EH)
+- attempts: 6 discards (4 regressions EC/EE/EF/EG, 1 mild ED −0.005, 1 neutral EH); 0 full evals; 0 keeps
+- bottleneck: CZ path geometry locked — deck<=3 pile, deck>=4 pile-ons, unbounded endgame pair, no defense take heuristics
+- what changed: closed pile window narrowing, endgame pair cap, defense trump-table take, deck>=4 AttackDone guard
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: attack-phase novelties only; DM-class strip timing at medium; simplification ablation strip-only endgame
 ```
