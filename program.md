@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **EO refinement** — isolate deck==1/2/3 pair-open extension; EO medium +0.0012 best maybe since batch-16.
-2. **Throw-in rank match** — EN/ER neutral; try stronger bonus or deck==3-only pile battles only.
-3. **Hold CZ geometry** — no pile/window/strip reorder retries.
-4. **Endgame open rank** — EQ confirms opp==1 highest hurts; skip opp-rank tweaks.
-5. **Full eval gate** — only EO-class >= +0.003 medium on two seeds before full.
+1. **EU vs EO at dual/full** — deck==2 alone medium +0.0011; full EO +0.0012; escalate if dual >= +0.003.
+2. **Deck==2 + strip/pile synergy** — pair at deck==2 only when opp<=5 or singleton (one gate).
+3. **Throw-in rank match** — closed at -12 deck==3 (EX); skip unless paired with EU pair extension.
+4. **Hold CZ geometry** — deck==1/3 alone hurt; need full 1-3 window or deck==2 only.
+5. **No single-component keeps** — all EO-class below +0.003 medium gate so far.
 
 Rules for selecting ideas:
 
@@ -627,6 +627,14 @@ Append failed idea classes here so they are not retried.
 - direction: pair deck>=5 or deck==3 only (exact)
   evidence: exp ES medium −0.0001; deck 1-3 window beats deck==3 alone (EO)
   do not retry unless: —
+
+- direction: pair deck>=5 or deck==1 / deck 1+3 without 2 / deck==3 alone quick
+  evidence: exp ET/EW/EV quick −0.0004..−0.0008; deck==2 is primary lift (EU)
+  do not retry unless: paired as full EO 1-3 window
+
+- direction: throw-in rank -12 deck==3 only
+  evidence: exp EX neutral quick
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -822,4 +830,13 @@ date/window: jun22 batch-21 (EN–ES)
 - what changed: closed global throw-in rank match and opp==1 open; EO dual agrees at +0.0008 B4
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: sweep deck==1/2/3 pair extension components; medium/full only if >= +0.003 B4
+```
+
+```text
+date/window: jun22 batch-22 (ET–EX)
+- attempts: 5 discards (1 maybe EU +0.0011 medium, 4 neutral/mild); 0 full evals; 0 keeps
+- bottleneck: EO lift driven mainly by deck==2 pair extension (+0.0011 medium); deck==1/3 alone hurt; full 1-3 window still best (+0.0012)
+- what changed: decomposed EO combo — deck==2 ≈ 90% of EO signal; throw-in rank -12 deck==3 inert
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: dual on EU/EO; deck==2 gated combos; full only if dual >= +0.003 B4
 ```
