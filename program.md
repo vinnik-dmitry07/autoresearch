@@ -437,27 +437,27 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-33 — CQ pile/pair windows locked: pile<=3 optimal; <=4 −0.006; <=2 −0.001; pair>=5 optimal
-- Next batch type: qualitatively new endgame/pressure triggers (not pile/pair window combos)
+- Mode: **SWEEP**
+- Since: batch-34 — HD strip `deck<=2` full B4 +0.006 but search +0.004 below keep bar; maybe-cluster on strip deck threshold
+- Next batch type: strip deck window grid (`==0/==1/<=2/<=3/<=1+opp`) on b4
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
 
-- Which local situations does B4 exploit most? Open strip opp<=2 synergizes with CQ combo (+0.010) though neutral alone at AQ (BV) — endgame trump timing when opponent nearly empty.
+- Which local situations does B4 exploit most? **Strip deck<=2** (HD) +0.006 B4 full but search +0.004 — early endgame trump-strip before deck empty may be the next keep axis.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip combo** — defense unchanged; memory inert (B3vsB2 0.500).
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 34 — endgame pressure, one change):
+Next 5 experiment ideas (**SWEEP** batch 35 — strip deck threshold grid):
 
-1. **Strip when opp<=3** — widen endgame open strip from <=2 (FZ was −0.011 on combo; single-axis retest).
-2. **Pair-open when opp<=3** — midgame pair if opponent short, regardless of deck (new trigger).
-3. **Pile pass when opp has 6 cards** — skip pile vs full-hand defender (mirror GE inverted).
-4. **Open lowest trump when deck<=2 and opp<=2** — hybrid strip/open timing.
-5. **Medium on GU** — pair>=5 + pile<=2 reconfirm at 500k (only if quick signal ≥ −0.001).
+1. **strip deck==0** — CZ control (baseline cell).
+2. **strip deck==1** — strip only when exactly one card left in deck.
+3. **strip deck<=2** — HD replicate (quick +0.006 class).
+4. **strip deck<=3** — widen strip earlier.
+5. **strip deck<=1 + opp<=1** — tighter dual gate on HD axis.
 
 Rules for selecting ideas:
 
@@ -748,6 +748,10 @@ Append failed idea classes here so they are not retried.
 - direction: COMBO batch-33 pile/pair windows (GU–GY)
   evidence: GU pile<=2 −0.001; GV pile<=4 −0.006; GW/GX neutral; GY void+CZ medium −0.00012
   do not retry unless: new third axis with quick >= +0.003 (CZ pile<=3 pair>=5 locked)
+
+- direction: PIVOT batch-34 endgame pressure (HA–HC)
+  evidence: HA strip opp<=3 −0.011; HB pair opp<=3 −0.012; HC pile pass opp>=6 −0.0007 neutral
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1060,4 +1064,13 @@ date/window: jun22 batch-33 (GU–GY) COMBO
 - what changed: closed CQ-class window replay; GV pile<=4 strong regression
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: PIVOT batch-34 endgame pressure triggers (not pile/pair windows)
+```
+
+```text
+date/window: jun22 batch-34 (HA–HD) PIVOT
+- attempts: 4 b4 + HD medium/dual/full; 0 keeps
+- bottleneck: 10th zero-keep batch broken by HD maybe — strip deck<=2 full B4 +0.006 search +0.004 below +0.005 keep bar
+- what changed: HA/HB regress −0.011/−0.012; HC neutral; HD best signal since CZ at B4 but sub-gate on search
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: SWEEP batch-35 strip deck threshold grid
 ```
