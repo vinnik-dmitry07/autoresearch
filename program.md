@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-70 — hand-count PIVOT closed (PS–QC); n_table pivots flat; HD sub-gate still ~0.0008 below search keep bar
-- Next batch type: COMBO HD strip + search-lift second axis (void/table-depth/pile only if quick B4 >= +0.006)
+- Mode: **EXPLOIT**
+- Since: batch-73 — COMBO batch-71–72 closed; all HD+second-axis search ≤ +0.0042; HD ABLATE confirms pile load-bearing
+- Next batch type: EXPLOIT HD sub-gate only (no bare CZ probes); full eval only if medium search ≥ +0.0045 AND dual agrees
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 71 — HD search-lift):
+Next 5 experiment ideas (**EXPLOIT** batch 74 — HD sub-gate only):
 
-1. **HD + table-depth pass n_table>=5** (OX +0.0053 quick) — retest medium search.
-2. **HD + void pile −10 when n_table>=2** — table-aware void pressure on HD base.
-3. **HD + pile deck<=2** (PP +0.0055) — confirm medium search vs HD alone.
-4. **HD + strip opp==2 only** — narrow endgame strip gate on HD.
-5. **HD + new-suit bonus −3** (OY) — reconfirm; only escalate if dual seeds agree +0.0045 search.
+1. **HD medium + dual reconfirm** — stability check only; no full unless search ≥ +0.0045 both seeds.
+2. **HD ablate pair-open** (QS −0.005 on HD vs CZ −0.005) — confirm inert on HD base.
+3. **HD strip deck 0|2** (exclude deck 1) — retest HO axis on HD.
+4. **HD + void remove** (QT) — simplification candidate if full agrees.
+5. **Meta plateau review** — document ~0.0008 search gap; pause bare COMBO unless new mechanism.
 
 Rules for selecting ideas:
 
@@ -860,6 +860,14 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-70 n_table (QD–QF)
   evidence: QD/QF neutral; QE pile n_table>=3 −0.050; PA-class regress
+  do not retry unless: —
+
+- direction: COMBO batch-71–72 HD search-lift (QG–QO)
+  evidence: QG/QI medium search +0.0040; QH/QN tie HD +0.0058 quick; QK/OY +0.00418; triple COMBOs flat
+  do not retry unless: mechanism outside void/pile/pass/new-suit/table-depth class
+
+- direction: ABLATE batch-73 HD stack (QS–QV)
+  evidence: QU pile off −0.052; QV pair-skip −0.010; QS pair −0.005; QT void off −0.001 — pile essential on HD
   do not retry unless: —
 ```
 
@@ -1479,4 +1487,22 @@ date/window: jun22 batch-70 (QD–QF) PIVOT n_table
 - what changed: closed n_table void/pile/pair gates
 - result: 167b02d unchanged
 - next bias: COMBO batch-71 HD search-lift retries (OX/void/table only)
+```
+
+```text
+date/window: jun22 batch-71–72 (QG–QO) COMBO HD
+- attempts: 5 b4 + HD medium + QG/QI/QK medium + QK dual; 0 keeps
+- bottleneck: HD medium search +0.00424 best; QK/OY +0.00418; all COMBOs below +0.0045 keep bar
+- what changed: closed HD+pass/void/pile/new-suit/table triple COMBOs
+- result: 167b02d unchanged
+- next bias: HD ABLATE batch-73
+```
+
+```text
+date/window: jun22 batch-73 (QS–QV) ABLATE HD
+- attempts: 4 b4; 0 keeps
+- bottleneck: 43+ zero-keep batches; HD search lift not reachable via second-axis COMBO
+- what changed: HD pile −0.052; strip pair-skip −0.010; void −0.001 on HD base
+- result: 167b02d unchanged; HD archived EXPLOIT-only sub-gate
+- next bias: EXPLOIT stability + meta plateau review
 ```
