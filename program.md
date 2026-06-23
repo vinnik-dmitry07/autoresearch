@@ -437,12 +437,13 @@ The sections below are editable by the agent during meta mode.
 - **WR ablation map (batches 102–106):** load-bearing: `hand≥opp` (−0.0018), strip `opp≤2` (−0.014), deck≤2 pair (−0.012), pile trump `deck≤3` (−0.020). Optimal: `total≤16`, pile `opp≤5`, pile `deck≤3`. Inert/closed: rank-match, deck≥6, void mag, opp≤6, total 14–17, pair min+1/skip+2, suit tie-break, rank-aware void, pile-pass trump hoard.
 - **Plateau (batch-107):** WR full search **0.79506** stable (dual seed 0/1 agree); next keep needs **+0.005** search (bar **0.80006**). ~80 batches since CZ keep; 1 keep (WR) in batch-101.
 - **Defense rank-match SWEEP (batch-108):** quick peak **−2/−4** search ~0.7956 (+0.0005); **−3** medium flat (XT); **−6** regress; softer ultra-endgame inert.
+- **Top probe (unkept):** exp **XW** defense rank-match **−4** — medium search **0.79595 (+0.00089)** vs WR full; still **~0.0041** below keep bar. Occam WR+def−4: **198 lines** (+4).
 
 ## Search mode
 
-- Mode: **meta / PIVOT**
-- Since: batch-108 — defense rank-match SWEEP closed at −2/−4 quick; medium unlikely to keep
-- Next batch type: halt defense rank-match unless dual+medium on −4; attack-side only
+- Mode: **PIVOT**
+- Since: batch-109 — XW −4 medium 0.79595 best unkept; attack trump-hoard/void-gate inert; defense axis closed without keep
+- Next batch type: COMBO WR+def−4 only if dual agrees; else new attack class
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -459,16 +460,17 @@ The sections below are editable by the agent during meta mode.
 - **WR PIVOT (batch-106):** pile-pass only-trump deck>0 −0.020 (same as XM); suit tie-break inert; endgame pair skip min+2 −0.0015.
 - **WR PIVOT (batch-107):** ultra-endgame pass hand==1 −0.019; defense rank-match quick +0.0009 medium flat (0.79505); dual seeds stable.
 - **WR PIVOT (batch-108):** softer pass hand==2 opp==1 inert; defense rank-match −2/−4 quick +0.0005.
+- **WR PIVOT (batch-109):** XW −4 medium +0.00089; open trump hoard + void hand-gate inert.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**meta** batch 109):
+Next 5 experiment ideas (**COMBO / PIVOT** batch 110):
 
-1. **Optional: dual+medium on XV/XW (−2/−4)** — only if quick signal worth confirming; expect flat like XT.
-2. **PIVOT: attack defer non-trump open when trumps≥3 and deck≥4 on WR** — trump conservation (new class).
-3. **PIVOT: pile void only when opp hand ≤ our hand on WR** — combine hand≥opp with void timing.
-4. **Meta: Occam WR+defense −4 line count** — if medium flat, document closed axis.
-5. **Halt defense rank-match SWEEP** — −2/−4/−6 mapped; −3 medium flat.
+1. **COMBO: WR + defense rank-match −4** — dual then medium; XW alone medium 0.79595 unkept.
+2. **Do not full-eval XW** — +0.00089 medium below +0.003 gate; keep bar 0.80006 unreachable without +0.005 full.
+3. **PIVOT: strip only when opp==1 on WR** — endgame tighter than opp≤2 (not batch-101 WQ which failed on TQ).
+4. **PIVOT: midgame pair only when hand≥opp on WR** — hand gate on open path.
+5. **Halt defense rank-match SWEEP and open trump hoard** — batch-109 closed.
 
 Rules for selecting ideas:
 
@@ -1018,6 +1020,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: SWEEP batch-108 defense rank-match bonus (XV–XX) + XY softer pass
   evidence: XV/XW quick +0.0005; XT/−3 medium flat; XX −6 regress; XY inert
+  do not retry unless: —
+
+- direction: PIVOT batch-109 open trump hoard / pile void gate (XZ/YA)
+  evidence: XZ deck>=4 trumps>=3 +5 penalty inert; YA void hand-gate inert
   do not retry unless: —
 ```
 
@@ -1952,4 +1958,13 @@ date/window: jun22 batch-108 (XV–XY) SWEEP defense rank-match + softer pass
 - what changed: closed defense rank-match SWEEP and softer ultra-endgame pass
 - result: f5bb135 unchanged
 - next bias: meta batch-109; optional dual+medium −4; attack-side trump conservation
+```
+
+```text
+date/window: jun22 batch-109 (XW/XZ/YA) medium −4 confirm + attack PIVOTs
+- attempts: 1 medium + 2 quick; 0 keeps
+- bottleneck: XW −4 medium 0.79595 (+0.00089) best unkept; XZ/YA inert
+- what changed: defense rank-match −4 documented as top probe; attack trump hoard closed
+- result: f5bb135 unchanged; keep bar still ~0.0041 above XW medium
+- next bias: COMBO WR+def−4 dual; midgame hand gate on open
 ```
