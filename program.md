@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-97 — TQ COMBOs + deck≥6×total sweep all ≤0.79376 medium; structural ceiling confirmed
-- Next batch type: PIVOT outside TQ/CZ attack stack (e.g. defense rank cap, belief-free priors); no TQ COMBO re-runs
+- Mode: **EXPLORE**
+- Since: batch-98 — defense rank-cap/take-threshold catastrophic (WA −0.047, WE −0.311); attack priors neutral
+- Next batch type: EXPLORE attack-side only (no defense take/cap); meta documents TQ ceiling
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-97):** 67+ zero-keep batches; TQ medium 0.79376 immovable; deck≥6 COMBO −0.00005 vs TQ.
+- **Plateau (batch-98):** 68+ zero-keep batches; defense manipulation catastrophic; attack-side priors inert on CZ.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 98 — outside TQ/CZ attack):
+Next 5 experiment ideas (**EXPLORE** batch 99 — attack-only micro-tweaks):
 
-1. **Defense rank cap +2 over attack** — refuse expensive covers.
-2. **Attack value rank-unseen prior** — boost dump of ranks fully on table (no memory).
-3. **Open lowest suit with fewest cards** — suit-spread tie-break on open.
-4. **Pile void bonus +12** — stronger pile void pressure (open stays −8/−5).
-5. **Take when cover cost > rank+8** — voluntary take threshold on defense.
+1. **Midgame pair cap min+1** — tighten from min+2 on CZ.
+2. **Endgame pair cap min+4** — widen singleton skip search.
+3. **Pile trump only when opp<=4** — narrow on CZ (not TQ).
+4. **Strip when trumps>=2 AND opp<=2** — compound guard on CZ.
+5. **Void open -6 pile -10** — asymmetric void split (not batch-32 grid).
 
 Rules for selecting ideas:
 
@@ -966,6 +966,10 @@ Append failed idea classes here so they are not retried.
 - direction: EXPLOIT batch-97 TQ deck>=6 x total gate (VV–VY)
   evidence: VY/VW medium 0.79371; VV/VX 0.79368; all below TQ 0.79376
   do not retry unless: —
+
+- direction: PIVOT batch-98 defense/priors (WA–WE)
+  evidence: WA rank cap −0.047; WE take threshold −0.311; WB/WD/WC neutral
+  do not retry unless: new mechanism unrelated to take/cap
 ```
 
 ## Loop notes
@@ -1800,4 +1804,13 @@ date/window: jun22 batch-97 (VV–VZ) EXPLOIT TQ deck>=6 x total
 - what changed: closed deck>=6×total COMBO on TQ; structural ceiling documented
 - result: 167b02d unchanged
 - next bias: PIVOT batch-98 outside TQ/CZ attack stack
+```
+
+```text
+date/window: jun22 batch-98 (WA–WE) PIVOT defense/priors
+- attempts: 5 quick; 0 keeps
+- bottleneck: WA/WE catastrophic; WB/WD/WC neutral on CZ
+- what changed: closed defense rank-cap and voluntary take; attack priors inert
+- result: 167b02d unchanged
+- next bias: EXPLORE batch-99 attack-only micro-tweaks on CZ
 ```
