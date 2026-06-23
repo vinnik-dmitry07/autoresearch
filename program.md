@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-24 — CZ stack saturated; pair-extension (EO/FF) capped ~+0.0013 medium (< +0.003 gate)
-- Next batch type: qualitatively new attack mechanism; no pair-extension / pile-window / open-strip micro-tweaks
+- Mode: **ABLATE**
+- Since: batch-26 — two PIVOT batches (25-26) all neutral except FL −0.004; attack-timing pivots invisible at quick
+- Next batch type: simplification / remove one mechanism; confirm load-bearing or find simpler equal score
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 26 — one change each):
+Next 5 experiment ideas (**ABLATE** batch 27 — disable one mechanism each):
 
-1. **Midgame pile pass at table depth** — `AttackDone` on pile when `n_table >= 4` and `deck>=4` (stop over-piling).
-2. **Pair-open only when opp>=2** — skip midgame pair when `opp==1` (deck>=5 path); singleton pressure when opponent nearly empty.
-3. **Throw-in rank cap** — pass pile if best card rank > min_non_trump+3 (avoid high-rank throw-ins mid-fight).
-4. **Open-path void bonus only** — apply void-suit −5 only when `!has_done`; remove void bonus on pile path.
-5. **Desperate trump open** — when `deck==0`, only trumps in hand, `opp<=2`: open lowest trump (bypass pair/strip loop).
+1. **Remove void open bonus** — drop void-suit −5 entirely; test if pile void −8 alone suffices.
+2. **Remove midgame pair-open** — deck>=5 pair loop off; keep endgame pair + strip (DZ ablation reconfirm at quick).
+3. **Remove pile void bonus** — void −5 open only, pile void −8 removed (mirror of FO).
+4. **Remove endgame pair promotion** — deck==0 singleton→pair search off; keep strip fallback only.
+5. **Remove finish pile trump dump** — deck<=3 pile path off; keep open strip (DR ablation reconfirm at quick).
 
 Rules for selecting ideas:
 
@@ -716,6 +716,10 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-25 attack timing (FG-FK)
   evidence: FG early-trump guard / FH rank-match pile / FI endgame pair cap+4 / FJ opp>=5 pile skip / FK opp==1 min open — all quick B4 0.63607 search 0.78896
   do not retry unless: new trigger geometry (not same guards/caps)
+
+- direction: PIVOT batch-26 attack geometry (FL-FP)
+  evidence: FL n_table>=4 pile pass −0.004 B4; FM-FP all quick 0.63607 neutral
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -956,4 +960,13 @@ date/window: jun22 batch-25 (FG–FK) PIVOT
 - what changed: build.bat fast builds simulate target only; adaptive cadence + search modes committed; results.tsv re-init
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: PIVOT batch-26 — table-depth pile pass, opp-gated pair-open, rank cap throw-in, open-only void bonus, desperate trump open
+```
+
+```text
+date/window: jun22 batch-26 (FL–FP) PIVOT
+- attempts: 5 discards (1 mild regression FL −0.004, 4 neutral); 0 full evals; 0 keeps
+- bottleneck: second PIVOT batch flat — attack geometry changes invisible at quick except over-piling hurts
+- what changed: none on best; search mode → ABLATE for batch 27
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: ABLATE batch — remove void/pair/pile/strip components one at a time; look for simplification wins
 ```
