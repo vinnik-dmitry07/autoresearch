@@ -11,8 +11,8 @@
 // branch, and do not add persistent/global state, I/O, clocks, or randomness.
 //
 // MANIFEST (keep in sync with the constants below):
-//   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; endgame opening
-//                                       prefers a low pair when the bare minimum is a singleton
+//   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame open
+//                                       low pair within min+2; endgame pair-open + trump-strip
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -53,18 +53,38 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
     }
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
 
-    // H1: initial attack — lowest non-trump; skip lone singleton if a low pair exists.
+    // H1: initial attack — lowest non-trump; midgame prefer low pair within cap; endgame
+    // skip lone singleton if a low pair exists; else trump-strip when trump-rich.
     if (!has_done) {
         const CardMask nt = L.hand & ~SUIT_MASK[L.trump_suit];
         const int mnt = nt ? rank_of(lowest(nt)) : NUM_RANKS;
         int open_rank = mnt;
-        if (mnt < NUM_RANKS && L.deck_count == 0 &&
-            popcount(L.hand & RANK_MASK[mnt] & ~SUIT_MASK[L.trump_suit]) == 1) {
+        if (L.deck_count > 0) {
+            for (int r = mnt; r <= mnt + 2 && r < NUM_RANKS; ++r) {
+                if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
+                    open_rank = r;
+                    break;
+                }
+            }
+        } else if (mnt < NUM_RANKS &&
+                   popcount(L.hand & RANK_MASK[mnt] & ~SUIT_MASK[L.trump_suit]) == 1) {
             for (int r = mnt + 1; r < NUM_RANKS; ++r) {
                 if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
                     open_rank = r;
                     break;
                 }
+            }
+            if (open_rank == mnt && L.opponent_hand_count <= 3 &&
+                popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 3) {
+                Move low_trump{MoveType::AttackDone, NO_CARD, 0};
+                for (int i = 0; i < legal.count; ++i) {
+                    const Move& m = legal.moves[i];
+                    if (m.type != MoveType::AttackPlay || !is_trump(m.card, L.trump_suit)) continue;
+                    if (low_trump.type != MoveType::AttackPlay ||
+                        rank_of(m.card) < rank_of(low_trump.card))
+                        low_trump = m;
+                }
+                if (low_trump.type == MoveType::AttackPlay) return low_trump;
             }
         }
         for (int i = 0; i < legal.count; ++i) {
