@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-47/48 — pile/hand/scoring explore all regress or flat; HD archived; 22+ zero-keep batches
-- Next batch type: qualitatively new endgame timing (opp hand count, last-card triggers) or COMBO HD only on quick >= +0.006
+- Mode: **COMBO**
+- Since: batch-49 — endgame opp-hand triggers all regress (JX −0.045); HD remains only sub-gate; 25+ zero-keep batches
+- Next batch type: COMBO HD strip + one novel axis only if quick screen >= +0.006; else ABLATE CZ simplification
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 49 — endgame opp-hand triggers):
+Next 5 experiment ideas (**COMBO/ABLATE** batch 50):
 
-1. **Open strip when opp==1** — single-opponent-card timing (not opp<=2).
-2. **Pile trump when opp<=2 and deck<=1** — tighter finish pile.
-3. **AttackDone when opp==0 cards** — pass vs empty opponent (if legal).
-4. **COMBO HD + defense trump cost 60** — JV neutral; skip unless medium beats +0.0045.
-5. **Do not retry JK pile rank-match** — −0.079 regression class.
+1. **ABLATE void bonus off** — CZ simplification (GK neutral medium).
+2. **ABLATE pair-open off** — confirm DZ −0.005 on current CZ.
+3. **COMBO HD + void remove** — HP class retest at medium.
+4. **COMBO HD + pile deck<=3 unchanged** — should equal HD; skip if redundant.
+5. **Do not retry JW/JX/JY endgame opp triggers** — all regress.
 
 Rules for selecting ideas:
 
@@ -792,6 +792,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-48 scoring (JQ–JT)
   evidence: void/trump/pair-cap/pile-window all flat or regress; JT pile deck<=2 opp<=4 −0.018
+  do not retry unless: —
+
+- direction: PIVOT batch-49 endgame opp-hand (JW–JZ)
+  evidence: JW opp==1 −0.012; JX pile deck<=1 −0.045; JY HD opp==1 −0.006; JZ −0.001
   do not retry unless: —
 ```
 
@@ -1240,4 +1244,13 @@ date/window: jun22 batch-48 (JQ–JT) PIVOT
 - what changed: closed scoring micro-tweak axis; JV HD+defense neutral
 - result: 167b02d unchanged
 - next bias: PIVOT batch-49 endgame opp-hand triggers
+```
+
+```text
+date/window: jun22 batch-49 (JW–JZ) PIVOT
+- attempts: 4 b4; 0 keeps; JX −0.045 regression
+- bottleneck: opp==1 strip/pile all worse than opp<=2 CZ/HD class
+- what changed: closed endgame opp-hand trigger axis
+- result: 167b02d unchanged; HD archived top probe
+- next bias: COMBO/ABLATE batch-50 simplification vs HD COMBO
 ```
