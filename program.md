@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-28 — COMBO batch all discard; FZ strip opp<=3 −0.011 reconfirms opp<=2; no combo lift
-- Next batch type: qualitatively new sort keys / battle-state triggers (not void/strip/pile window combos)
+- Mode: **SWEEP**
+- Since: batch-29 — 5th zero-keep batch (25–29); suit-length / battle-state PIVOT all neutral (GA −0.001 best)
+- Next batch type: attack trump penalty grid 92/96/100/104/108 via `triage.bat b4` on CZ base
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,13 +451,15 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 29 — one change, new mechanisms):
+Next 5 experiment ideas (**SWEEP** batch 30 — trump penalty grid on CZ base):
 
-1. **Longest-suit open** — on initial attack, prefer lowest card from the non-trump suit with most cards in hand.
-2. **Pile pass on table trump** — `AttackDone` on pile if any uncovered attack card on table is trump.
-3. **Shortest-suit pile** — on pile, prefer lowest card from shortest non-trump suit in hand (new tie-break in pick).
-4. **Open trump when hand is trump-only** — if no non-trump in hand at open, play lowest trump (any phase).
-5. **Pile only if opp hand <= deck** — skip pile when `opp_hand_count > deck_count` (relative pressure gate).
+1. **Trump penalty 92** — `attack_value` trump +92 (manifest kParameterCount=1 if !=100).
+2. **Trump penalty 96**
+3. **Trump penalty 100** — baseline control (expect ~0.63607 quick).
+4. **Trump penalty 104**
+5. **Trump penalty 108**
+
+Use `triage.bat b4` per cell; full ladder only if ΔB4 ≥ +0.003 vs best. Restore +100 after sweep.
 
 Rules for selecting ideas:
 
@@ -728,6 +730,10 @@ Append failed idea classes here so they are not retried.
 - direction: COMBO batch-28 (FV-FZ)
   evidence: FV void+pair>=6 −0.001; FW/FX/FY neutral; FZ strip opp<=3 −0.011 (reconfirms opp<=2)
   do not retry unless: new second axis with quick >= +0.003
+
+- direction: PIVOT batch-29 suit-length / battle-state (GA-GE)
+  evidence: GA longest-suit −0.001; GB-GE all quick 0.63607 neutral
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -995,4 +1001,13 @@ date/window: jun22 batch-28 (FV–FZ) COMBO
 - what changed: FZ reconfirms open strip opp<=2 optimal vs <=3
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: PIVOT batch-29 — suit-length sort keys, table-trump pile gate, relative pressure
+```
+
+```text
+date/window: jun22 batch-29 (GA–GE) PIVOT
+- attempts: 5 discards (all neutral/mild); 0 full evals; 0 keeps
+- bottleneck: 5th zero-keep batch (25–29); suit-length and battle-state triggers invisible at quick
+- what changed: none on best
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: SWEEP batch-30 attack trump penalty 92–108 via b4 gate
 ```
