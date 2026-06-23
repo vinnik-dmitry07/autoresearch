@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-103 — WR stack ablation map: strip/hand>=opp load-bearing; total≤16 mild; finish windows closed
-- Next batch type: total-gate SWEEP; deck==2 pair ablation on WR
+- Mode: **PIVOT**
+- Since: batch-104 — WR knob SWEEP/ablations closed; total≤16 and deck≤2 pair confirmed; local optimum at f5bb135
+- Next batch type: qualitatively new attack mechanisms only (WR stack fully mapped)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -451,17 +451,18 @@ The sections below are editable by the agent during meta mode.
 - **WR keep (batch-101):** hand≥opp pile gate is the missing +0.0003 search lift over TQ ceiling; strip opp<=2 and total≤16 remain load-bearing.
 - **WR ablation (batch-102):** removing hand≥opp drops to TQ level (search −0.0018); hand>opp and hand≥opp+1 catastrophic (−0.033).
 - **WR ablation (batch-103):** strip opp≤2 −0.014 load-bearing; total≤16 −0.0006 mild; pile deck≤3 beats deck≤2 (−0.0006); pile opp≤4 −0.016.
+- **WR mapped (batch-104):** total gate ≤16 optimal (14/15 −0.0006; 17 −0.00055); deck==2 pair −0.012 load-bearing; opp≤6 −0.0007; void pile −10 inert.
 - Does complexity reduction improve B4 parity? Still complexity 100; four timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT/SWEEP** batch 104 on WR base):
+Next 5 experiment ideas (**PIVOT** batch 105 — new mechanisms on WR base):
 
-1. **SWEEP: total gate 14/15/17 on WR** — sharpness around ≤16 (XC shows mild −0.0006).
-2. **ABLATE: deck<=2 pair window → deck==0 only on WR** — test if deck==2 pair still needed with hand>=opp.
-3. **COMBO: WR + void bonus pile −10** — retest void magnitude on WR base.
-4. **PIVOT: pile opp<=6 on WR** — one retest with hand>=opp (opp<=4 closed).
-5. **Do not narrow pile opp or deck window** — opp≤4 and deck≤2 regress on WR.
+1. **PIVOT: defer pile trump until deck==0 on WR** — only strip path dumps trump on open; pile non-trump only until deck empty.
+2. **PIVOT: open pair cap min+1 on WR** — midgame pair window shift (distinct from deck>=6).
+3. **PIVOT: pile void bonus rank-aware** — void bonus only when table has uncovered rank match.
+4. **Occam audit:** WR line count vs CZ — document stack for handoff.
+5. **Do not re-sweep WR knobs** — total/opp/deck/hand gates all closed (batches 102–104).
 
 Rules for selecting ideas:
 
@@ -991,6 +992,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: EXPLOIT batch-103 WR finish-window / ablate (XC–XF)
   evidence: XD strip off −0.014; XE opp<=4 −0.016; XC total gate −0.0006; XF deck<=2 pile −0.0006
+  do not retry unless: —
+
+- direction: EXPLOIT/SWEEP batch-104 WR total gate / deck pair / opp (XG–XL)
+  evidence: XG/XH total≤14/15 −0.0006; XI ≤17 −0.00055; XJ deck==0 only −0.012; XK void inert; XL opp<=6 −0.0007
   do not retry unless: —
 ```
 
@@ -1880,4 +1885,13 @@ date/window: jun22 batch-103 (XC–XF) EXPLOIT WR ablations + finish probes
 - what changed: WR stack ablation map complete; pile opp≤5 and deck≤3 confirmed optimal
 - result: f5bb135 unchanged
 - next bias: SWEEP total gate 14–17; ablate deck==2 pair on WR
+```
+
+```text
+date/window: jun22 batch-104 (XG–XL) SWEEP total gate + WR probes
+- attempts: 6 quick; 0 keeps
+- bottleneck: total≤16 and deck≤2 pair confirmed optimal; XJ deck==0 only −0.012; all deltas ≤0.001 below WR
+- what changed: closed total-gate SWEEP and opp<=6 on WR; WR stack fully mapped
+- result: f5bb135 unchanged; local optimum search 0.79506
+- next bias: PIVOT batch-105 qualitatively new mechanisms on WR base
 ```
