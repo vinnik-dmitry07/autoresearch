@@ -438,8 +438,8 @@ The sections below are editable by the agent during meta mode.
 ## Search mode
 
 - Mode: **EXPLOIT**
-- Since: batch-101 keep **WR** — hand-size pile gate on TQ stack crosses full keep bar
-- Next batch type: second-axis COMBO / SWEEP on WR base; ablate hand>=opp load-bearing
+- Since: batch-102 — hand>=opp ablation confirms load-bearing; hand gate SWEEP closed; rank-match/deck>=6 inert on WR
+- Next batch type: ABLATE WR stack parts; narrow finish-window COMBOs only
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,18 @@ The sections below are editable by the agent during meta mode.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
 - **WR keep (batch-101):** hand≥opp pile gate is the missing +0.0003 search lift over TQ ceiling; strip opp<=2 and total≤16 remain load-bearing.
+- **WR ablation (batch-102):** removing hand≥opp drops to TQ level (search −0.0018); hand>opp and hand≥opp+1 catastrophic (−0.033).
 - Does complexity reduction improve B4 parity? Still complexity 100; four timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT** batch 102 on WR base):
+Next 5 experiment ideas (**EXPLOIT** batch 103 on WR base):
 
-1. **ABLATE: pile hand>=opp off** — confirm load-bearing vs TQ alone.
-2. **COMBO: WR + rank-match pile throw-in** — retest VQ axis on WR base.
-3. **SWEEP: hand>=opp+1 vs hand>=opp vs hand>opp** — pile gate sharpness.
-4. **COMBO: WR + deck>=6 midgame pair** — retest VS axis on new base.
-5. **Do not revert to CZ/TQ-only** — WR is locked best.
+1. **ABLATE: total≤16 gate off on WR** — confirm deck==2 pair gate load-bearing.
+2. **ABLATE: strip opp<=2 off on WR** — confirm endgame strip load-bearing.
+3. **COMBO: WR + pile opp<=4** — retest WH axis on WR base (was −0.016 on CZ).
+4. **PIVOT: finish pile deck<=2 only on WR** — narrow finish window (distinct from WO deck<=1).
+5. **Do not re-sweep hand gate** — hand>=opp is sharp optimum (WZ/XA closed).
 
 Rules for selecting ideas:
 
@@ -981,6 +982,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-101 strip opp==1 / n_table pass / total gate (WQ/WS/WT/WU)
   evidence: WQ strip opp==1 −0.010; WS n_table>=3 −0.027; WT/WU total≤14/≤18 ≤ TQ 0.79376
+  do not retry unless: —
+
+- direction: EXPLOIT batch-102 WR hand gate SWEEP / COMBO (WX–XB)
+  evidence: WX ablate −0.0018 (TQ level); WZ/XA hand>opp/+1 −0.033; WY rank-match −0.00055; XB deck>=6 −0.00056
   do not retry unless: —
 ```
 
@@ -1852,4 +1857,13 @@ date/window: jun22 batch-101 (WQ–WU) PIVOT TQ second mechanisms
 - what changed: committed f5bb135 WR; search mode → EXPLOIT; 71-batch plateau broken
 - result: f5bb135 B4 0.64489 search 0.79506 lower_ci 0.64464 (+0.00813 B4 vs CZ)
 - next bias: EXPLOIT batch-102 ablate hand>=opp; COMBO rank-match / deck>=6 on WR base
+```
+
+```text
+date/window: jun22 batch-102 (WX–XB) EXPLOIT WR ablate/COMBO/SWEEP
+- attempts: 5 quick; 0 keeps
+- bottleneck: WX ablate confirms hand>=opp load-bearing (−0.0018 → TQ); WZ/XA hand gate too strict −0.033
+- what changed: closed hand gate SWEEP; rank-match and deck>=6 inert on WR base
+- result: f5bb135 unchanged; keep bar search≥0.80006
+- next bias: EXPLOIT batch-103 ablate total gate / strip on WR; finish-window COMBOs
 ```
