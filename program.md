@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-73 — COMBO batch-71–72 closed; all HD+second-axis search ≤ +0.0042; HD ABLATE confirms pile load-bearing
-- Next batch type: EXPLOIT HD sub-gate only (no bare CZ probes); full eval only if medium search ≥ +0.0045 AND dual agrees
+- Mode: **PIVOT**
+- Since: batch-75 — EXPLOIT batch-74 HD stable (medium search +0.00424, dual +0.00381); KZ/RJ reconfirms B4/search tradeoff
+- Next batch type: PIVOT opponent-relative timing (strip/pile vs opp hand count); no bare HD/CZ re-runs
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,16 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
+- **Plateau (batch-74):** HD medium search +0.00424 stable ~0.0008 below keep bar; KZ (HD+pair min+3) best B4 (+0.0067) but search +0.0040 — structural B4/search tradeoff at complexity 100.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT** batch 74 — HD sub-gate only):
+Next 5 experiment ideas (**PIVOT** batch 76 — opponent-relative):
 
-1. **HD medium + dual reconfirm** — stability check only; no full unless search ≥ +0.0045 both seeds.
-2. **HD ablate pair-open** (QS −0.005 on HD vs CZ −0.005) — confirm inert on HD base.
-3. **HD strip deck 0|2** (exclude deck 1) — retest HO axis on HD.
-4. **HD + void remove** (QT) — simplification candidate if full agrees.
-5. **Meta plateau review** — document ~0.0008 search gap; pause bare COMBO unless new mechanism.
+1. **Strip when opponent hand count == 1** — desperate endgame open.
+2. **Pile trump when opponent hand <= 2 and deck <= 2** — finish vs short opponent.
+3. **Pair-open when own hand count > opponent hand count** — hand-advantage pair timing.
+4. **Skip pile trump when opponent has <= 2 cards** — conserve vs short defender.
+5. **Strip when deck<=2 AND opponent<=1 only** — narrow HD strip gate (RH neutral on HD).
 
 Rules for selecting ideas:
 
@@ -869,6 +870,10 @@ Append failed idea classes here so they are not retried.
 - direction: ABLATE batch-73 HD stack (QS–QV)
   evidence: QU pile off −0.052; QV pair-skip −0.010; QS pair −0.005; QT void off −0.001 — pile essential on HD
   do not retry unless: —
+
+- direction: EXPLOIT batch-74–75 HD stability (RA–RE, RF–RJ)
+  evidence: RA medium +0.00424 dual +0.00381 stable; RB 0|2 −0.0007 vs HD; RC deck==2 −0.011; RF additive deck==2 neutral; RJ/KZ B4 +0.0067 search +0.0040
+  do not retry unless: search-lift axis outside pair-cap class
 ```
 
 ## Loop notes
@@ -1505,4 +1510,13 @@ date/window: jun22 batch-73 (QS–QV) ABLATE HD
 - what changed: HD pile −0.052; strip pair-skip −0.010; void −0.001 on HD base
 - result: 167b02d unchanged; HD archived EXPLOIT-only sub-gate
 - next bias: EXPLOIT stability + meta plateau review
+```
+
+```text
+date/window: jun22 batch-74–75 (RA–RJ) EXPLOIT
+- attempts: RA medium/dual + 8 b4 + RJ medium/dual; 0 keeps
+- bottleneck: HD search +0.00424 reconfirmed; KZ/RJ best B4 (+0.0067) but search +0.0040 — tradeoff persists
+- what changed: closed HD strip deck 0|2/==2/<=1 sweep; additive deck==2 strip neutral
+- result: 167b02d unchanged; meta plateau documented (~0.0008 search gap)
+- next bias: PIVOT batch-76 opponent-relative timing
 ```
