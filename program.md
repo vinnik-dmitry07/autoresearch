@@ -433,13 +433,13 @@ The sections below are editable by the agent during meta mode.
 - Search score: 0.78941
 - Lower CI: 0.63652
 - Complexity: 100
-- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2` (was 3); +0.010 B4 vs CQ at full; split 0.481, win 0.418. Ablation map: pile dump −0.059 (DR), endgame strip −0.010 (DS), midgame pair −0.005 medium (DZ).
+- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2` (was 3); +0.010 B4 vs CQ at full; split 0.481, win 0.418. Ablation map: pile dump −0.059 (DR), endgame strip −0.010 (DS), midgame pair −0.005 medium (DZ). **Top probe HD:** strip `deck<=2` full B4 +0.006 search +0.004; IH pair>=6 + strip full B4 +0.0063 search +0.0041.
 
 ## Search mode
 
-- Mode: **ABLATE**
-- Since: batch-39 — pile COMBOs on HD all regress/neutral; HD dual agrees +0.0058; 13+ zero-keep batches on strip axis
-- Next batch type: ABLATE HD strip components (deck==1 drag, deck==2-only vs <=2, pile/pair off on HD base)
+- Mode: **SWEEP**
+- Since: batch-40 ABLATE — pile −0.052 load-bearing; deck==1 +0.0007 in <=2; IH pair>=6 best COMBO quick +0.0057 (HR class, full search +0.004)
+- Next batch type: pair-delay grid on HD base (`deck>=5/6/7/8/9`) via b4
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**ABLATE** batch 40 — HD strip load-bearing parts):
+Next 5 experiment ideas (**SWEEP** batch 41 — pair delay on HD strip base):
 
-1. **HD minus deck==1** — strip `deck==0|2` only (HO retest at medium if b4 ≥ +0.005).
-2. **HD minus deck==0 strip** — strip `deck==1|2` only (HL class; expect regress).
-3. **HD minus pile dump** — deck<=2 strip + pile off (DR class on HD base).
-4. **HD minus pair-open** — deck<=2 strip + pair deck>=6 (FR/DZ class).
-5. **HD minus strip entirely** — revert to CQ (confirm +0.010 gap vs CZ).
+1. **HD + pair deck>=5** — CZ control (baseline cell).
+2. **HD + pair deck>=6** — IH/HR best COMBO cell.
+3. **HD + pair deck>=7** — IL quick +0.0053.
+4. **HD + pair deck>=8** — extend delay grid.
+5. **HD + pair deck>=4** — CF regression class control.
 
 Rules for selecting ideas:
 
@@ -1134,4 +1134,13 @@ date/window: jun22 batch-39 (HT–IE) COMBO
 - what changed: closed pile+strip COMBO axis; IE additive deck==2 = HO class (+0.0051)
 - result: 167b02d B4 0.63676 search 0.78941 unchanged; HD single-axis still top probe
 - next bias: ABLATE batch-40 HD strip component map
+```
+
+```text
+date/window: jun22 batch-40 (IF–IL) ABLATE
+- attempts: 6 b4; 0 keeps
+- bottleneck: HD strip +0.006 vs CQ; pile −0.052 on HD base; IH pair>=6 best quick +0.0057 (HR class)
+- what changed: deck==1 mild +0.0007 vs 0|2; pair delay >=6 helps on HD base (opposite CZ-alone ablation)
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: SWEEP batch-41 pair delay grid on HD base
 ```
