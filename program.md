@@ -433,13 +433,13 @@ The sections below are editable by the agent during meta mode.
 - Search score: 0.79506
 - Lower CI: 0.64464
 - Complexity: 100
-- Why it is best: **WR** = TQ stack (pair `deck<=2` + `total≤16` gate at deck==2; strip `deck==0` `opp<=2`) plus **pile trump only when `hand≥opp`** within finish window (`deck<=3`, `opp<=5`, `trumps≥1`). Full +0.00813 B4 / +0.00565 search vs CZ (`167b02d`). Breaks 71-batch zero-keep plateau (batch-101).
+- Why it is best: **WR** = TQ stack (pair `deck<=2` + `total≤16` gate at deck==2; strip `deck==0` `opp<=2`) plus **pile trump only when `hand≥opp`** within finish window (`deck<=3`, `opp<=5`, `trumps≥1`). Full +0.00813 B4 / +0.00565 search vs CZ (`167b02d`). Breaks 71-batch zero-keep plateau (batch-101). Occam: **194 lines** (+5 vs CZ 189).
 
 ## Search mode
 
 - Mode: **PIVOT**
-- Since: batch-104 — WR knob SWEEP/ablations closed; total≤16 and deck≤2 pair confirmed; local optimum at f5bb135
-- Next batch type: qualitatively new attack mechanisms only (WR stack fully mapped)
+- Since: batch-105 — pile trump deck≤3 load-bearing (XM −0.020); pair min+1 and rank-aware void inert
+- Next batch type: meta plateau; only mechanisms outside pile-trump timing / pair window
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,17 +452,18 @@ The sections below are editable by the agent during meta mode.
 - **WR ablation (batch-102):** removing hand≥opp drops to TQ level (search −0.0018); hand>opp and hand≥opp+1 catastrophic (−0.033).
 - **WR ablation (batch-103):** strip opp≤2 −0.014 load-bearing; total≤16 −0.0006 mild; pile deck≤3 beats deck≤2 (−0.0006); pile opp≤4 −0.016.
 - **WR mapped (batch-104):** total gate ≤16 optimal (14/15 −0.0006; 17 −0.00055); deck==2 pair −0.012 load-bearing; opp≤6 −0.0007; void pile −10 inert.
+- **WR PIVOT (batch-105):** pile trump deck≤3 essential (XM deck==0 only −0.020); midgame pair min+1 −0.0016; rank-aware void inert.
 - Does complexity reduction improve B4 parity? Still complexity 100; four timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 105 — new mechanisms on WR base):
+Next 5 experiment ideas (**meta / PIVOT** batch 106):
 
-1. **PIVOT: defer pile trump until deck==0 on WR** — only strip path dumps trump on open; pile non-trump only until deck empty.
-2. **PIVOT: open pair cap min+1 on WR** — midgame pair window shift (distinct from deck>=6).
-3. **PIVOT: pile void bonus rank-aware** — void bonus only when table has uncovered rank match.
-4. **Occam audit:** WR line count vs CZ — document stack for handoff.
-5. **Do not re-sweep WR knobs** — total/opp/deck/hand gates all closed (batches 102–104).
+1. **Meta: document WR ablation map** in Current best for handoff (no eval).
+2. **PIVOT: pile pass when only-trump legal and deck>0 on WR** — trump hoard via pass not penalty.
+3. **PIVOT: open lowest-suit tie-break on WR** — suit diversity when ranks tie.
+4. **PIVOT: endgame pair skip min+2 on WR** — distinct from min+1 (batch-105 XN).
+5. **Halt WR knob sweeps** — local optimum; need +0.005 search for next keep.
 
 Rules for selecting ideas:
 
@@ -996,6 +997,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: EXPLOIT/SWEEP batch-104 WR total gate / deck pair / opp (XG–XL)
   evidence: XG/XH total≤14/15 −0.0006; XI ≤17 −0.00055; XJ deck==0 only −0.012; XK void inert; XL opp<=6 −0.0007
+  do not retry unless: —
+
+- direction: PIVOT batch-105 WR pile-trump defer / pair shift / rank void (XM–XO)
+  evidence: XM pile trump deck==0 only −0.020; XN pair min+1 −0.0016; XO rank-aware void inert
   do not retry unless: —
 ```
 
@@ -1894,4 +1899,13 @@ date/window: jun22 batch-104 (XG–XL) SWEEP total gate + WR probes
 - what changed: closed total-gate SWEEP and opp<=6 on WR; WR stack fully mapped
 - result: f5bb135 unchanged; local optimum search 0.79506
 - next bias: PIVOT batch-105 qualitatively new mechanisms on WR base
+```
+
+```text
+date/window: jun22 batch-105 (XM–XO) PIVOT WR new mechanisms + Occam
+- attempts: 3 quick; 0 keeps
+- bottleneck: XM pile trump deck≤3 load-bearing (−0.020); XN/XO inert; Occam WR 194 lines (+5 vs CZ)
+- what changed: closed pile-trump defer and rank-aware void; Occam documented in Current best
+- result: f5bb135 unchanged; keep bar search≥0.80006 still ~0.005 away
+- next bias: meta batch-106; pile-pass trump hoard; halt WR knob sweeps
 ```
