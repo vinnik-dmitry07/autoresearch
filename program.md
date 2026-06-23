@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-55 — fresh PIVOT axes flat/regress (MG −0.059); HD archived sub-gate ~0.0008 below keep bar on search
-- Next batch type: COMBO HD strip + qualitatively new second axis OR meta plateau review
+- Mode: **PIVOT**
+- Since: batch-60 — ABLATE confirms CZ stack minimal (pile −0.059, strip −0.010, pair −0.005, void −0.001); HD COMBO second-axis hunt closed (batch 56–59)
+- Next batch type: PIVOT attack geometry unrelated to HD strip / pile pass / pair cap / defense cost
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 55 — fresh axes):
+Next 5 experiment ideas (**PIVOT** batch 61 — attack geometry):
 
-1. **Pile pass when defender took last round** — not observable without memory; skip.
-2. **Open lowest card when hand size==1** — endgame single-card open timing.
-3. **Defend cost scales with n_table** — prefer take on large tables (new defense axis).
-4. **AttackDone when cannot add non-trump to pile** — legal-move aware pass.
-5. **Archive HD** — do not re-run unless COMBO clears +0.006 quick with search >= +0.0045 medium.
+1. **Open from longest non-trump suit when deck>=7** — delayed suit-pressure open (MA failed at deck>=4).
+2. **Pile prefer lowest rank matching any table card** — rank-aware throw-in (not soft rank-match).
+3. **AttackDone when n_table>=5 and no non-trump pile legal** — table-depth pass without full trump-only guard.
+4. **Skip trump-strip when only one trump remains** — conserve last trump in endgame open.
+5. **Throw-in suit diversity penalty** — deprioritize repeating a suit already on table during pile phase.
 
 Rules for selecting ideas:
 
@@ -809,6 +809,30 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-54 open/split-strip (MA–MD)
   evidence: MA longest suit −0.031; MB soft rank-match −0.079; MC trump>=2 −0.016; MD split neutral
   do not retry unless: —
+
+- direction: COMBO batch-56 HD second-axis (MO–MS)
+  evidence: MO pair opp>=4 −0.007; MP/MQ/MR/MS tie HD +0.00577 quick; no search lift
+  do not retry unless: mechanism unrelated to pile/deck/void/defense cost
+
+- direction: legal only-trump pile pass (MT/MV)
+  evidence: MT −0.059; MV −0.052 on HD base; JP only-trump −0.010 on CZ
+  do not retry unless: —
+
+- direction: PIVOT batch-57 pile pass / pair widen (MT/MX)
+  evidence: MT/MV regress; MU deck 0|2 +0.0051 < HD; MX pair min+4 neutral
+  do not retry unless: —
+
+- direction: HD pile narrowing / defense take / second trump strip (NG–NK)
+  evidence: NG pile deck<=1 −0.015; NH opp<=3 −0.021; NI broken; NJ ablate pile −0.052; NK second trump +0.002
+  do not retry unless: —
+
+- direction: HD pair cap tighten / strip opp==1 (NL–NP)
+  evidence: NL min+1 search 0.79265; NM exact min 0.79136; NN/NO defense trump 35/65 neutral; NP opp==1 −0.006
+  do not retry unless: —
+
+- direction: ABLATE batch-60 CZ/HD simplification (NQ–NU)
+  evidence: NQ pile off −0.059; NR pair off −0.005; NS void off −0.001; NT strip off −0.010; NU HD+pile off −0.052 — stack minimal
+  do not retry unless: new keep candidate on different base
 ```
 
 ## Loop notes
@@ -1319,4 +1343,49 @@ date/window: jun22 batch-55 (ME–MH) PIVOT
 - what changed: closed hand==1 open, n_table defense cost, legal pile pass, table trump take
 - result: 167b02d unchanged
 - next bias: meta plateau review; HD archived as manual keep candidate pending search lift
+```
+
+```text
+date/window: jun22 batch-56 (MO–MS) COMBO
+- attempts: 5 b4 + HD medium control; 0 keeps
+- bottleneck: HD second-axis (pair opp>=4, pile deck<=2, defend cost, void, high-trump) none beat HD search +0.0042
+- what changed: closed HD COMBO second-axis sweep; MO pair-delay −0.007
+- result: 167b02d unchanged; HD remains search-optimal probe
+- next bias: PIVOT legal pile pass + fresh axes batch-57
+```
+
+```text
+date/window: jun22 batch-57 (MT–MX) PIVOT/COMBO
+- attempts: 5 b4 + MW medium; 0 keeps
+- bottleneck: only-trump pile pass −0.059; KZ (MW) B4 +0.0064 search +0.00397 — still below keep bar
+- what changed: closed legal trump-only pile pass; MU deck 0|2 worse than HD <=2
+- result: 167b02d unchanged
+- next bias: HD refinement batch-58
+```
+
+```text
+date/window: jun22 batch-58 (NG–NK) COMBO/ABLATE
+- attempts: 5 b4; 0 keeps; all regress or flat vs HD
+- bottleneck: pile narrowing and defense take on HD base all hurt B4; second-lowest trump strip +0.002 only
+- what changed: closed HD pile opp/deck narrowing and trump-rank strip variants
+- result: 167b02d unchanged
+- next bias: pair cap / defense sweep batch-59
+```
+
+```text
+date/window: jun22 batch-59 (NL–NP) SWEEP/PIVOT
+- attempts: 5 quick; 0 keeps
+- bottleneck: HD pair tighten and strip opp==1 all below HD; defense trump penalty 35/65 neutral
+- what changed: closed HD pair cap tighten and opp==1 strip gate
+- result: 167b02d unchanged
+- next bias: ABLATE batch-60 confirm stack minimal
+```
+
+```text
+date/window: jun22 batch-60 (NQ–NU) ABLATE
+- attempts: 5 quick; 0 keeps
+- bottleneck: 35+ zero-keep batches; ablations match batch-50 map — CZ stack is load-bearing minimum
+- what changed: confirmed pile −0.059, strip −0.010, pair −0.005, void −0.001; HD without pile −0.052
+- result: 167b02d unchanged; HD ~0.0008 below search keep bar is structural not fixable by second-axis COMBO
+- next bias: PIVOT batch-61 attack geometry (longest suit deck>=7, rank-match pile, table-depth pass)
 ```
