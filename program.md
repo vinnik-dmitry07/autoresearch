@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Endgame pair unbounded** — keep wide promotion search; ED confirms cap hurts.
-2. **Midgame pile-ons required** — EG confirms deck>=4 throw-ins load-bearing; no early AttackDone guards.
-3. **Pile window locked** — deck<=3 not ==3; deck==0 pile dump matters (EC).
-4. **Attack-phase only novelties** — pile-phase trump penalty, strip without singleton at medium (DM +0.001).
-5. **Simplification probe** — drop endgame pair loop keep strip only (risk DS-class −0.010 if strip mistimed).
+1. **Hold CZ geometry** — batch 19–20 closed pile/pile-on/endgame/pair-cap axes.
+2. **Cross-rank combo hypotheses** — pair-open only when pile deck<=3 same battle (two-axis, one commit).
+3. **Throw-in rank matching** — prefer ranks already on table when multiple non-trump legal (new sort key).
+4. **Endgame open rank** — open highest non-trump when opp==1 (risky; DP opp==1 strip was −0.012).
+5. **Simplify manifest** — three windows correct but pair loop+strip redundant with strip-only at −0.009; no simplification keep.
 
 Rules for selecting ideas:
 
@@ -603,6 +603,18 @@ Append failed idea classes here so they are not retried.
 - direction: defense voluntary take (table trump count)
   evidence: exp EF quick −0.025 B4
   do not retry unless: new take trigger unrelated to trump count
+
+- direction: endgame strip-only / skip pair loop
+  evidence: exp EI quick −0.009 B4; pair loop required before strip fallback
+  do not retry unless: —
+
+- direction: pile-phase trump +110 / pile highest trump dump
+  evidence: exp EJ/EM neutral quick
+  do not retry unless: —
+
+- direction: midgame pair cap min+1
+  evidence: exp EL quick −0.002 B4; min+2 optimal
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -780,4 +792,13 @@ date/window: jun22 batch-19 (EC–EH)
 - what changed: closed pile window narrowing, endgame pair cap, defense trump-table take, deck>=4 AttackDone guard
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: attack-phase novelties only; DM-class strip timing at medium; simplification ablation strip-only endgame
+```
+
+```text
+date/window: jun22 batch-20 (EI–EM)
+- attempts: 5 discards (1 regression EI −0.009, 1 mild EL −0.002, 1 medium EK +0.001, 2 neutral); 0 full evals; 0 keeps
+- bottleneck: endgame pair loop load-bearing; singleton gate DM +0.001 below gate; no pile-trump-rank lever
+- what changed: closed strip-only simplification, pile trump penalty/rank, midgame min+1 cap, DM medium reconfirm
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: cross-rank combo or throw-in rank-matching; hold CZ stack; no further single-knob sweeps
 ```
