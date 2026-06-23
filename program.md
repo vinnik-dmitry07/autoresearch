@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-32 SWEEP — void bonus grid flat on b4 (all ~0.63607); GR open5/pile6 best at −0.00068
-- Next batch type: CQ-class pile/pair window combos (orthogonal 2-change); escalate on ΔB4 ≥ +0.005 quick
+- Mode: **PIVOT**
+- Since: batch-33 — CQ pile/pair windows locked: pile<=3 optimal; <=4 −0.006; <=2 −0.001; pair>=5 optimal
+- Next batch type: qualitatively new endgame/pressure triggers (not pile/pair window combos)
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 33 — pile/pair window replay):
+Next 5 experiment ideas (**PIVOT** batch 34 — endgame pressure, one change):
 
-1. **pair>=5 + pile<=2** — CQ-class tighter pile (CR was −0.001 quick vs CQ).
-2. **pair>=5 + pile<=4** — widen pile vs CZ `<=3`.
-3. **pair>=6 + pile<=3** — CT was −0.001 vs CQ; quick reconfirm.
-4. **pair>=4 + pile<=3** — CF regression class control.
-5. **void remove + pile<=3 + strip** — CZ minus void (GK simplification + hold timing).
+1. **Strip when opp<=3** — widen endgame open strip from <=2 (FZ was −0.011 on combo; single-axis retest).
+2. **Pair-open when opp<=3** — midgame pair if opponent short, regardless of deck (new trigger).
+3. **Pile pass when opp has 6 cards** — skip pile vs full-hand defender (mirror GE inverted).
+4. **Open lowest trump when deck<=2 and opp<=2** — hybrid strip/open timing.
+5. **Medium on GU** — pair>=5 + pile<=2 reconfirm at 500k (only if quick signal ≥ −0.001).
 
 Rules for selecting ideas:
 
@@ -744,6 +744,10 @@ Append failed idea classes here so they are not retried.
 - direction: SWEEP batch-32 void bonus grid (GP–GT)
   evidence: all b4 B4 ~0.63607; GR open5/pile6 −0.00068 best; axis inert on CZ
   do not retry unless: —
+
+- direction: COMBO batch-33 pile/pair windows (GU–GY)
+  evidence: GU pile<=2 −0.001; GV pile<=4 −0.006; GW/GX neutral; GY void+CZ medium −0.00012
+  do not retry unless: new third axis with quick >= +0.003 (CZ pile<=3 pair>=5 locked)
 ```
 
 ## Loop notes
@@ -1047,4 +1051,13 @@ date/window: jun22 batch-32 (GP–GT) SWEEP
 - what changed: closed void bonus sweep; GR open5/pile6 −0.00068 best cell
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: COMBO batch-33 CQ-class pile/pair window replay
+```
+
+```text
+date/window: jun22 batch-33 (GU–GY) COMBO
+- attempts: 6 discards (1 regression GV −0.006, 4 neutral/mild, GY medium); 0 full evals; 0 keeps
+- bottleneck: 9th zero-keep batch; CZ pile<=3 + pair>=5 confirmed optimal vs <=2/<=4/<=6
+- what changed: closed CQ-class window replay; GV pile<=4 strong regression
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: PIVOT batch-34 endgame pressure triggers (not pile/pair windows)
 ```
