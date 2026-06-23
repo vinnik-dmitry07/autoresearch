@@ -437,27 +437,27 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-35 SWEEP — strip `deck<=2` best cell (+0.006 B4); `==1` −0.019; `<=3` +0.005 but search +0.004; HD full search +0.004 below keep bar
-- Next batch type: refine strip deck window (`==2`, `1|2`, opp gates) — max 3 attempts then meta-review
-- After next keep: continue **EXPLOIT** or switch to **COMBO** if second axis needed
+- Mode: **COMBO**
+- Since: batch-38 — all deck<=2 COMBOs sub-gate; HR pair>=6 full B4 +0.0063 search +0.0041; HD single-axis still best
+- Next batch type: COMBO deck<=2 strip + pile/pair/strip synergy (historical keep pattern: AQ→CQ→CZ)
+- After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
 
-- Which local situations does B4 exploit most? **Strip deck<=2** (HD) +0.006 B4 full but search +0.004 — early endgame trump-strip before deck empty may be the next keep axis.
+- Which local situations does B4 exploit most? **Strip deck<=2** (HD) +0.006 B4 full, search +0.004 — must keep `deck==0` strip; `deck==2` adds signal; `deck==1` drags (HO 0|2 slightly worse than HD <=2).
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip combo** — defense unchanged; memory inert (B3vsB2 0.500).
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT** batch 36 — strip deck<=2 refinement):
+Next 5 experiment ideas (**COMBO** batch 39 — deck<=2 strip + CZ-stack synergy):
 
-1. **strip deck==2 only** — isolate HH signal (not deck 0/1).
-2. **strip deck 1|2** — `deck_count>=1 && deck_count<=2` (exclude empty deck).
-3. **strip deck<=2 opp<=3** — widen opp gate on best deck cell.
-4. **COMBO deck<=2 strip + void remove** — simplification test on best cell.
-5. **Re-full deck<=2** — only if batch 36 #1–#2 improve medium search ≥ +0.005.
+1. **deck<=2 + pile deck<=3 opp<=4** — widen pile vs HR/HQ (AC/AD class on HD base).
+2. **deck<=2 + open strip opp<=2 unchanged** — retest HD alone at dual seed (reconfirm).
+3. **deck<=2 + pile deck<=4** — pile widen on HD (watch CS/DE regression class).
+4. **deck<=2 + pair deck>=5 unchanged** — HD + CZ pair (should match HR direction).
+5. **Full re-run HD** — only if dual seed disagrees; else skip redundant full.
 
 Rules for selecting ideas:
 
@@ -756,6 +756,14 @@ Append failed idea classes here so they are not retried.
 - direction: SWEEP batch-35 strip deck grid (HF–HJ)
   evidence: HH deck<=2 +0.006; HI deck<=3 +0.005 search +0.004; HG deck==1 −0.019; HJ deck<=1 opp<=1 −0.011
   do not retry unless: deck==1 or opp<=1 strip combos
+
+- direction: EXPLOIT batch-36 strip refinements (HK–HM)
+  evidence: HK deck==2 only −0.011; HL deck 1|2 −0.010; HM opp<=3 −0.005; deck==0 strip load-bearing
+  do not retry unless: —
+
+- direction: strip deck 0|2 only (HO)
+  evidence: full B4 +0.0057 search +0.0039 — strictly worse than HD deck<=2 at full
+  do not retry unless: combined with second axis
 ```
 
 ## Loop notes
@@ -1086,4 +1094,31 @@ date/window: jun22 batch-35 (HF–HJ) SWEEP
 - what changed: closed strip deck grid; HH optimal; HI <=3 slightly worse on search
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: EXPLOIT batch-36 refine deck<=2 strip (==2, 1|2, opp widen)
+```
+
+```text
+date/window: jun22 batch-36 (HK–HM) EXPLOIT
+- attempts: 3 b4 discards; 0 keeps
+- bottleneck: refinements all regress — deck==0 strip required; deck==2 alone −0.011; opp<=3 −0.005
+- what changed: closed EXPLOIT window grid on strip deck/opp; HD deck<=2 remains best cell
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: HO deck 0|2 test + COMBO batch-38
+```
+
+```text
+date/window: jun22 batch-37 (HO) EXPLOIT follow-up
+- attempts: 1 b4 + medium + full; 0 keeps
+- bottleneck: HO deck 0|2 full B4 +0.0057 search +0.0039 — below HD deck<=2 (+0.0064/+0.0042)
+- what changed: deck==1 in <=2 is mild drag; deck==0+2 without 1 slightly worse than full <=2
+- result: 167b02d B4 0.63676 search 0.78941 unchanged; HD remains top sub-gate
+- next bias: COMBO batch-38 hold deck<=2 strip + orthogonal axis
+```
+
+```text
+date/window: jun22 batch-38 (HP–HS) COMBO
+- attempts: 4 b4 + HR medium/full; 0 keeps
+- bottleneck: HR deck<=2+pair>=6 full B4 +0.0063 search +0.0041 — still 0.0009 below keep bar; HS opp<=1 −0.006
+- what changed: void/pile/pair COMBOs all ~HD level; no synergy beat single-axis HD
+- result: 167b02d B4 0.63676 search 0.78941 unchanged; HD remains top probe
+- next bias: COMBO batch-39 deck<=2 + pile widen synergy
 ```
