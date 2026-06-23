@@ -13,11 +13,13 @@
 // MANIFEST (keep in sync with the constants below):
 //   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame open
 //                                       low pair within min+2; endgame pair-open + trump-strip
+//   H2  suit_balance_attack         -- opening rank + pile-on ties: minimize suit spread
+//   H3  suit_balance_defense        -- among tied minimal beaters, minimize post-play spread
 // Parameters: (none)
 // ============================================================================
 namespace durak {
 
-constexpr int kHeuristicCount = 1;
+constexpr int kHeuristicCount = 3;
 constexpr int kParameterCount = 0;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
@@ -30,6 +32,24 @@ namespace {
 
 bool is_trump(Card c, int trump) { return suit_of(c) == trump; }
 
+int suit_len(CardMask hand, int suit) { return popcount(hand & SUIT_MASK[suit]); }
+
+// Non-trump suit spread: 0 = perfectly even, higher = more lopsided hand.
+int suit_imbalance(CardMask hand, int trump) {
+    int lo = 99, hi = 0;
+    for (int s = 0; s < NUM_SUITS; ++s) {
+        if (s == trump) continue;
+        const int n = suit_len(hand, s);
+        if (n < lo) lo = n;
+        if (n > hi) hi = n;
+    }
+    return (lo == 99) ? 0 : hi - lo;
+}
+
+int imbalance_after(CardMask hand, Card c, int trump) {
+    return suit_imbalance(hand & ~card_bit(c), trump);
+}
+
 // Lower is better. Trumps are heavily penalized so non-trump dumps win; the
 // memory term is a small prior favoring ranks that are still mostly unseen.
 double attack_value(Card c, int trump, const MemoryFeatures* mem) {
@@ -39,18 +59,72 @@ double attack_value(Card c, int trump, const MemoryFeatures* mem) {
     return v;
 }
 
-Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const LegalMoves& legal,
-                   bool has_done) {
+// H2: prefer attacks that leave a more even non-trump suit distribution.
+int pick_attack_index(const LocalFeatures& L, const LegalMoves& legal, const MemoryFeatures* mem,
+                      int rank_filter, bool rank_only_non_trump) {
     int best = -1;
     double best_v = 1e18;
+    int best_imb = 999;
+    int best_suit_len = -1;
     for (int i = 0; i < legal.count; ++i) {
         if (legal.moves[i].type != MoveType::AttackPlay) continue;
-        const double v = attack_value(legal.moves[i].card, L.trump_suit, mem);
-        if (v < best_v) {
+        const Card c = legal.moves[i].card;
+        if (rank_only_non_trump && is_trump(c, L.trump_suit)) continue;
+        if (rank_filter >= 0 && rank_of(c) != rank_filter) continue;
+        const double v = attack_value(c, L.trump_suit, mem);
+        const int imb = imbalance_after(L.hand, c, L.trump_suit);
+        const int sl = suit_len(L.hand, suit_of(c));
+        if (v < best_v - 1e-9) {
             best_v = v;
+            best_imb = imb;
+            best_suit_len = sl;
             best = i;
+        } else if (v <= best_v + 1e-9) {
+            if (imb < best_imb || (imb == best_imb && sl > best_suit_len)) {
+                best_imb = imb;
+                best_suit_len = sl;
+                best = i;
+            }
         }
     }
+    return best;
+}
+
+// H3: spend beaters from suits that keep the hand balanced afterward.
+int pick_defense_index(const LocalFeatures& L, const LegalMoves& legal,
+                       const MemoryFeatures* mem) {
+    int best = -1;
+    double best_c = 1e18;
+    int best_imb = 999;
+    int best_suit_len = -1;
+    for (int i = 0; i < legal.count; ++i) {
+        const Move& m = legal.moves[i];
+        if (m.type != MoveType::DefendPlay) continue;
+        const Card d = m.card;
+        double cost = double(rank_of(d));
+        if (is_trump(d, L.trump_suit)) cost += 50.0;
+        if (mem) cost -= 0.001 * double(mem->unknown_rank_count[rank_of(d)]);
+        const int imb = imbalance_after(L.hand, d, L.trump_suit);
+        const int sl = suit_len(L.hand, suit_of(d));
+        if (cost < best_c - 1e-9) {
+            best_c = cost;
+            best_imb = imb;
+            best_suit_len = sl;
+            best = i;
+        } else if (cost <= best_c + 1e-9) {
+            if (imb < best_imb || (imb == best_imb && sl > best_suit_len)) {
+                best_imb = imb;
+                best_suit_len = sl;
+                best = i;
+            }
+        }
+    }
+    return best;
+}
+
+Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const LegalMoves& legal,
+                   bool has_done) {
+    const int best = pick_attack_index(L, legal, mem, -1, false);
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
 
     // H1: initial attack — lowest non-trump; midgame prefer low pair within cap; endgame
@@ -60,18 +134,28 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
         const int mnt = nt ? rank_of(lowest(nt)) : NUM_RANKS;
         int open_rank = mnt;
         if (L.deck_count > 0) {
+            int best_imb = 999;
             for (int r = mnt; r <= mnt + 2 && r < NUM_RANKS; ++r) {
-                if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
+                const CardMask rank_cards = L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit];
+                if (popcount(rank_cards) < 2) continue;
+                const Card sample = lowest(rank_cards);
+                const int imb = imbalance_after(L.hand, sample, L.trump_suit);
+                if (imb < best_imb) {
+                    best_imb = imb;
                     open_rank = r;
-                    break;
                 }
             }
         } else if (mnt < NUM_RANKS &&
                    popcount(L.hand & RANK_MASK[mnt] & ~SUIT_MASK[L.trump_suit]) == 1) {
+            int best_imb = 999;
             for (int r = mnt + 1; r < NUM_RANKS; ++r) {
-                if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
+                const CardMask rank_cards = L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit];
+                if (popcount(rank_cards) < 2) continue;
+                const Card sample = lowest(rank_cards);
+                const int imb = imbalance_after(L.hand, sample, L.trump_suit);
+                if (imb < best_imb) {
+                    best_imb = imb;
                     open_rank = r;
-                    break;
                 }
             }
             if (open_rank == mnt && L.opponent_hand_count <= 3 &&
@@ -87,12 +171,8 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
                 if (low_trump.type == MoveType::AttackPlay) return low_trump;
             }
         }
-        for (int i = 0; i < legal.count; ++i) {
-            const Move& m = legal.moves[i];
-            if (m.type == MoveType::AttackPlay && rank_of(m.card) == open_rank &&
-                !is_trump(m.card, L.trump_suit))
-                return m;
-        }
+        const int open = pick_attack_index(L, legal, mem, open_rank, true);
+        if (open >= 0) return legal.moves[open];
         return legal.moves[best];
     }
 
@@ -115,20 +195,7 @@ Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const Leg
         if (L.def[i] == NO_CARD && !coverable[i]) return {MoveType::DefendTake, NO_CARD, 0};
     if (!any_defend) return {MoveType::DefendTake, NO_CARD, 0};
 
-    int best = -1;
-    double best_c = 1e18;
-    for (int i = 0; i < legal.count; ++i) {
-        const Move& m = legal.moves[i];
-        if (m.type != MoveType::DefendPlay) continue;
-        const Card d = m.card;
-        double cost = double(rank_of(d));
-        if (is_trump(d, L.trump_suit)) cost += 50.0;  // prefer non-trump (rational base)
-        if (mem) cost -= 0.001 * double(mem->unknown_rank_count[rank_of(d)]);
-        if (cost < best_c) {
-            best_c = cost;
-            best = i;
-        }
-    }
+    const int best = pick_defense_index(L, legal, mem);
     return best >= 0 ? legal.moves[best] : Move{MoveType::DefendTake, NO_CARD, 0};
 }
 
