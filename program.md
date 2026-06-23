@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-75 — EXPLOIT batch-74 HD stable (medium search +0.00424, dual +0.00381); KZ/RJ reconfirms B4/search tradeoff
-- Next batch type: PIVOT opponent-relative timing (strip/pile vs opp hand count); no bare HD/CZ re-runs
+- Mode: **SWEEP**
+- Since: batch-78 — opponent-relative PIVOT (76–77) and rank/deck PIVOT (78) all below maybe; RW endgame pair `deck<=1` neutral at medium (+0.0004 search, +0.0008 B4)
+- Next batch type: SWEEP endgame pair-promotion deck window on CZ base (not strip); no HD re-runs unless RW sweep clears +0.003 medium
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-74):** HD medium search +0.00424 stable ~0.0008 below keep bar; KZ (HD+pair min+3) best B4 (+0.0067) but search +0.0040 — structural B4/search tradeoff at complexity 100.
+- **Plateau (batch-78):** 49+ zero-keep batches; HD search +0.00424 remains top unkept (~0.0008 below keep bar); CZ-base RW endgame pair `deck<=1` neutral at medium (+0.0004 search).
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 76 — opponent-relative):
+Next 5 experiment ideas (**SWEEP** batch 79 — endgame pair-promotion deck window on CZ):
 
-1. **Strip when opponent hand count == 1** — desperate endgame open.
-2. **Pile trump when opponent hand <= 2 and deck <= 2** — finish vs short opponent.
-3. **Pair-open when own hand count > opponent hand count** — hand-advantage pair timing.
-4. **Skip pile trump when opponent has <= 2 cards** — conserve vs short defender.
-5. **Strip when deck<=2 AND opponent<=1 only** — narrow HD strip gate (RH neutral on HD).
+1. **Endgame pair-promotion when deck == 0 only** — CZ control (singleton skip + strip path unchanged).
+2. **Endgame pair-promotion when deck == 1 only** — extend pair loop one draw earlier.
+3. **Endgame pair-promotion when deck <= 1** — RW reconfirm (medium +0.0004 search).
+4. **Endgame pair-promotion when deck <= 2** — wider than RW without touching strip gate.
+5. **Endgame pair-promotion when deck == 2 only** — isolate deck==2 component (HD strip class).
 
 Rules for selecting ideas:
 
@@ -874,6 +874,18 @@ Append failed idea classes here so they are not retried.
 - direction: EXPLOIT batch-74–75 HD stability (RA–RE, RF–RJ)
   evidence: RA medium +0.00424 dual +0.00381 stable; RB 0|2 −0.0007 vs HD; RC deck==2 −0.011; RF additive deck==2 neutral; RJ/KZ B4 +0.0067 search +0.0040
   do not retry unless: search-lift axis outside pair-cap class
+
+- direction: PIVOT batch-76–77 opponent-relative (RK–RT)
+  evidence: RK strip opp==1 −0.012; RL pile deck<=2 opp<=2 −0.044; RM/RR hand-advantage pair −0.004; RN skip pile opp<=2 −0.008; RO strip deck<=2 opp<=1 −0.006; RP strip opp==2 −0.002; RQ pile deck<=2 opp<=3 −0.030; RS void opp<=3 −0.001; RT pile opp>=4 −0.017
+  do not retry unless: conjunct with non-opp deck gate only
+
+- direction: PIVOT batch-78 rank/deck structure (RU–RY except RW)
+  evidence: RU pair deck>=4 −0.005; RV strip trump==1 only −0.060; RX void −11/−4 −0.001; RY pile hand>=3 −0.006
+  do not retry unless: —
+
+- direction: RW endgame pair deck<=1 at medium
+  evidence: quick neutral; medium search +0.0004 B4 +0.0008 — below +0.003 escalate; sweep deck window before COMBO
+  do not retry unless: SWEEP batch-79 finds deck cell >= +0.003 medium
 ```
 
 ## Loop notes
@@ -1519,4 +1531,22 @@ date/window: jun22 batch-74–75 (RA–RJ) EXPLOIT
 - what changed: closed HD strip deck 0|2/==2/<=1 sweep; additive deck==2 strip neutral
 - result: 167b02d unchanged; meta plateau documented (~0.0008 search gap)
 - next bias: PIVOT batch-76 opponent-relative timing
+```
+
+```text
+date/window: jun22 batch-76–77 (RK–RT) PIVOT opponent-relative
+- attempts: 10 quick; 0 keeps; all regress or neutral
+- bottleneck: 47+ zero-keep batches; opponent-relative strip/pile/pair gates all anti-synergize with CZ
+- what changed: closed opponent-relative timing class (strip opp==1/2, pile opp narrow/widen, hand-advantage pair)
+- result: 167b02d unchanged; best probe RP strip opp==2 −0.002 B4
+- next bias: PIVOT batch-78 rank/deck structure on CZ
+```
+
+```text
+date/window: jun22 batch-78 (RU–RY) PIVOT rank/deck + RW medium
+- attempts: 5 quick + RW medium; 0 keeps
+- bottleneck: RV strip trump==1 −0.060; RW endgame pair deck<=1 neutral at medium (+0.0004 search)
+- what changed: closed pair deck>=4, trump==1 strip, void asymmetric, pile hand>=3; RW archived for SWEEP
+- result: 167b02d unchanged
+- next bias: SWEEP batch-79 endgame pair-promotion deck window
 ```
