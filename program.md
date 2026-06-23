@@ -439,8 +439,8 @@ The sections below are editable by the agent during meta mode.
 ## Search mode
 
 - Mode: **PIVOT**
-- Since: batch-83 — deck==2 pair refinements exhausted; SX/SZ tie SD; SY/TB opp gates kill lift; SV medium +0.0039 < SD +0.0042
-- Next batch type: PIVOT widen/narrow deck==2 window (deck==3, deck 1|2) or simplification path; no SV/SX–TB re-runs
+- Since: batch-84 — deck window SWEEP closed; deck==2 is sharp optimum; SD full remains top unkept (+0.0042 search)
+- Next batch type: PIVOT qualitatively new mechanism outside deck pair window; or total-cards / table-state triggers on SD base
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-83):** deck==2 pair gates (hand/opp/rank) inert or anti-synergize; SV split form below SD at medium (+0.0039 vs +0.0042).
+- **Plateau (batch-84):** deck==2 pair window is sharp — widen to deck<=3/2|3 regresses; deck==3 alone hurts; TE split 1|2 ties SD.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 84 — deck window around deck==2 pair):
+Next 5 experiment ideas (**PIVOT** batch 85 — new trigger class on SD base):
 
-1. **SD deck<=3 pair** (strip `deck==0`) — widen pair window one step past deck==2.
-2. **SD deck==3 pair only** — isolate deck==3 component.
-3. **SD deck 1|2 pair** (strip `deck==0`) — explicit two-cell window without deck==0 pair extension.
-4. **SD deck==2|3 pair** — narrow widen to adjacent cells only.
-5. **SD midgame pair-off** — test if dropping `deck>=5` pair frees search headroom on SD base.
+1. **SD deck==2 pair when total cards left <= 10** — phase transition by combined deck+hands.
+2. **SD deck==2 pair when n_table == 0** — fresh-attack gate (first card of battle).
+3. **SD deck==2 pair when opponent has >= 3 cards** — inverse of failed opp<=4 gate.
+4. **SD + pile pass when deck >= 4** — conserve trump mid-finish on SD base.
+5. **SD deck==2 pair + strip when trump count >= 2** — compound endgame trigger.
 
 Rules for selecting ideas:
 
@@ -909,6 +909,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: EXPLOIT batch-83 deck==2 pair refinements (SW–TB)
   evidence: SX/SZ tie SD; SY/TB opp gates → CZ neutral; SW SV medium +0.0039 < SD +0.0042
+  do not retry unless: —
+
+- direction: PIVOT batch-84 deck window (TC–TG)
+  evidence: TC deck<=3 +0.0031; TD deck==3 −0.001; TE 1|2 = SD; TF 2|3 +0.0028; TG midgame +0.002
   do not retry unless: —
 ```
 
@@ -1618,4 +1622,13 @@ date/window: jun22 batch-83 (SW–TB) EXPLOIT deck==2 pair refine
 - what changed: closed hand/opp/rank gates on deck==2 pair; unified deck<=2 beats split SV form
 - result: 167b02d unchanged
 - next bias: PIVOT batch-84 deck window widen (deck==3) or simplification
+```
+
+```text
+date/window: jun22 batch-84 (TC–TG) PIVOT deck window
+- attempts: 5 quick; 0 keeps
+- bottleneck: deck==2 sharp — TC/TF widen regress; TD deck==3 alone −0.001; TE split 1|2 ties SD
+- what changed: closed deck window around deck==2; SD unified deck<=2 confirmed optimal formulation
+- result: 167b02d unchanged
+- next bias: PIVOT batch-85 new trigger class (total-cards, n_table) on SD base
 ```
