@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold CZ** — open strip opp<=2 is sharp optimum (DB −0.012, DC −0.011); pile deck<=3 locked.
-2. **Pile deck<=2** — DD −0.001 vs CZ; closed unless combo with new axis.
-3. **Split→win via pair cap** — DF min+3 neutral (+0.0006 medium); split drops to 0.456 but B4 flat.
-4. **New combo axis** — CZ three-window stack saturated; need qualitatively new mechanism for next +0.005 keep.
-5. **Avoid open/pile opp on pile path** — CW showed pile opp narrow anti-synergy; open-path opp only.
+1. **Hold CZ stack** — all single-knob deltas within ±0.001 except anti-synergy axes.
+2. **No pile opp narrow** — DG pile opp<=2 −0.044; CW pile opp<=4 −0.020; pile stays opp<=5.
+3. **No strip trump gates** — DJ >=2 trumps −0.009; keep >=1 trump on strip.
+4. **Void global on CZ** — DH void pile -9 neutral; skip void unless combo hypothesis.
+5. **Qualitative new axis** — CZ saturated; consider simplification (drop endgame pair loop?) at risk CK −0.008.
 
 Rules for selecting ideas:
 
@@ -535,6 +535,18 @@ Append failed idea classes here so they are not retried.
 - direction: pile deck<=4 vs CZ / pair min+3 vs CZ
   evidence: exp DE −0.006; DF neutral (+0.0006 medium)
   do not retry unless: —
+
+- direction: pile opp<=2 + CZ (pile path)
+  evidence: exp DG quick −0.044 vs CZ (worse than CW opp<=4)
+  do not retry unless: —
+
+- direction: open strip >=2 trumps / pair deck>=4 + CZ
+  evidence: exp DJ −0.009; DK −0.005 quick
+  do not retry unless: —
+
+- direction: void pile -9 / open strip high trump + CZ
+  evidence: exp DH/DL neutral quick
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -667,4 +679,13 @@ date/window: jun22 batch-14 (DB–DF)
 - what changed: closed open opp sweep around 2; pile deck sweep around 3 at CZ baseline
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: hold CZ stack; need new axis for next keep (+0.005 gate)
+```
+
+```text
+date/window: jun22 batch-15 (DG–DL)
+- attempts: 5 discards (1 regression DG −0.044, 2 mild DJ/DK, 2 neutral DH/DL); 0 full evals; 0 keeps
+- bottleneck: CZ fully saturated — pile opp narrow anti-synergizes; void/strip rank neutral
+- what changed: closed pile opp<=2 on pile path; strip trump count; pair deck>=4 on CZ
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: hold CZ; no pile opp tweaks; need qualitatively new mechanism
 ```
