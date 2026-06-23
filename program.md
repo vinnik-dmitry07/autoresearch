@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Deck==2 gated pair** — EU +0.0011 medium; add opp<=5 or pile-phase gate on deck==2 extension only.
-2. **EO plateau accepted** — full 1-3 window +0.0012 medium max; no dual/full without >= +0.003.
-3. **New mechanism hunt** — CZ+EO micro-combo saturated; consider defense or belief-free rank inference.
-4. **Hold CZ stack** — keep pile/strip/endgame geometry fixed.
-5. **No forced full** — EO/EY/EZ dual all below escalate gate.
+1. **FF refinement** — deck 1/2 without deck==3 best at +0.0013 medium; try deck==2+1 only vs deck==2 alone at medium.
+2. **Deck==3 anti-synergy** — FF beats EO by dropping deck==3; do not add deck==3 to pair extension.
+3. **Hold CZ stack** — pile/strip/endgame unchanged; pair extension is only open axis.
+4. **Defense overkill** — FE neutral; skip defense rank tweaks.
+5. **Full eval gate** — FF medium +0.0013 still below +0.003; no forced full.
 
 Rules for selecting ideas:
 
@@ -635,6 +635,18 @@ Append failed idea classes here so they are not retried.
 - direction: throw-in rank -12 deck==3 only
   evidence: exp EX neutral quick
   do not retry unless: —
+
+- direction: deck==2 pair opp<=4/5 gate / singleton gate alone
+  evidence: exp FA/FB neutral; FC +0.0006 same as EU (gate inert)
+  do not retry unless: —
+
+- direction: defense overkill rank penalty
+  evidence: exp FE neutral quick
+  do not retry unless: —
+
+- direction: EO deck 1-3 full window vs FF deck 1/2
+  evidence: FF medium +0.0013 beats EO +0.0012; deck==3 anti-synergizes pair extension
+  do not retry unless: testing deck==3 removal only (FF axis)
 ```
 
 ## Loop notes
@@ -848,4 +860,13 @@ date/window: jun22 batch-23 (EY–EZ)
 - what changed: closed dual escalation path for EO-class until new combo axis
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: deck==2 gated pair (opp/singleton); or accept EO plateau and hunt new mechanism
+```
+
+```text
+date/window: jun22 batch-24 (FA–FF)
+- attempts: 6 discards (1 maybe FF +0.0013 medium best EO-class, 5 neutral/mild); 0 full evals; 0 keeps
+- bottleneck: deck==3 anti-synergy in pair extension — FF (deck 1/2) beats EO (deck 1-3); still below +0.003 gate
+- what changed: closed opp/singleton gates on deck==2; defense overkill neutral; FF new best maybe +0.0013 medium
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: refine FF deck 1/2 window; dual FF; hunt qualitatively new mechanism beyond pair extension
 ```
