@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-67 — EXPLORE defense closed (PC/PD catastrophic; PH–PM neutral); attack refinements flat
-- Next batch type: PIVOT hand-count / phase triggers (defense and attack geometry exhausted)
+- Mode: **COMBO**
+- Since: batch-70 — hand-count PIVOT closed (PS–QC); n_table pivots flat; HD sub-gate still ~0.0008 below search keep bar
+- Next batch type: COMBO HD strip + search-lift second axis (void/table-depth/pile only if quick B4 >= +0.006)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 68 — hand-count phase):
+Next 5 experiment ideas (**COMBO** batch 71 — HD search-lift):
 
-1. **Trump-strip when own hand count <= 3** (not deck gate) — endgame by hand size.
-2. **Pile trump dump when own hand count <= 4** — finish by hand pressure.
-3. **Pair-open only when opponent hand count >= 5** — delay pair vs short opponent.
-4. **AttackDone pile when own hand count <= 2 and best card is trump** — hand-size pass.
-5. **Open lowest trump when hand count <= 2 and no non-trump** — desperate open timing.
+1. **HD + table-depth pass n_table>=5** (OX +0.0053 quick) — retest medium search.
+2. **HD + void pile −10 when n_table>=2** — table-aware void pressure on HD base.
+3. **HD + pile deck<=2** (PP +0.0055) — confirm medium search vs HD alone.
+4. **HD + strip opp==2 only** — narrow endgame strip gate on HD.
+5. **HD + new-suit bonus −3** (OY) — reconfirm; only escalate if dual seeds agree +0.0045 search.
 
 Rules for selecting ideas:
 
@@ -852,6 +852,14 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-67 attack refine (PN–PR)
   evidence: PN/PQ strip opp<=3 −0.011/−0.005; PR pair opp<=4 −0.005; PP HD+pile deck<=2 +0.0055 (same as MP)
+  do not retry unless: —
+
+- direction: PIVOT batch-68–69 hand-count phase (PS–QC)
+  evidence: PS hand<=3 strip −0.010; PT hand<=4 pile −0.062; PU/PW/QB neutral; PV −0.006; PZ/QA regress
+  do not retry unless: hand gate AND deck gate conjunction
+
+- direction: PIVOT batch-70 n_table (QD–QF)
+  evidence: QD/QF neutral; QE pile n_table>=3 −0.050; PA-class regress
   do not retry unless: —
 ```
 
@@ -1453,4 +1461,22 @@ date/window: jun22 batch-67 (PN–PR) PIVOT
 - what changed: closed batch-67 attack refinements
 - result: 167b02d unchanged; HD remains top unkept probe ~0.0008 below search keep bar
 - next bias: PIVOT batch-68 hand-count phase triggers
+```
+
+```text
+date/window: jun22 batch-68–69 (PS–QC) PIVOT hand-count
+- attempts: 10 quick; 0 keeps
+- bottleneck: hand<=3 strip −0.010; hand<=4 pile −0.062; pair/opp gates neutral
+- what changed: closed hand-count phase triggers; deck gates remain load-bearing
+- result: 167b02d unchanged
+- next bias: n_table batch-70
+```
+
+```text
+date/window: jun22 batch-70 (QD–QF) PIVOT n_table
+- attempts: 3 b4; 0 keeps; all neutral or regress
+- bottleneck: 40+ zero-keep batches; HD ~0.0008 below search keep bar unchanged
+- what changed: closed n_table void/pile/pair gates
+- result: 167b02d unchanged
+- next bias: COMBO batch-71 HD search-lift retries (OX/void/table only)
 ```
