@@ -441,7 +441,7 @@ Append failed idea classes here so they are not retried.
   do not retry unless: global void change (not phase-split)
 
 - direction: pile deck<=3/4 dual/medium without dual agreement
-  evidence: exp BC/BG/BW medium +0.003 B4, dual disagree, below full gate
+  evidence: exp BC/BG medium +0.003 B4, dual disagree, below full gate
   do not retry unless: dual agrees on two seeds AND medium >= +0.005 B4
 
 - direction: pile deck>=9
