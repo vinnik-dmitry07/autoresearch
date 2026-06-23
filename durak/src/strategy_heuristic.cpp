@@ -11,7 +11,8 @@
 // branch, and do not add persistent/global state, I/O, clocks, or randomness.
 //
 // MANIFEST (keep in sync with the constants below):
-//   H1  min_non_trump_attack        -- attack/throw-in/defend with the lowest non-trump card
+//   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; endgame opening
+//                                       prefers a low pair when the bare minimum is a singleton
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -52,8 +53,28 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
     }
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
 
-    // H1: initial attack leads the lowest non-trump (trump only if no choice).
-    if (!has_done) return legal.moves[best];
+    // H1: initial attack — lowest non-trump; skip lone singleton if a low pair exists.
+    if (!has_done) {
+        const CardMask nt = L.hand & ~SUIT_MASK[L.trump_suit];
+        const int mnt = nt ? rank_of(lowest(nt)) : NUM_RANKS;
+        int open_rank = mnt;
+        if (mnt < NUM_RANKS && L.deck_count == 0 &&
+            popcount(L.hand & RANK_MASK[mnt] & ~SUIT_MASK[L.trump_suit]) == 1) {
+            for (int r = mnt + 1; r < NUM_RANKS; ++r) {
+                if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
+                    open_rank = r;
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < legal.count; ++i) {
+            const Move& m = legal.moves[i];
+            if (m.type == MoveType::AttackPlay && rank_of(m.card) == open_rank &&
+                !is_trump(m.card, L.trump_suit))
+                return m;
+        }
+        return legal.moves[best];
+    }
 
     // Optional throw-in / pile-on: keep dumping the lowest non-trump card, never a trump.
     if (!is_trump(legal.moves[best].card, L.trump_suit)) return legal.moves[best];
