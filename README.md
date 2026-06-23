@@ -71,8 +71,8 @@ durak\build.bat test
 durak\build.bat fast
 
 :: Fast triage after editing strategy_heuristic.cpp (see program.md)
-set BEST_SEARCH=0.77341
-set BEST_B4=0.61206
+set BEST_SEARCH=0.79506
+set BEST_B4=0.64489
 scripts\triage.bat quick
 scripts\triage.bat medium
 scripts\triage.bat dual
@@ -123,6 +123,26 @@ Or on Windows: `scripts\run_analysis.bat`
 
 Or open `analysis.ipynb` in Jupyter and run all cells. Outputs: `progress.png`,
 `occam.png`, `score_alignment.png`.
+
+## Results (jun22 autoresearch run)
+
+After **113+ experiment batches** and **2 keeps** (CZ → WR), the search plateaued:
+
+| Metric | WR (`f5bb135`) | Notes |
+|--------|----------------|-------|
+| B2 vs B4 `point_rate` | **0.64489** | full 5M seeds; lower CI **0.64464** |
+| `search_score` | **0.79506** | composite ladder vs B0/B1/B4 |
+| B3 vs B2 (memory ablation) | **0.50000** | memory tie-break inert on final stack |
+| Complexity | 100 | 194 lines, 1 heuristic, 0 parameters |
+
+**WR stack (minimal, load-bearing):** midgame pair-open (`deck≥5`), endgame pair at
+`deck≤2` with `total≤16` gate, trump-strip at `deck==0` `opp≤2`, finish pile-trump when
+`hand≥opp` within `deck≤3` `opp≤5`. Best unkept probe: defense rank-match −4 at search
+0.79595 medium (+0.00089 vs WR) — still below the keep bar.
+
+The memoryless challenger **beats B1/B0 strongly** but remains **below the independent
+memory-counting baseline B4**. Local hand/table structure carries most of the lift; the
+wired memory prior does not change move choices on the accepted policy.
 
 ## Project structure
 

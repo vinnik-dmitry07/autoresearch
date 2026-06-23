@@ -441,10 +441,10 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **halt (terminal plateau)**
-- Since: batch-113 — new mechanism class (suit geometry, pile depth, tight-beat, open pass) all inert; WR dual quick stable
-- Next batch type: none unless human adds new hypothesis; post-keep memory ablation only after a keep
-- After next keep: **EXPLOIT** + post-keep memory ablation
+- Mode: **closed (jun22 run complete)**
+- Since: batch-114 — post-plateau memory ablation logged; WR accepted as final challenger
+- Next batch type: none — restart only with new hypothesis or rule change
+- After next keep: N/A (run complete)
 
 ## Open questions
 
@@ -465,16 +465,17 @@ The sections below are editable by the agent during meta mode.
 - **WR PIVOT (batch-111):** YE pass n_table>=4 −0.016 (throw-in load-bearing); YF total≤18 −0.0006 inert (confirms ≤16 optimal).
 - **WR ABLATE (batch-112):** pile trump −0.039; midgame pair −0.011; deck≤2 pair −0.012; strip −0.014; void penalty −0.0006 mild. **Stack minimal** — no simplification keep.
 - **WR PIVOT (batch-113):** shortest-suit open −0.0003; pile depth / tight-beat / open pass inert. **Terminal plateau** — accept `f5bb135`.
+- **Closure (batch-114):** B3 vs B2 **0.50000** (5M seeds); memory hook inert on WR stack. **Jun22 run complete.**
 
 ## Editable research directions
 
-Next 5 experiment ideas (**halt — terminal plateau**):
+Next 5 experiment ideas (**run closed**):
 
-1. **No further batches** without a new mechanism hypothesis from human review.
-2. **Locked best `f5bb135` (WR)** — full search 0.79506; best unkept YB 0.79595 medium (+0.00089).
-3. **Summary for paper/README:** memoryless local heuristics reach ~0.645 B4 vs memory-counting B4; WR stack is minimal and mapped.
-4. **Optional manual follow-up:** B3 vs B2 memory ablation on WR (`post_keep.bat`) — only meaningful after accepting WR as final keep candidate.
-5. **Do not retry:** attack knobs, defense rank-match, throw-in passes, ABLATE components — all closed batches 102–113.
+1. **Jun22 run complete** — locked best `f5bb135` (WR); 113+ experiment batches; 2 keeps (CZ, WR).
+2. **Headline result:** B2 vs B4 **0.64489** full (lower CI 0.64464); search **0.79506**; B4 still ahead but local heuristics close gap vs early ~0.49 parity.
+3. **Memory ablation:** B3 vs B2 **0.50000** on WR — wired memory tie-break never changes decisions.
+4. **Best unkept:** YB/XW defense rank-match −4 at **0.79595** medium (+0.00089) — below keep bar.
+5. **To restart:** edit `## Search mode` + add new hypothesis; do not re-sweep closed axes (batches 102–113).
 
 Rules for selecting ideas:
 
@@ -2027,4 +2028,13 @@ date/window: jun22 batch-113 (YP/YL–YO) dual reconfirm + new mechanism PIVOT
 - what changed: closed suit geometry, pile depth, defense tight-beat, open pass; terminal plateau
 - result: f5bb135 unchanged
 - next bias: halt loop; human review or accept WR as final challenger
+```
+
+```text
+date/window: jun22 batch-114 closure — post-plateau ablation + run complete
+- attempts: 0 strategy edits; 1 ablation (5M seeds); engine/sim tests pass
+- bottleneck: B4 edge not reached (lower_ci 0.64464 < 0.52); memory inert at 0.50000
+- what changed: B3vsB2 row logged; search mode → closed; README results summary
+- result: f5bb135 final; jun22 autoresearch run complete
+- next bias: none — restart with new hypothesis only
 ```
