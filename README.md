@@ -106,14 +106,14 @@ Paste this into Cursor:
 
 Run the Durak autoresearch meta-loop.
 
-Use program.md as the control plane. Start setup if needed, then run 5 experiment attempts, perform 1 meta-review, update the editable sections of program.md, commit kept experiment changes with `exp:` and safe loop improvements with `meta:`, then continue without asking me.
+Use program.md as the control plane. Start setup if needed, then run experiment batches per `## Search mode`, perform meta-review when any trigger fires (keep, plateau, maybe-cluster, or ~5 attempts), update durable sections including Search mode, commit kept experiment changes with `exp:` and safe loop improvements with `meta:`, then continue without asking me.
 ```
 
 During experiment attempts, the agent edits only `durak/src/strategy_heuristic.cpp`.
 During meta-review, it may update search policy (research directions, loop notes,
 diagnostics, helper scripts) but must not change the locked contract: README rules, engine,
 baselines, metric, keep/revert thresholds, tests, or full eval. See `program.md` for the
-5+1 meta-loop cadence. After a **keep**, refresh charts:
+Adaptive meta-loop cadence (see `program.md` **Meta-review cadence**). After a **keep**, refresh charts:
 
 ```bash
 jupyter nbconvert --execute analysis.ipynb

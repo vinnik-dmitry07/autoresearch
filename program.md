@@ -20,6 +20,7 @@ This repo is run by one autonomous agent in two modes:
 The transcript is not the source of truth. Durable state lives in this file, especially:
 
 * `## Current best`
+* `## Search mode`
 * `## Open questions`
 * `## Editable research directions`
 * `## Loop notes`
@@ -27,11 +28,56 @@ The transcript is not the source of truth. Durable state lives in this file, esp
 
 The agent should periodically rewrite these sections so the next cycle starts from compressed evidence rather than from the chat transcript.
 
-Default cadence:
+Also maintain `## Search mode` (see **Durable agent memory**): the active exploration
+strategy for the next experiment batch.
 
-* Run **5 experiment attempts**.
-* Then run **1 meta-review**.
-* Repeat until the human interrupts, the metric plateaus, or further improvement would require weakening a locked invariant.
+### Meta-review cadence (adaptive)
+
+Run a **meta-review** when **any** trigger fires (check after each experiment attempt):
+
+| Trigger | Action |
+|---------|--------|
+| **Counter** — 5 experiment attempts since last meta-review | Standard meta-review |
+| **Keep** — any experiment kept | Meta-review **before** the next batch (update ablation map, set EXPLOIT/COMBO mode) |
+| **Plateau** — 3 consecutive batches with 0 keeps and 0 full evals | Meta-review; switch search mode (usually EXPLORE → COMBO or PIVOT) |
+| **Maybe-cluster** — 2+ probes in the last batch with medium/dual ΔB4 ≥ +0.002 on the same axis | Meta-review; plan a **sweep batch** or COMBO batch on that axis |
+| **Axis closed** — same direction rejected 3+ times at quick/medium | Meta-review; append to `## Rejected directions`, stop that axis |
+
+If no trigger fires, keep experimenting. Do not wait for exactly 5 attempts when a keep or
+plateau trigger is active.
+
+Default rhythm is still roughly **5 experiments → 1 meta-review**, but event-driven reviews
+take priority over the counter.
+
+### Search modes
+
+Meta-review sets `## Search mode`. Experiment batches follow it.
+
+| Mode | When | Experiment rule |
+|------|------|-----------------|
+| **EXPLORE** | New axis, flat score, or after a keep's first follow-up | **One change** per attempt; quick B4 screen first |
+| **COMBO** | Single-axis maybe ≥ +0.002 medium (e.g. pair-delay, pile window) | **Two orthogonal changes** per attempt (hold best axis + test second); escalate on ΔB4 ≥ +0.005 quick |
+| **SWEEP** | Meta plans a small grid on one parameter/window | **5 related variants** in one batch (see **Sweep batches**); one build cycle per variant |
+| **ABLATE** | Best stack unclear; confirm load-bearing parts | **Disable one mechanism** per attempt (pile dump off, strip off, pair skip); quick only unless regression ≥ −0.005 |
+| **PIVOT** | Current stack saturated; micro-tweaks capped below +0.003 medium | **Qualitatively new mechanism** only; no ±1 on exhausted axes |
+| **EXPLOIT** | Immediately after a keep | Refine **one window** around the kept change; max 3 attempts then meta-review |
+
+Keeps historically required **COMBO** (AQ pile-only, CQ pair+pile, CZ + open strip). Do not
+stay in EXPLORE-only mode through a plateau.
+
+### Sweep batches
+
+When meta-review enters **SWEEP** mode, plan all 5 variants in `## Editable research
+directions` as a labeled grid (e.g. `deck>=3/4/5/6/7` or `opp<=1/2/3/4/5`). The agent runs
+them serially in one batch without asking the human:
+
+1. Same baseline commit for all variants.
+2. `build.bat fast` → `triage.bat quick` (→ `medium` if maybe) per variant.
+3. Log every variant to `results.tsv` even if neutral.
+4. After all 5: meta-review picks best signal, rejects closed cells, sets next mode.
+
+Prefer gate 1 (`triage.bat b4`) for numeric sweeps; use `scripts\sweep_*.py` when one
+exists. Do not run full eval on sweep variants unless one clears the normal full gate.
 
 ## Locked vs mutable
 
@@ -99,7 +145,7 @@ You CANNOT during experiment mode:
 
 ### Meta mode permissions
 
-After every 5 experiment attempts, enter meta mode.
+Enter meta mode when a **meta-review trigger** fires (see **Meta-review cadence**).
 
 In meta mode, you may edit **mutable** items only:
 
@@ -270,9 +316,16 @@ The loop runs on a dedicated branch (e.g. `autoresearch/jun22`).
 
 LOOP FOREVER:
 
-1. Note the current best commit and its `search_score` from `results.tsv`.
-2. Edit `durak/src/strategy_heuristic.cpp` with one experimental idea (and update the
-   manifest). Keep changes minimal and Occam-friendly.
+1. Note the current best commit, `search_score`, and **`## Search mode`** from
+   `program.md` / `results.tsv`.
+2. Edit `durak/src/strategy_heuristic.cpp` per the active search mode (and update the
+   manifest):
+
+   - **EXPLORE / PIVOT / ABLATE / EXPLOIT**: one change per attempt.
+   - **COMBO**: two orthogonal changes (document both in the description).
+   - **SWEEP**: one cell of the current sweep grid (meta lists all 5).
+
+   Keep changes minimal and Occam-friendly.
 3. Fast triage (do **not** commit yet):
 
 ```bat
@@ -317,9 +370,10 @@ scripts\post_keep.bat
 
 ## Meta-review loop
 
-After every 5 experiment attempts:
+When any **meta-review trigger** fires:
 
-1. Review the last 5 rows or attempted rows in `results.tsv`, plus recent git diffs and logs.
+1. Review recent rows in `results.tsv` (last batch at minimum; last 15 if plateau), plus
+   recent git diffs and triage summaries (not full logs).
 2. Classify each attempt:
    - useful signal
    - noisy/inconclusive
@@ -327,23 +381,25 @@ After every 5 experiment attempts:
    - crash/bug
    - repeated failed direction
    - complexity-only change
-3. Identify the biggest feedback-loop bottleneck:
-   - slow build
-   - slow full eval
-   - weak quick/full correlation
-   - unclear logs
-   - repeated doomed ideas
-   - too many full evals
-   - too few promising candidates reaching full eval
-4. Make at least one concrete loop improvement if safe:
-   - update `program.md`
+   - sweep cell (closed / open / best-in-grid)
+3. Identify the biggest bottleneck — **search policy first**, harness second:
+   - wrong search mode (EXPLORE on a combo axis, PIVOT needed)
+   - repeated doomed ideas (missing `## Rejected directions` entry)
+   - maybe-cluster not escalated to COMBO or SWEEP
+   - too many full evals / too few promising candidates reaching full
+   - slow build / slow full eval / weak quick–full correlation / unclear logs
+4. **Set `## Search mode`** for the next batch (EXPLORE, COMBO, SWEEP, ABLATE, PIVOT, or
+   EXPLOIT) with a one-line rationale.
+5. Make at least one concrete loop improvement if safe (harness/diagnostics only):
+   - update `program.md` durable sections
    - improve `analysis.ipynb` diagnostics
-   - improve a helper script
-   - add a log parser
-   - prune research directions
-5. Append compressed notes to `## Loop notes`.
-6. Rewrite `## Editable research directions` with the next 5 experiments.
-7. Commit meta changes:
+   - improve a helper script or add a sweep script
+   - prune research directions / append rejected directions
+6. Append compressed notes to `## Loop notes`.
+7. Rewrite `## Editable research directions`:
+   - **Normal modes**: next 5 experiments aligned with search mode.
+   - **SWEEP mode**: label the 5-cell grid explicitly (variant 1…5).
+8. Commit meta changes:
 
 ```bat
 git add program.md analysis.ipynb scripts
@@ -379,6 +435,13 @@ The sections below are editable by the agent during meta mode.
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2` (was 3); +0.010 B4 vs CQ at full; split 0.481, win 0.418. Ablation map: pile dump −0.059 (DR), endgame strip −0.010 (DS), midgame pair −0.005 medium (DZ).
 
+## Search mode
+
+- Mode: **PIVOT**
+- Since: batch-24 — CZ stack saturated; pair-extension (EO/FF) capped ~+0.0013 medium (< +0.003 gate)
+- Next batch type: qualitatively new attack mechanism; no pair-extension / pile-window / open-strip micro-tweaks
+- After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
+
 ## Open questions
 
 - Which local situations does B4 exploit most? Open strip opp<=2 synergizes with CQ combo (+0.010) though neutral alone at AQ (BV) — endgame trump timing when opponent nearly empty.
@@ -388,20 +451,22 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas:
+Next 5 experiment ideas (**PIVOT** batch 26 — one change each):
 
-1. **FF refinement** — deck 1/2 without deck==3 best at +0.0013 medium; try deck==2+1 only vs deck==2 alone at medium.
-2. **Deck==3 anti-synergy** — FF beats EO by dropping deck==3; do not add deck==3 to pair extension.
-3. **Hold CZ stack** — pile/strip/endgame unchanged; pair extension is only open axis.
-4. **Defense overkill** — FE neutral; skip defense rank tweaks.
-5. **Full eval gate** — FF medium +0.0013 still below +0.003; no forced full.
+1. **Midgame pile pass at table depth** — `AttackDone` on pile when `n_table >= 4` and `deck>=4` (stop over-piling).
+2. **Pair-open only when opp>=2** — skip midgame pair when `opp==1` (deck>=5 path); singleton pressure when opponent nearly empty.
+3. **Throw-in rank cap** — pass pile if best card rank > min_non_trump+3 (avoid high-rank throw-ins mid-fight).
+4. **Open-path void bonus only** — apply void-suit −5 only when `!has_done`; remove void bonus on pile path.
+5. **Desperate trump open** — when `deck==0`, only trumps in hand, `opp<=2`: open lowest trump (bypass pair/strip loop).
 
 Rules for selecting ideas:
 
-- Prefer one-change experiments.
-- Prefer simplification when score is flat.
-- Prefer changes that can be screened by quick B4 signal.
+- Follow **`## Search mode`**: one-change in EXPLORE/PIVOT/ABLATE/EXPLOIT; two orthogonal in COMBO; grid cells in SWEEP.
+- After a single-axis maybe ≥ +0.002 medium, meta must switch to **COMBO** or **SWEEP**, not more EXPLORE on the same knob.
+- Prefer simplification when score is flat (ABLATE confirms load-bearing parts first).
+- Prefer changes screenable by quick B4 (`triage.bat b4` or quick).
 - Avoid retrying rejected directions unless a new mechanism is given.
+- Do not force full eval below the locked gates; B4-first escalation rules unchanged.
 
 ## Rejected directions
 
@@ -647,6 +712,10 @@ Append failed idea classes here so they are not retried.
 - direction: EO deck 1-3 full window vs FF deck 1/2
   evidence: FF medium +0.0013 beats EO +0.0012; deck==3 anti-synergizes pair extension
   do not retry unless: testing deck==3 removal only (FF axis)
+
+- direction: PIVOT batch-25 attack timing (FG-FK)
+  evidence: FG early-trump guard / FH rank-match pile / FI endgame pair cap+4 / FJ opp>=5 pile skip / FK opp==1 min open — all quick B4 0.63607 search 0.78896
+  do not retry unless: new trigger geometry (not same guards/caps)
 ```
 
 ## Loop notes
@@ -869,4 +938,22 @@ date/window: jun22 batch-24 (FA–FF)
 - what changed: closed opp/singleton gates on deck==2; defense overkill neutral; FF new best maybe +0.0013 medium
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: refine FF deck 1/2 window; dual FF; hunt qualitatively new mechanism beyond pair extension
+```
+
+```text
+date/window: jun22 meta-protocol (adaptive cadence + search modes)
+- attempts: n/a (control-plane update)
+- bottleneck: fixed 5+1 cadence + EXPLORE-only rule kept agent on CZ plateau (batch 3–24); keeps required COMBO
+- what changed: adaptive meta triggers; Search modes (EXPLORE/COMBO/SWEEP/ABLATE/PIVOT/EXPLOIT); sweep batches; PIVOT directions for batch 25+
+- result: best unchanged 167b02d B4 0.63676 search 0.78941
+- next bias: PIVOT — early-trump guard, throw-in rank match, endgame-only caps; no pair-extension micro-tweaks
+```
+
+```text
+date/window: jun22 batch-25 (FG–FK) PIVOT
+- attempts: 5 discards (all neutral at quick); 0 full evals; 0 keeps
+- bottleneck: first PIVOT batch invisible at 100k — all B4 0.63607 search 0.78896; build.bat fast blocked by web_server.exe lock
+- what changed: build.bat fast builds simulate target only; adaptive cadence + search modes committed; results.tsv re-init
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: PIVOT batch-26 — table-depth pile pass, opp-gated pair-open, rank cap throw-in, open-only void bonus, desperate trump open
 ```

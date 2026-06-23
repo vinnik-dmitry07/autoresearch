@@ -29,11 +29,11 @@ if "%MODE%"=="fast" (
         echo build.bat fast: no build tree; running full configure...
         "%CMAKE%" -S "%SRC%." -B "%SRC%build" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" -DCMAKE_BUILD_TYPE=Release || exit /b 1
     )
+    "%CMAKE%" --build "%SRC%build" --target simulate || exit /b 1
 ) else (
     "%CMAKE%" -S "%SRC%." -B "%SRC%build" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" -DCMAKE_BUILD_TYPE=Release || exit /b 1
+    "%CMAKE%" --build "%SRC%build" || exit /b 1
 )
-
-"%CMAKE%" --build "%SRC%build" || exit /b 1
 
 if defined RUN_TEST (
     "%CMAKE%" --build "%SRC%build" --target engine_tests simulation_tests || exit /b 1
