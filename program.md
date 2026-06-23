@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold CZ geometry** — batch 19–20 closed pile/pile-on/endgame/pair-cap axes.
-2. **Cross-rank combo hypotheses** — pair-open only when pile deck<=3 same battle (two-axis, one commit).
-3. **Throw-in rank matching** — prefer ranks already on table when multiple non-trump legal (new sort key).
-4. **Endgame open rank** — open highest non-trump when opp==1 (risky; DP opp==1 strip was −0.012).
-5. **Simplify manifest** — three windows correct but pair loop+strip redundant with strip-only at −0.009; no simplification keep.
+1. **EO refinement** — isolate deck==1/2/3 pair-open extension; EO medium +0.0012 best maybe since batch-16.
+2. **Throw-in rank match** — EN/ER neutral; try stronger bonus or deck==3-only pile battles only.
+3. **Hold CZ geometry** — no pile/window/strip reorder retries.
+4. **Endgame open rank** — EQ confirms opp==1 highest hurts; skip opp-rank tweaks.
+5. **Full eval gate** — only EO-class >= +0.003 medium on two seeds before full.
 
 Rules for selecting ideas:
 
@@ -615,6 +615,18 @@ Append failed idea classes here so they are not retried.
 - direction: midgame pair cap min+1
   evidence: exp EL quick −0.002 B4; min+2 optimal
   do not retry unless: —
+
+- direction: throw-in table rank bonus global / deck<=3-only
+  evidence: exp EN/ER neutral quick
+  do not retry unless: bonus magnitude >= 12 or deck==3-only pile battles
+
+- direction: endgame opp==1 highest non-trump open
+  evidence: exp EQ quick −0.001 B4
+  do not retry unless: —
+
+- direction: pair deck>=5 or deck==3 only (exact)
+  evidence: exp ES medium −0.0001; deck 1-3 window beats deck==3 alone (EO)
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -801,4 +813,13 @@ date/window: jun22 batch-20 (EI–EM)
 - what changed: closed strip-only simplification, pile trump penalty/rank, midgame min+1 cap, DM medium reconfirm
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: cross-rank combo or throw-in rank-matching; hold CZ stack; no further single-knob sweeps
+```
+
+```text
+date/window: jun22 batch-21 (EN–ES)
+- attempts: 6 discards (1 mild EQ −0.001, 1 maybe EO +0.0012 medium, 4 neutral); 0 full evals; 0 keeps
+- bottleneck: first combo signal since CZ — pair-open on deck 1-3 synergizes with pile window but below +0.003 escalate
+- what changed: closed global throw-in rank match and opp==1 open; EO dual agrees at +0.0008 B4
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: sweep deck==1/2/3 pair extension components; medium/full only if >= +0.003 B4
 ```
