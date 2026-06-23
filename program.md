@@ -433,13 +433,13 @@ The sections below are editable by the agent during meta mode.
 - Search score: 0.78941
 - Lower CI: 0.63652
 - Complexity: 100
-- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2` (was 3); +0.010 B4 vs CQ at full; split 0.481, win 0.418. Ablation map: pile dump −0.059 (DR), endgame strip −0.010 (DS), midgame pair −0.005 medium (DZ). **Top probe HD:** strip `deck<=2` full B4 +0.006 search +0.004; IH pair>=6 + strip full B4 +0.0063 search +0.0041.
+- **Top probe (unkept):** exp HD strip `deck<=2` — medium B4 0.64323 (+0.0065), search 0.79365 (+0.0042), full B4 0.64318; ~0.0008 below search keep bar. One-line delta from CZ: `deck==0` → `deck<=2` on open strip path.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-43 — HD dual/medium stable (+0.006 B4, +0.004 search); COMBO void/pile/high-trump no beat; gap to keep bar ~0.0008 search
-- Next batch type: max 3 HD refinements or accept sub-gate; consider full re-run only on new quick >= +0.006
+- Mode: **EXPLORE**
+- Since: batch-44/45/46 — HD loop closed (medium search +0.0042 stable, skip full); defense rank cap flat (JJ −0.23); attack explore JL/JM regress
+- Next batch type: EXPLORE pile rank-match fix + hand-pressure triggers; HD archived as top probe pending keep-bar breakthrough
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT** batch 44 — HD sub-gate final pass):
+Next 5 experiment ideas (**EXPLORE** batch 47 — pile/hand pressure):
 
-1. **HD full re-run** — variance check only if medium search ≥ +0.0045 (currently +0.0042).
-2. **HD strip deck<=2 opp<=2** — confirm no opp window left (HM was −0.005).
-3. **HD manifest-only** — update manifest if HD ever kept; else skip.
-4. **Stop HD loop** — if batch 44 flat, meta pivot to new research axis (memory-free defense rank cap).
-5. **Post-keep prep** — document HD as `probe HD` commit candidate if full clears keep bar.
+1. **Pile rank-match throw-in** — prefer legal card matching table rank (JK fix/retry).
+2. **Pair-open when hand<=3 cards** — tighter JL variant.
+3. **Pile pass when hand has 1 card left** — endgame pass trigger.
+4. **AttackDone when only trump left and deck==0** — dump avoidance.
+5. **HD strip** — do not re-run unless new quick >= +0.006 from another axis COMBO.
 
 Rules for selecting ideas:
 
@@ -776,6 +776,14 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-42 defense/pile/novel strip (IR–JA)
   evidence: all b4 flat ±0.001 except IY pile deck==0 −0.003; split pair/strip neutral
   do not retry unless: combined with HD strip as COMBO
+
+- direction: EXPLOIT HD strip loop (batch-44 JE)
+  evidence: medium search +0.0042 x3 reconfirms; full +0.00417; skip further HD unless COMBO quick >= +0.006
+  do not retry unless: second axis clears +0.006 quick
+
+- direction: PIVOT batch-45 defense rank cap (JF–JJ)
+  evidence: JF–JI flat; JJ take opp<=2 deck<=1 −0.231; axis closed
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1178,4 +1186,31 @@ date/window: jun22 batch-43 (HD/JB–JD) COMBO
 - what changed: closed HD COMBO hunt; dual agrees +0.0058
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: EXPLOIT batch-44 HD final pass or axis pivot
+```
+
+```text
+date/window: jun22 batch-44 (JE) EXPLOIT
+- attempts: 1 medium; 0 full (search +0.0042 < +0.0045 variance threshold); 0 keeps
+- bottleneck: HD sub-gate stable; closed HD EXPLOIT loop per plan
+- what changed: JE medium B4 0.64323 search 0.79365 matches prior HD full class
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: PIVOT batch-45 defense rank cap
+```
+
+```text
+date/window: jun22 batch-45 (JF–JJ) PIVOT
+- attempts: 5 b4; 0 keeps; 1 regression JJ −0.231
+- bottleneck: defense rank cap / trump cost / take thresholds all flat on CZ
+- what changed: closed defense rank-cap axis; JJ voluntary take catastrophic
+- result: 167b02d unchanged; HD remains archived top probe
+- next bias: EXPLORE batch-46 attack pile/hand pressure
+```
+
+```text
+date/window: jun22 batch-46 (JL–JM) EXPLORE
+- attempts: 3 b4 (JK broken skip); 0 keeps
+- bottleneck: JL hand<=4 pair −0.012; JM strip opp==1 −0.006; no beat HD
+- what changed: hand-pressure explore regress; pivot off HD re-runs
+- result: 167b02d unchanged
+- next bias: EXPLORE batch-47 pile rank-match + hand pressure
 ```
