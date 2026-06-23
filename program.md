@@ -377,7 +377,7 @@ The sections below are editable by the agent during meta mode.
 - Search score: 0.78941
 - Lower CI: 0.63652
 - Complexity: 100
-- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2` (was 3); +0.010 B4 vs CQ at full; split 0.481, win 0.418.
+- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2` (was 3); +0.010 B4 vs CQ at full; split 0.481, win 0.418. Ablation map: pile dump −0.059 (DR), endgame strip −0.010 (DS), midgame pair −0.005 medium (DZ).
 
 ## Open questions
 
@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Defense trump cost** — only untouched axis on CZ; +40/+55 probes.
-2. **Endgame strip timing** — strip before pair loop or without singleton prerequisite.
-3. **Pile void pressure** — pile-phase void -10 (open void neutral on DT).
-4. **Hold load-bearing paths** — pile dump deck<=3 and endgame strip opp<=2 are essential (DR/DS).
-5. **Midgame pair ablation at medium** — DN neutral quick; confirm inert vs marginal.
+1. **Combo refinement on load-bearing paths** — pile deck==3 exact vs <=3; strip only after pair fails (CZ order).
+2. **AttackDone vs trump throw-in** — when deck>3 refuse pile trump (inverse of pile dump window).
+3. **Endgame pair cap** — min+3 at deck==0 only (midgame cap min+2 fixed).
+4. **Hold CZ stack** — all three paths confirmed load-bearing via DR/DS/DZ ablations.
+5. **Qualitative defense** — take when table trump count high (new mechanism, not cost tweak).
 
 Rules for selecting ideas:
 
@@ -575,6 +575,22 @@ Append failed idea classes here so they are not retried.
 - direction: void open -10 / midgame pair opp>=4 / pile deck<=2 only
   evidence: exp DT/DU/DV quick neutral or −0.001
   do not retry unless: —
+
+- direction: defense trump cost +40/+55 on CZ
+  evidence: exp DW/EB quick neutral; prior BJ/BK neutral at AQ
+  do not retry unless: —
+
+- direction: void pile -10 / endgame strip before pair loop
+  evidence: exp DX neutral; DY quick −0.0009
+  do not retry unless: —
+
+- direction: midgame pair deck upper bound <=12
+  evidence: exp EA quick −0.003 B4
+  do not retry unless: —
+
+- direction: skip midgame pair-open (ablation)
+  evidence: exp DZ medium −0.005 B4; DN quick neutral (resolution-dependent)
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -734,4 +750,13 @@ date/window: jun22 batch-17 (DR–DV)
 - what changed: ablation map — CQ combo value mostly pile path; CZ delta mostly endgame strip
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: defense trump cost; endgame strip reorder; pile void -10; confirm midgame pair inert at medium
+```
+
+```text
+date/window: jun22 batch-18 (DW–EB)
+- attempts: 6 discards (2 mild EA −0.003 / DY −0.001, 1 medium DZ −0.005, 3 neutral); 0 full evals; 0 keeps
+- bottleneck: defense/void knobs inert; strip-before-pair and pair upper-bound hurt slightly; midgame pair load-bearing at medium
+- what changed: closed defense cost +40/+55 and void pile -10; confirmed DZ ablation vs DN quick neutral
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: refine load-bearing path ordering/windows; attackDone early-trump guard; endgame-only pair cap
 ```
