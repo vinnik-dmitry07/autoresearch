@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **TQ/TS** total≤16–17 + deck==2 pair — medium search **0.79376 (+0.00435)**, full **0.79368 (+0.0043)**; ~0.00065 below keep bar. **SD** full +0.0042.
+- **Top probe (unkept):** exp **TQ/TS** total≤16–17 + deck==2 pair — medium search **0.79376 (+0.00435)**, full **0.79368**; ~0.00065 below keep bar. exp **TW** (TQ+min+3) full B4 **0.64351** but search **0.79345** — B4/search tradeoff.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-87 — total threshold 15–17 saturated at medium 0.79376; TU pile COMBO flat; dual agrees
-- Next batch type: COMBO search-lift on TQ base (total≤16); no total-threshold re-sweeps
+- Mode: **ABLATE**
+- Since: batch-88 meta-review — TQ COMBOs all below TQ peak; TW B4/search tradeoff; 59+ zero-keep batches
+- Next batch type: ABLATE TQ stack (total gate vs deck==2 pair) + meta plateau; no TQ COMBO re-runs
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-87):** total≤15–17 all medium search 0.79373–0.79376; structural ceiling ~0.00065 below keep bar.
+- **Plateau (batch-88):** TQ medium 0.79376 is search ceiling; TW full B4 0.64351 but search 0.79345 — no COMBO breaks +0.00435.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 88 — TQ base total≤16, search-lift second axis):
+Next 5 experiment ideas (**ABLATE** batch 89 — TQ stack vs SD):
 
-1. **TQ + pair cap min+3 midgame** — SF-class on TQ base.
-2. **TQ + void remove** — SL-class on TQ base.
-3. **TQ + pile deck<=2** — TU reconfirm at medium.
-4. **TQ ablate midgame pair** — SR on TQ base.
-5. **TQ total<=16 dual + medium seed 1** — full dual ladder if quick agrees.
+1. **Remove total≤16 gate** — revert to SD; quantify TQ delta.
+2. **Remove deck==2 pair entirely** — CZ baseline on TQ pile/strip paths.
+3. **TQ total gate only at deck==2** — confirm TH/TM ablation on full TQ.
+4. **TW ablate min+3** — TW vs TQ B4 delta at medium.
+5. **SD + total≤16 without deck<=2** — test if total gate alone lifts.
 
 Rules for selecting ideas:
 
@@ -925,6 +925,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: EXPLOIT batch-87 fine total threshold (TR–TV)
   evidence: TR/TR medium 0.79373; TS/TQ medium 0.79376 tie; TT +0.0038; TU flat; TV dual agrees
+  do not retry unless: —
+
+- direction: COMBO batch-88 TQ second-axis (TW–UA)
+  evidence: TW full B4 0.64351 search 0.79345; TX/TY flat; TZ +0.002; UA = TS; all below TQ medium 0.79376
   do not retry unless: —
 ```
 
@@ -1670,4 +1674,13 @@ date/window: jun22 batch-87 (TR–TV) EXPLOIT fine total threshold
 - what changed: closed total threshold 14–18; ceiling ~0.00065 below keep bar
 - result: 167b02d unchanged
 - next bias: COMBO batch-88 search-lift on TQ base
+```
+
+```text
+date/window: jun22 batch-88 (TW–UA) COMBO TQ second-axis
+- attempts: 5 quick + TW medium/full; 0 keeps; 1 full eval
+- bottleneck: TQ medium 0.79376 remains search peak; TW B4 0.64351 but search 0.79345 tradeoff
+- what changed: closed TQ+min+3/void/pile/midgame COMBOs; meta plateau 59+ zero-keep batches
+- result: 167b02d unchanged
+- next bias: ABLATE batch-89 TQ stack decomposition vs SD
 ```
