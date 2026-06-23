@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **TQ** — medium search **0.79376 (+0.00435)**, full **0.79368**; ~0.00065 below keep bar. Stack: SD (`deck<=2` pair + strip `deck==0`) + deck==2 pair gated `total≤16` (lift window 11–16). **SD** alone medium 0.79365; total gate +0.00011 medium.
+- **Top probe (unkept):** exp **TQ** — medium search **0.79376 (+0.00435)** remains peak. exp **VS/VW/VY** (TQ+deck≥6) medium **0.79371** (−0.00005); all ~0.00065 below keep bar.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-95 — VM/TQ medium 0.79376 reconfirmed (+0.00435); n_table pass axis closed (VP −0.060, VN −0.025, VJ −0.014)
-- Next batch type: COMBO on TQ base (deck==2 pair + total≤16); no bare TQ/SD re-runs without new axis
+- Mode: **PIVOT**
+- Since: batch-97 — TQ COMBOs + deck≥6×total sweep all ≤0.79376 medium; structural ceiling confirmed
+- Next batch type: PIVOT outside TQ/CZ attack stack (e.g. defense rank cap, belief-free priors); no TQ COMBO re-runs
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-95):** TQ medium 0.79376 stable; ~0.00065 below keep bar; 65+ zero-keep batches; CZ locally optimal.
+- **Plateau (batch-97):** 67+ zero-keep batches; TQ medium 0.79376 immovable; deck≥6 COMBO −0.00005 vs TQ.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 96 — TQ base second axis):
+Next 5 experiment ideas (**PIVOT** batch 98 — outside TQ/CZ attack):
 
-1. **TQ + pile rank-match** — VH bonus on TQ endgame base.
-2. **TQ + pile opp<=4** — narrow pile window on TQ base.
-3. **TQ + midgame pair deck>=6** — VB gate on TQ base.
-4. **TQ + strip opp==1** — sharpen strip on TQ base.
-5. **TQ dual medium seed 1** — stability check if any quick COMBO ≥ +0.003.
+1. **Defense rank cap +2 over attack** — refuse expensive covers.
+2. **Attack value rank-unseen prior** — boost dump of ranks fully on table (no memory).
+3. **Open lowest suit with fewest cards** — suit-spread tie-break on open.
+4. **Pile void bonus +12** — stronger pile void pressure (open stays −8/−5).
+5. **Take when cover cost > rank+8** — voluntary take threshold on defense.
 
 Rules for selecting ideas:
 
@@ -957,6 +957,14 @@ Append failed idea classes here so they are not retried.
 
 - direction: n_table early pile pass (VJ–VP batch-94/95)
   evidence: n_table>=2 −0.060; >=3 −0.025; >=4 −0.014; >=5 −0.0023; throw-in depth essential
+  do not retry unless: —
+
+- direction: COMBO batch-96 TQ second-axis (VQ–VT)
+  evidence: VQ ties TQ 0.79376; VR −0.011; VS 0.79371; VT −0.010; VU dual stable
+  do not retry unless: new axis outside pile/strip/midgame on TQ
+
+- direction: EXPLOIT batch-97 TQ deck>=6 x total gate (VV–VY)
+  evidence: VY/VW medium 0.79371; VV/VX 0.79368; all below TQ 0.79376
   do not retry unless: —
 ```
 
@@ -1774,4 +1782,22 @@ date/window: jun22 batch-95 (VM–VP) TQ reconfirm + n_table sweep
 - what changed: closed n_table 2–5 pass sweep; TQ still best unkept
 - result: 167b02d unchanged
 - next bias: COMBO batch-96 on TQ base
+```
+
+```text
+date/window: jun22 batch-96 (VQ–VU) COMBO TQ second-axis
+- attempts: 4 quick + VQ/VS medium + VU dual; 0 keeps
+- bottleneck: VQ ties TQ 0.79376; VS 0.79371; VR/VT regress; dual agrees
+- what changed: closed TQ+rank-match/pile-opp/strip-opp COMBOs; VS deck>=6 best COMBO −0.00005
+- result: 167b02d unchanged
+- next bias: EXPLOIT batch-97 deck>=6 x total gate on TQ
+```
+
+```text
+date/window: jun22 batch-97 (VV–VZ) EXPLOIT TQ deck>=6 x total
+- attempts: 5 quick + 4 medium; 0 keeps
+- bottleneck: TQ 0.79376 peak; VY/VW 0.79371; VV/VX 0.79368; keep bar unreachable
+- what changed: closed deck>=6×total COMBO on TQ; structural ceiling documented
+- result: 167b02d unchanged
+- next bias: PIVOT batch-98 outside TQ/CZ attack stack
 ```
