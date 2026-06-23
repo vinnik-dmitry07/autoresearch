@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold CQ baseline** — combo locked; pile `deck<=3` + pair `deck>=5`.
-2. **Pile deck<=2** — narrow pile further (BB regressed deck<=1; test deck<=2 only with CQ pair delay).
-3. **Pile deck<=4 + pair deck>=5** — CP was +0.002 alone; confirm CQ beats CP at medium.
-4. **Pair deck>=6 + pile deck<=3** — swap pair threshold with pile combo fixed.
-5. **Refresh analysis** — run `scripts\run_analysis.bat` after keep row logged.
+1. **Hold CQ combo** — pile `deck<=3` + pair `deck>=5` locked; pile<=2/4 and pair>=6/7 all worse on quick.
+2. **Pile opp<=4 + CQ** — test opp narrow on pile path only (AS regressed alone at AQ; retry with pair delay).
+3. **Void open -6 + CQ combo** — void on open path with locked CQ pair/pile windows.
+4. **Pair deck>=5 pile deck<=3 opp<=4** — three-knob only if quick >= +0.003 on two-change first.
+5. **Hold** — no keep without full gate; CQ pile==3 exact regresses −0.061.
 
 Rules for selecting ideas:
 
@@ -507,6 +507,14 @@ Append failed idea classes here so they are not retried.
 - direction: pair deck>=5 opp>=4 / deck 5-15 / deck==5 only
   evidence: exp CM/CN/CO neutral quick
   do not retry unless: —
+
+- direction: pile deck<=2 / pile deck<=4 / pair>=6|7 + pile<=3 vs CQ
+  evidence: exp CR/CS/CT/CV quick −0.001..−0.005 vs CQ 7912e0c
+  do not retry unless: —
+
+- direction: pile deck==3 only (exact)
+  evidence: exp CU quick B4 0.565 (−0.061 vs CQ)
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -612,4 +620,13 @@ date/window: jun22 batch-11 (CP–CQ)
 - what changed: exp CQ committed 7912e0c; B3vsB2 0.500 confirmed
 - result: B4 0.62635 search 0.78125 (+0.007 B4 vs AQ); W/L/S win 0.392 loss 0.106 split 0.502
 - next bias: refine pile deck window around 3; hold pair deck>=5; avoid defense axes
+```
+
+```text
+date/window: jun22 batch-12 (CR–CV)
+- attempts: 5 discards (1 regression CU pile==3 −0.061, 4 mild vs CQ); 0 full evals; 0 keeps
+- bottleneck: CQ combo local optimum — pile<=3 beats <=2/4; pair>=5 beats >=6/7 on quick
+- what changed: analysis.ipynb nbformat fixed; charts refreshed (progress/occam/score_alignment)
+- result: 7912e0c B4 0.62635 search 0.78125 unchanged
+- next bias: hold CQ; test pile opp narrow + CQ; avoid exact deck windows
 ```
