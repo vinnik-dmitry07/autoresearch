@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold AQ baseline** — pile finish stays `deck<=5 opp<=5`; opp<=3 strongly regresses (BM).
-2. **Skip midgame pair-open** — remove deck>0 pair loop entirely; rely on singleton open + endgame pair path only.
-3. **Narrow finish pile** — pile trump dump only when `deck<=4` (between BB regression and AQ 5).
-4. **Open trump strip tighter** — endgame open strip when `opp<=2` instead of 3.
-5. **Void pile -7** — global void pile bonus (exp AT neutral; retest as single axis post-plateau).
+1. **Hold AQ baseline** — all single-knob axes at plateau; pile `deck<=5 opp<=5` locked.
+2. **Split→win combo** — delay pair to `deck>=6` only (between baseline and neutral BQ/BX).
+3. **Void open pressure** — void open bonus −7 or −8 on open path only (pile stays −8).
+4. **Pile pass early** — when `deck>5` and only trump would pile-on, pass (AttackDone) instead of trump dump.
+5. **Pair cap min+3** — widen pair search to min+3 ranks (opposite of neutral BR min+1).
 
 Rules for selecting ideas:
 
@@ -475,6 +475,14 @@ Append failed idea classes here so they are not retried.
 - direction: void open -6 / pair deck>=8 / pair cap min+1
   evidence: exp BP/BQ/BR quick neutral vs AQ
   do not retry unless: combined with measurable quick delta >= +0.003
+
+- direction: skip midgame pair-open entirely
+  evidence: exp BS quick B4 −0.002; split↓ win↑ but net B4 loss
+  do not retry unless: paired with finish tweak that recovers B4
+
+- direction: pile deck<=4 / open strip opp<=2 / void pile -7 / pair deck>=10
+  evidence: exp BU/BV/BW/BX quick neutral vs AQ
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -535,4 +543,13 @@ date/window: jun22 batch-6 (BM–BR)
 - what changed: W/L/S diagnostic logged; closed finish opp<=3 and trump +105 / pair-delay axes
 - result: d5bca3c B4 0.61938 search 0.77742
 - next bias: skip midgame pairs; narrow pile deck<=4; tighter open strip opp<=2; split→win attack timing
+```
+
+```text
+date/window: jun22 batch-7 (BS–BX)
+- attempts: 5 discards (1 mild regression BS −0.002, 4 neutral); 0 full evals; 0 keeps
+- bottleneck: pair/finish/void axes exhausted at quick resolution; BS shifts W/L/S (split 0.509→0.468) but loses B4
+- what changed: closed batch-6 directions (BU/BV/BW/BX); logged BS W/L/S side effect
+- result: d5bca3c B4 0.61938 search 0.77742
+- next bias: partial pair delay deck>=6; void open-only; early pile pass; pair cap min+3
 ```
