@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-54 — HD medium stable (+0.0042); MA/MB/MC regress; split-strip neutral; 30+ zero-keep batches
-- Next batch type: qualitatively new axis (not HD re-run, not rank-match pile, not suit diversity)
+- Mode: **COMBO**
+- Since: batch-55 — fresh PIVOT axes flat/regress (MG −0.059); HD archived sub-gate ~0.0008 below keep bar on search
+- Next batch type: COMBO HD strip + qualitatively new second axis OR meta plateau review
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -1310,4 +1310,13 @@ date/window: jun22 batch-54 (MA–LO) EXPLOIT/PIVOT
 - what changed: closed open longest suit, soft rank-match, split-strip, trump>=2 strip gates
 - result: 167b02d unchanged; HD remains archived keep candidate
 - next bias: PIVOT batch-55 fresh axes (defense table-size, legal pile pass)
+```
+
+```text
+date/window: jun22 batch-55 (ME–MH) PIVOT
+- attempts: 4 b4; 0 keeps; MG −0.059 (pile trump pass = pile dump off class)
+- bottleneck: 31+ zero-keep batches; no axis beats HD sub-gate
+- what changed: closed hand==1 open, n_table defense cost, legal pile pass, table trump take
+- result: 167b02d unchanged
+- next bias: meta plateau review; HD archived as manual keep candidate pending search lift
 ```
