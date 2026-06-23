@@ -13,7 +13,7 @@
 // MANIFEST (keep in sync with the constants below):
 //   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame open
 //                                       low pair within min+2; endgame pair-open + trump-strip;
-//                                       pile prefers suits opponent trumped on this table
+//                                       void pile -8; finish trump-strip opp<=2 trumps>=2
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -45,16 +45,17 @@ bool opp_likely_void_suit(const LocalFeatures& L, int suit) {
 
 // Lower is better. Trumps are heavily penalized so non-trump dumps win; the
 // memory term is a small prior favoring ranks that are still mostly unseen.
-double attack_value(Card c, int trump, const MemoryFeatures* mem, const LocalFeatures& L) {
+double attack_value(Card c, int trump, const MemoryFeatures* mem, const LocalFeatures& L,
+                    bool pile_phase) {
     double v = double(rank_of(c));
     if (is_trump(c, trump)) v += 100.0;
-    else if (opp_likely_void_suit(L, suit_of(c))) v -= 5.0;
+    else if (opp_likely_void_suit(L, suit_of(c))) v -= pile_phase ? 8.0 : 5.0;
     if (mem) v -= 0.001 * double(mem->unknown_rank_count[rank_of(c)]);
     return v;
 }
 
 int pick_lowest_attack(const LocalFeatures& L, const MemoryFeatures* mem, const LegalMoves& legal,
-                       int rank_filter, bool non_trump_only) {
+                       int rank_filter, bool non_trump_only, bool pile_phase) {
     int best = -1;
     double best_v = 1e18;
     for (int i = 0; i < legal.count; ++i) {
@@ -62,7 +63,7 @@ int pick_lowest_attack(const LocalFeatures& L, const MemoryFeatures* mem, const 
         const Card c = legal.moves[i].card;
         if (non_trump_only && is_trump(c, L.trump_suit)) continue;
         if (rank_filter >= 0 && rank_of(c) != rank_filter) continue;
-        const double v = attack_value(c, L.trump_suit, mem, L);
+        const double v = attack_value(c, L.trump_suit, mem, L, pile_phase);
         if (v < best_v) {
             best_v = v;
             best = i;
@@ -73,7 +74,7 @@ int pick_lowest_attack(const LocalFeatures& L, const MemoryFeatures* mem, const 
 
 Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const LegalMoves& legal,
                    bool has_done) {
-    const int best = pick_lowest_attack(L, mem, legal, -1, false);
+    const int best = pick_lowest_attack(L, mem, legal, -1, false, has_done);
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
 
     // H1: initial attack — lowest non-trump; midgame prefer low pair within cap; endgame
@@ -97,8 +98,8 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
                     break;
                 }
             }
-            if (open_rank == mnt && L.opponent_hand_count <= 3 &&
-                popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 3) {
+            if (open_rank == mnt && L.opponent_hand_count <= 2 &&
+                popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 2) {
                 Move low_trump{MoveType::AttackDone, NO_CARD, 0};
                 for (int i = 0; i < legal.count; ++i) {
                     const Move& m = legal.moves[i];
@@ -110,7 +111,7 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
                 if (low_trump.type == MoveType::AttackPlay) return low_trump;
             }
         }
-        const int open = pick_lowest_attack(L, mem, legal, open_rank, true);
+        const int open = pick_lowest_attack(L, mem, legal, open_rank, true, false);
         if (open >= 0) return legal.moves[open];
         return legal.moves[best];
     }
