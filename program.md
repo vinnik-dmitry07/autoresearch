@@ -433,6 +433,7 @@ The sections below are editable by the agent during meta mode.
 - Search score: 0.78941
 - Lower CI: 0.63652
 - Complexity: 100
+- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation: pile −0.059, strip −0.010, pair −0.005 medium.
 - **Top probe (unkept):** exp HD strip `deck<=2` — medium B4 0.64323 (+0.0065), search 0.79365 (+0.0042), full B4 0.64318; ~0.0008 below search keep bar. One-line delta from CZ: `deck==0` → `deck<=2` on open strip path.
 
 ## Search mode
