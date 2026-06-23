@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp HD strip `deck<=2` — medium B4 0.64323 (+0.0065), search 0.79365 (+0.0042), full B4 0.64318; ~0.0008 below search keep bar. One-line delta from CZ: `deck==0` → `deck<=2` on open strip path.
+- **Top probe (unkept):** exp **KZ** = HD strip `deck<=2` + pair cap `min+3` — full B4 **0.64337** (+0.0066), search **0.79335** (+0.0039). exp **HD** alone — full B4 0.64318, search **0.79358** (+0.0042, closer to keep bar). LB: pair cap min+3 alone neutral.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-50 — CZ ablation map refreshed; HD full re-run search +0.00417 stable; KE/KS no beat HD; KU additive strip neutral
-- Next batch type: COMBO must pair HD strip with mechanism that lifts search ≥ +0.005; try attack-phase structural combos only
+- Mode: **EXPLOIT**
+- Since: batch-51 — KZ HD+pair min+3 synergy (+0.0066 B4 full) but search +0.0039 < HD alone +0.0042; pair cap alone neutral (LB)
+- Next batch type: SWEEP pair cap min+2/3/4 on HD base; escalate if medium search >= +0.0045
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 51 — HD structural synergy):
+Next 5 experiment ideas (**SWEEP** batch 52 — pair cap on HD strip base):
 
-1. **HD strip (deck<=2 block) + void pile-only** — KS = HD; skip unless new variant.
-2. **HD + pile dump deck<=4** — HT class on HD (was −0.008); skip.
-3. **Full HD strip block + pair deck>=6** — HR class; skip unless quick >= +0.006.
-4. **CZ ablation confirm** — KD/KC/KB done batch-50; no re-run.
-5. **New COMBO axis only** — e.g. open-phase rank filter; must clear +0.006 quick to escalate.
+1. **HD + pair min+2** — CZ control cell (LA class).
+2. **HD + pair min+3** — KZ best B4 cell (+0.0066 full).
+3. **HD + pair min+4** — extend cap grid.
+4. **HD + pair min+1** — tighter cap control.
+5. **Medium/full on best cell** — only if quick >= +0.006 and medium search >= +0.0045.
 
 Rules for selecting ideas:
 
@@ -1262,4 +1262,13 @@ date/window: jun22 batch-50 (KA–KF) ABLATE/COMBO
 - what changed: KD pile −0.059 KC strip −0.010 KB pair −0.005 KA void −0.001; KE/KS no beat HD
 - result: 167b02d unchanged; HD remains archived top probe (one-line CZ delta)
 - next bias: COMBO batch-51 HD structural synergy only if quick >= +0.006
+```
+
+```text
+date/window: jun22 batch-51 (KV–KZ) COMBO
+- attempts: 5 b4 + KZ medium/dual/full + LB ablate; 0 keeps
+- bottleneck: KZ HD+pair min+3 full B4 +0.0066 but search +0.0039 (HD alone +0.0042 still closer to keep bar)
+- what changed: pair cap min+3 alone neutral; synergy with HD strip lifts B4 not search; KW pair deck<=2 −0.014
+- result: 167b02d unchanged; KZ new top B4 probe, HD top search probe
+- next bias: SWEEP batch-52 pair cap grid on HD base
 ```
