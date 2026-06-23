@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **SD** endgame pair-promotion `deck<=2` (strip stays `deck==0`) — full B4 **0.64318 (+0.0064)**, search **0.79358 (+0.0042)**; ties HD at full, ~0.0008 below search keep bar. exp **KZ** = HD + pair cap `min+3` — B4/search tradeoff.
+- **Top probe (unkept):** exp **SD** endgame pair `deck<=2` (strip `deck==0`) — full search **0.79358 (+0.0042)** / B4 0.64318. exp **SF** (SD + pair `min+3`) — full B4 **0.64337 (+0.0066)** but search **0.79335 (+0.0039)**; B4/search tradeoff persists (~0.0008 below keep bar).
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-79 — SWEEP SD `deck<=2` pair-promotion (strip `deck==0`) full B4 +0.0064 search +0.0042; ties HD; SB/SE regress
-- Next batch type: EXPLOIT SD base — search-lift COMBOs only; no bare HD/SD re-full unless new axis
+- Mode: **PIVOT**
+- Since: batch-80 — SD COMBOs all below keep bar; SF full = KZ tradeoff (B4 +0.0066 search +0.0039); SJ confirms deck==2 pair is SD signal
+- Next batch type: PIVOT search-lift outside pair-cap/pile/void class on SD base; no SF/KZ re-full
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-79):** 50+ zero-keep batches; SD/HD full search +0.0042 (~0.0008 below keep bar); pair-promotion `deck<=2` is the signal (strip widening redundant when strip stays `deck==0`).
+- **Plateau (batch-80):** 51+ zero-keep batches; SD search ceiling ~0.7936; pair `min+3` lifts B4 not search; deck==2 pair-promotion is the SD lift component.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT** batch 80 — SD base `deck<=2` pair-promotion, strip `deck==0`):
+Next 5 experiment ideas (**PIVOT** batch 81 — SD base, search-lift outside pair-cap/pile/void):
 
-1. **SD + pair cap min+3 midgame** — KZ-class on SD base; watch B4/search tradeoff.
-2. **SD + void −10 when opp<=3 pile** — RS neutral on CZ; retest on SD.
-3. **SD ablate strip** — confirm strip still load-bearing with widened pair window.
-4. **SD + pile deck<=2** — narrow finish pile to match pair window.
-5. **SD + skip pair when deck==2 only** — isolate deck==2 pair component without deck==1.
+1. **SD midgame pair-off** — disable `deck>=5` pair loop; keep endgame pair `deck<=2` only.
+2. **SD void bonus remove** — set void suit penalty to 0 globally; test if B1/B0 drag hides B4 lift.
+3. **SD pile pass when hand has 1 card** — skip trump pile dump on tiny hand.
+4. **SD endgame pair cap min+1** — tighten pair search within endgame block only (not midgame).
+5. **SD ablate pile trump path** — disable pile trump dump; confirm pile still load-bearing on SD.
 
 Rules for selecting ideas:
 
@@ -894,6 +894,10 @@ Append failed idea classes here so they are not retried.
 - direction: HD strip deck<=2 as sole change
   evidence: SD deck<=2 pair + strip deck==0 ties HD full (B4 0.64318 search 0.79358); strip widening redundant
   do not retry unless: paired with search-lift second axis on SD base
+
+- direction: EXPLOIT batch-80 SD COMBOs (SF–SJ)
+  evidence: SF/KZ-class min+3 full B4 0.64337 search 0.79335; SG/SI flat vs SD; SH strip ablate −0.003; SJ skip deck==2 pair → neutral (deck==2 is lift)
+  do not retry unless: search-lift axis outside pair-cap/pile/void-on-SD class
 ```
 
 ## Loop notes
@@ -1566,4 +1570,13 @@ date/window: jun22 batch-79 (SA–SE) SWEEP endgame pair deck window
 - what changed: closed deck==1-only and deck==2-only pair paths; SD replaces HD as cleaner unkept top probe
 - result: 167b02d unchanged
 - next bias: EXPLOIT batch-80 SD base search-lift COMBOs
+```
+
+```text
+date/window: jun22 batch-80 (SF–SJ) EXPLOIT SD COMBOs
+- attempts: 5 quick + SF medium/full; 0 keeps; 1 full eval
+- bottleneck: SF = KZ tradeoff (B4 +0.0066 search +0.0039); SJ confirms deck==2 pair is SD lift; SH strip still load-bearing (−0.003)
+- what changed: closed SD+min+3, void/pile deck<=2 COMBOs; SD search ceiling ~0.7936 documented
+- result: 167b02d unchanged
+- next bias: PIVOT batch-81 search-lift outside pair-cap class on SD base
 ```
