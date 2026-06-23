@@ -434,32 +434,32 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **SD** endgame pair `deck<=2` (strip `deck==0`) — full search **0.79358 (+0.0042)** / B4 0.64318. exp **SF** (SD + pair `min+3`) — full B4 **0.64337 (+0.0066)** but search **0.79335 (+0.0039)**; B4/search tradeoff persists (~0.0008 below keep bar).
+- **Top probe (unkept):** exp **SD** endgame pair `deck<=2` (strip `deck==0`) — full search **0.79358 (+0.0042)** / B4 0.64318. **Ablation (batch-82):** entire lift from **deck==2 pair only**; deck==1 inert; pile −0.052, midgame pair +0.002, strip −0.003 on SD.
 
 ## Search mode
 
-- Mode: **ABLATE**
-- Since: batch-81 meta-review — 3 consecutive zero-keep batches (79–81); SD search-lift PIVOTs exhausted; SL full search +0.0041 (below SD)
-- Next batch type: ABLATE SD stack decomposition (pair deck==2 vs deck==1 vs strip vs pile vs midgame pair); map load-bearing parts before new PIVOT
+- Mode: **EXPLOIT**
+- Since: batch-82 — SD ablation map complete; deck==2 pair is sole search lift; SQ medium ties SD
+- Next batch type: EXPLOIT deck==2 pair refinements on SD/SV base (hand/opp gates); no pile/pair-cap COMBOs
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
 
-- Which local situations does B4 exploit most? **Strip deck<=2** (HD) +0.006 B4 full, search +0.004 — must keep `deck==0` strip; `deck==2` adds signal; `deck==1` drags (HO 0|2 slightly worse than HD <=2).
+- Which local situations does B4 exploit most? **Deck==2 pair-promotion** (batch-82 ablation) — entire SD search lift; deck==1 inert; strip stays `deck==0`.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-81):** 52+ zero-keep batches; SD search ceiling ~0.7936 confirmed; void remove (SL) ties at medium, regresses at full; midgame pair, unbounded endgame pair search, pile all load-bearing on SD.
+- **Plateau (batch-82):** SD stack mapped — deck==2 pair = +0.004 search; deck==1 inert; SV (CZ + deck==2 additive) quick +0.0035 search, slightly below unified SD.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**ABLATE** batch 82 — SD stack decomposition):
+Next 5 experiment ideas (**EXPLOIT** batch 83 — deck==2 pair refinement on SD base):
 
-1. **SD ablate deck==2 pair only** — pair-promotion when `deck==2` disabled; keep `deck<=1`.
-2. **SD ablate deck==1 pair only** — pair when `deck==1` disabled; keep `deck==0` + `deck==2`.
-3. **SD ablate midgame pair** — SK reconfirm on SD base at medium if regression ≥ −0.003.
-4. **SD ablate strip** — SH reconfirm at medium.
-5. **SD ablate pile trump** — SO reconfirm at medium.
+1. **SV medium** — CZ + additive `deck==2` pair block; compare to SD full.
+2. **SD deck==2 pair + hand>=4 gate** — pair-promotion only with sufficient hand size.
+3. **SD deck==2 pair + opp<=4 gate** — narrow to short-opponent endgame.
+4. **SD deck==2 pair + singleton rank<=8** — skip high-rank singleton promotion.
+5. **SD split blocks** — explicit `deck==0` CZ block + `deck==2` pair (no unified `deck<=2`).
 
 Rules for selecting ideas:
 
@@ -901,6 +901,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-81 SD search-lift (SK–SO)
   evidence: SK midgame pair-off +0.002 search; SL void remove medium ties SD full search, full +0.0041; SM pile pass +0.003; SN endgame cap min+1 −0.011; SO pile off −0.052
+  do not retry unless: —
+
+- direction: ABLATE batch-82 SD stack (SP–ST, SU–SV)
+  evidence: SP deck==2 pair off → CZ neutral; SQ deck==1 off = SD; SR midgame +0.002; SS strip −0.003; ST pile −0.052; SU deck==2 only +0.0004; SV additive +0.0035
   do not retry unless: —
 ```
 
@@ -1592,4 +1596,13 @@ date/window: jun22 batch-81 (SK–SO) PIVOT SD search-lift
 - what changed: closed void remove, endgame cap min+1, pile pass hand==1 on SD; meta plateau trigger (3 batches 0 keeps)
 - result: 167b02d unchanged
 - next bias: ABLATE batch-82 SD stack decomposition (deck==1 vs deck==2 pair)
+```
+
+```text
+date/window: jun22 batch-82 (SP–SV) ABLATE SD stack
+- attempts: 5 ablate quick + SU/SV/SQ medium; 0 keeps
+- bottleneck: deck==2 pair = entire +0.004 search lift; deck==1 inert; pile −0.052 midgame pair +0.002 strip −0.003
+- what changed: SD ablation map complete; SV (CZ + deck==2 additive) +0.0035 quick, below unified SD
+- result: 167b02d unchanged
+- next bias: EXPLOIT batch-83 deck==2 pair refinements
 ```
