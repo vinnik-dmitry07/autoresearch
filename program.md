@@ -437,10 +437,10 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **SWEEP**
-- Since: batch-34 — HD strip `deck<=2` full B4 +0.006 but search +0.004 below keep bar; maybe-cluster on strip deck threshold
-- Next batch type: strip deck window grid (`==0/==1/<=2/<=3/<=1+opp`) on b4
-- After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
+- Mode: **EXPLOIT**
+- Since: batch-35 SWEEP — strip `deck<=2` best cell (+0.006 B4); `==1` −0.019; `<=3` +0.005 but search +0.004; HD full search +0.004 below keep bar
+- Next batch type: refine strip deck window (`==2`, `1|2`, opp gates) — max 3 attempts then meta-review
+- After next keep: continue **EXPLOIT** or switch to **COMBO** if second axis needed
 
 ## Open questions
 
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**SWEEP** batch 35 — strip deck threshold grid):
+Next 5 experiment ideas (**EXPLOIT** batch 36 — strip deck<=2 refinement):
 
-1. **strip deck==0** — CZ control (baseline cell).
-2. **strip deck==1** — strip only when exactly one card left in deck.
-3. **strip deck<=2** — HD replicate (quick +0.006 class).
-4. **strip deck<=3** — widen strip earlier.
-5. **strip deck<=1 + opp<=1** — tighter dual gate on HD axis.
+1. **strip deck==2 only** — isolate HH signal (not deck 0/1).
+2. **strip deck 1|2** — `deck_count>=1 && deck_count<=2` (exclude empty deck).
+3. **strip deck<=2 opp<=3** — widen opp gate on best deck cell.
+4. **COMBO deck<=2 strip + void remove** — simplification test on best cell.
+5. **Re-full deck<=2** — only if batch 36 #1–#2 improve medium search ≥ +0.005.
 
 Rules for selecting ideas:
 
@@ -752,6 +752,10 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-34 endgame pressure (HA–HC)
   evidence: HA strip opp<=3 −0.011; HB pair opp<=3 −0.012; HC pile pass opp>=6 −0.0007 neutral
   do not retry unless: —
+
+- direction: SWEEP batch-35 strip deck grid (HF–HJ)
+  evidence: HH deck<=2 +0.006; HI deck<=3 +0.005 search +0.004; HG deck==1 −0.019; HJ deck<=1 opp<=1 −0.011
+  do not retry unless: deck==1 or opp<=1 strip combos
 ```
 
 ## Loop notes
@@ -1073,4 +1077,13 @@ date/window: jun22 batch-34 (HA–HD) PIVOT
 - what changed: HA/HB regress −0.011/−0.012; HC neutral; HD best signal since CZ at B4 but sub-gate on search
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: SWEEP batch-35 strip deck threshold grid
+```
+
+```text
+date/window: jun22 batch-35 (HF–HJ) SWEEP
+- attempts: 5 b4 + HI medium; 0 keeps; 1 prior full (HD=HH)
+- bottleneck: strip deck<=2 best (+0.006 B4) but full search +0.004 below keep bar; deck==1 −0.019
+- what changed: closed strip deck grid; HH optimal; HI <=3 slightly worse on search
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: EXPLOIT batch-36 refine deck<=2 strip (==2, 1|2, opp widen)
 ```
