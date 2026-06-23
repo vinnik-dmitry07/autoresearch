@@ -70,10 +70,15 @@ durak\build.bat test
 :: Incremental rebuild during the experiment loop (skip CMake reconfigure)
 durak\build.bat fast
 
-:: Fast triage after editing strategy_heuristic.cpp (gates 0–2; see program.md)
-set BEST_SEARCH=0.73239
+:: Fast triage after editing strategy_heuristic.cpp (see program.md)
+set BEST_SEARCH=0.77341
+set BEST_B4=0.61206
 scripts\triage.bat quick
+scripts\triage.bat medium
+scripts\triage.bat dual
 scripts\triage.bat full
+:: Force full eval despite low delta: set FORCE_FULL=1
+:: Post-keep: scripts\post_keep.bat  (SKIP_ABLATE=1 SKIP_ANALYSIS=1 to skip slow steps)
 
 :: Run the baseline ladder (challenger B2 vs B4 / B1 / B0)
 durak\build\simulate.exe --mode ladder --eval full --batch 500000 > durak\run.log 2>&1
@@ -94,15 +99,21 @@ ctest --test-dir durak/build --output-on-failure
 
 ## Running the agent
 
-Point your agent at `program.md` and let it iterate:
+Paste this into Cursor:
 
 ```
-Have a look at program.md and let's kick off a new Durak experiment. Do the setup first.
+@README.md @program.md @analysis.ipynb
+
+Run the Durak autoresearch meta-loop.
+
+Use program.md as the control plane. Start setup if needed, then run 5 experiment attempts, perform 1 meta-review, update the editable sections of program.md, commit kept experiment changes with `exp:` and safe loop improvements with `meta:`, then continue without asking me.
 ```
 
-The agent edits only `durak/src/strategy_heuristic.cpp`, runs `scripts\triage.bat` (eval
-first, commit only on keep), and reverts the file on discard. See `program.md` for gate
-thresholds. After a **keep**, refresh charts:
+During experiment attempts, the agent edits only `durak/src/strategy_heuristic.cpp`.
+During meta-review, it may update search policy (research directions, loop notes,
+diagnostics, helper scripts) but must not change the locked contract: README rules, engine,
+baselines, metric, keep/revert thresholds, tests, or full eval. See `program.md` for the
+5+1 meta-loop cadence. After a **keep**, refresh charts:
 
 ```bash
 jupyter nbconvert --execute analysis.ipynb
@@ -111,7 +122,7 @@ jupyter nbconvert --execute analysis.ipynb
 Or on Windows: `scripts\run_analysis.bat`
 
 Or open `analysis.ipynb` in Jupyter and run all cells. Outputs: `progress.png`,
-`occam.png`.
+`occam.png`, `score_alignment.png`.
 
 ## Project structure
 
@@ -124,7 +135,8 @@ durak/
   CMakeLists.txt
   build.bat       Windows build helper (full / fast / test)
 scripts/
-  triage.bat      fast eval gates 0–2 (+ optional full)
+  triage.bat      parallel ladder gates 0–2 (+ delta-gated full)
+  triage_ladder.ps1  parallel B4/B1/B0 match evals
   run_analysis.bat refresh progress.png after a keep
   sweep_atk_trump.py example parameter sweep (quick B4 only)
 program.md        agent instructions and the experiment loop

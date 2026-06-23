@@ -5,43 +5,130 @@ strategy for two-player *podkidnoy* Durak, under a locked rules engine, and meas
 far simple local heuristics can go against fixed baselines — including a memory-counting
 opponent.
 
-You edit exactly one file: `durak/src/strategy_heuristic.cpp` (the no-memory policy core
-`choose_move_core` and its manifest). Everything else is the fixed harness.
+In **experiment mode**, you edit the heuristic strategy. In **meta mode**, you edit the
+search policy (directions, loop notes, diagnostics, helper scripts). Neither mode may
+change the locked contract (see **Locked vs mutable**). Everything else is the fixed
+harness.
+
+## Operating model: inner experiment loop + outer meta loop
+
+This repo is run by one autonomous agent in two modes:
+
+1. **Experiment mode**: search for a better memoryless heuristic.
+2. **Meta mode**: improve the feedback loop itself.
+
+The transcript is not the source of truth. Durable state lives in this file, especially:
+
+* `## Current best`
+* `## Open questions`
+* `## Editable research directions`
+* `## Loop notes`
+* `## Rejected directions`
+
+The agent should periodically rewrite these sections so the next cycle starts from compressed evidence rather than from the chat transcript.
+
+Default cadence:
+
+* Run **5 experiment attempts**.
+* Then run **1 meta-review**.
+* Repeat until the human interrupts, the metric plateaus, or further improvement would require weakening a locked invariant.
+
+## Locked vs mutable
+
+Do not let the meta-agent rewrite the **contract**. Let it rewrite only the **search
+policy**.
+
+| Locked (contract) | Mutable (search policy) |
+|-------------------|---------------------------|
+| README rules | heuristic strategy (`strategy_heuristic.cpp`) |
+| Durak engine | `program.md` research directions |
+| baselines (B0/B1/B3/B4) | `program.md` loop notes |
+| metric formula | `program.md` rejected directions, open questions, current best |
+| keep/revert thresholds | analysis diagnostics (`analysis.ipynb`) |
+| tests, forbidden checks | helper scripts for speed/logging (`scripts/`) |
+| full-eval seed counts | |
+
+Meta mode may edit only the **mutable** column. Experiment mode may edit only the
+heuristic strategy row. Neither mode may touch the locked column — not even to "clarify"
+or "optimize" the contract.
 
 ## Setup
 
-To set up a new experiment, work with the user to:
+To start a new experiment:
 
-1. **Agree on a run tag**: propose a tag based on today's date (e.g. `jun22`). The branch
-   `autoresearch/<tag>` must not already exist — this is a fresh run.
-2. **Create the branch**: `git checkout -b autoresearch/<tag>` from current master.
-3. **Read the in-scope files**: The project is small. Read these for full context:
-   - `README.md` — research framing.
-   - `durak/include/policy_core.hpp` — the fixed B2/B3 interface you implement against.
-   - `durak/src/strategy_heuristic.cpp` — **the only file you modify**.
-   - `program.md` — this file.
-4. **Build and test**: run `durak\build.bat test` (Windows). All three tests
-   (`engine_tests`, `simulation_tests`, `forbidden_check`) must pass before you start.
-5. **Initialize results.tsv**: if it does not exist, create `results.tsv` with just the
-   header row (see "Logging results"). The baseline is recorded after the first run.
-6. **Confirm and go**: confirm setup looks good, then kick off the experiment loop.
+1. Choose a run tag automatically from today's date, e.g. `jun22`.
+   If `autoresearch/<tag>` already exists, append a suffix: `jun22b`, `jun22c`, etc.
+2. Create the branch from current master:
+   `git checkout -b autoresearch/<tag>`.
+3. Read the in-scope files:
+   - `README.md`
+   - `durak/include/policy_core.hpp`
+   - `durak/src/strategy_heuristic.cpp`
+   - `program.md`
+   - `analysis.ipynb`
+4. Run `durak\build.bat test`.
+5. Initialize `results.tsv` if missing.
+6. Start the loop. Do not wait for human confirmation.
 
 ## What you CAN and CANNOT do
 
-**You CAN** edit `durak/src/strategy_heuristic.cpp`:
-- Change the body of `choose_move_core` (add, remove, reorder heuristics; tune parameters).
-- Update the manifest (`kHeuristicCount`, `kParameterCount`, `kComplexity`) to match.
-- Use only `LocalFeatures` (always) and the optional `MemoryFeatures*` (memory branch).
+Permissions follow **Locked vs mutable** above. The meta-agent rewrites search policy,
+not contract.
 
-**You CANNOT**:
-- Change `policy_core.hpp` (the signature), the engine, the simulator, the RNG, the
-  baselines (B0/B1/B3/B4), the tests, the CMake flags, or the stopping criteria.
-- Use `static`/global mutable state to remember turns, cards, seeds, games, or opponent
-  actions. The strategy must be a pure function of the current observation.
-- Add I/O, files, networking, clock access, threading, or randomness inside
-  `strategy_heuristic.cpp`. (`forbidden_check` enforces this; it must keep passing.)
-- Add a new heuristic class that fires only when `memory != nullptr`. The memory branch
-  (B3) may only refine tie-breaks/priors of the same heuristics the no-memory path uses.
+### Experiment mode permissions
+
+During an individual strategy experiment, you may edit exactly one mutable file:
+
+* `durak/src/strategy_heuristic.cpp`
+
+You CAN:
+
+* Change the body of `choose_move_core`.
+* Add, remove, reorder, or simplify local heuristics.
+* Tune numeric constants.
+* Update the manifest (`kHeuristicCount`, `kParameterCount`, `kComplexity`) to match.
+* Use only `LocalFeatures` always and the optional `MemoryFeatures*` only as a refinement of the same heuristic logic.
+
+You CANNOT during experiment mode:
+
+* Edit anything in the **Locked** column (engine, baselines, metric, thresholds, tests, full eval).
+* Use `static` or global mutable state to remember turns, cards, seeds, games, or opponent actions.
+* Add I/O, files, networking, clock access, threading, or randomness inside `strategy_heuristic.cpp`.
+* Add a heuristic class that fires only when `memory != nullptr`.
+* Edit `analysis.ipynb` to make a result look better.
+
+### Meta mode permissions
+
+After every 5 experiment attempts, enter meta mode.
+
+In meta mode, you may edit **mutable** items only:
+
+* `program.md` — durable sections (`## Current best`, `## Open questions`, `## Editable research directions`, `## Loop notes`, `## Rejected directions`) and loop guidance that does not change thresholds or eval sizes
+* `analysis.ipynb` — diagnostics only (keep rate, discard reasons, complexity drift, B4/search divergence)
+* `scripts/` — helper scripts for faster triage, log parsing, or safe caching that does not affect simulation results
+* `README.md` — loop documentation only; do not change locked rules or metric definitions
+
+You may NOT edit anything in the **Locked** column:
+
+* README rules / Durak rules
+* Durak engine, simulator, RNG
+* B0/B1/B3/B4 baselines
+* metric formula or Occam penalty
+* keep/revert thresholds or gate seed counts
+* tests, forbidden checks
+* full-eval protocol (5M seeds, paired eval, CI method)
+
+Allowed meta improvements include:
+
+* Add a faster smoke check before a full run (same seeds/thresholds).
+* Improve log parsing and triage output.
+* Cache safe intermediate outputs that do not affect simulation results.
+* Add notebook diagnostics for loop health.
+* Prune research directions that repeatedly failed.
+* Append rejected directions so the agent does not retry them.
+* Rewrite the next batch of research directions based on evidence.
+
+Meta changes must be committed with a `meta:` prefix. Strategy improvements must be committed with an `exp:` prefix.
 
 ## The metric
 
@@ -69,28 +156,40 @@ is a win. A tiny gain that adds an extra heuristic or parameter is usually not w
 
 ## Evaluation protocol (no peeking)
 
-Four gates for fast feedback; decide keep/discard **only** on gate 3 (full). Do not stop
+Gates for fast feedback; decide keep/discard **only** on gate 3 (full). Do not stop
 on the first time a confidence interval crosses a threshold during a batch — that is
 sequential peeking.
 
 | Gate | Command | Seeds | Purpose |
 |------|---------|-------|---------|
 | 0 smoke | `match --opponent B4 --seeds 5000` | 5k | crash / illegal move |
-| 1 B4 | `match --opponent B4 --eval quick` | 100k | cheap signal vs B4 (~1s) |
-| 2 ladder | `ladder --eval quick` | 100k × 3 | composite `search_score` (~5s) |
-| 3 full | `ladder --eval full` | 5M × 3 | **keep/discard only here** (~4 min) |
+| 1 B4 | `triage.bat b4` | 100k | cheap B4-only signal (~1.5s) |
+| 2 ladder | `triage.bat quick` | 100k × 3 parallel | composite `search_score` (~6s) |
+| 2b medium | `triage.bat medium` | 500k × 3 parallel | confirm maybe zone (~20s) |
+| 2c dual | `triage.bat dual` | 100k × 3 × 2 seeds | two quick ladders, seed 0/1 (~12s) |
+| 3 full | `triage.bat full` | 5M × 3 parallel | **keep/discard only here** (~1.7 min) |
+
+Quick delta rules (100k seeds; SE ≈ 0.0016 → noise ±0.003):
+
+| Δ search / Δ B4 | Action |
+|-----------------|--------|
+| both < 0.003 | discard (no full) |
+| either 0.003–0.006 | `triage.bat medium` or `triage.bat dual`, then re-check |
+| Δsearch ≥ 0.006 **or** ΔB4 ≥ 0.005 | `triage.bat full` (B4-first catches reporting wins) |
 
 Shortcut (rebuild + gates 0–2, optional gate 3):
 
 ```bat
-set BEST_SEARCH=0.73239
+set BEST_SEARCH=0.77341
+set BEST_B4=0.61206
 scripts\triage.bat quick
 scripts\triage.bat full
 ```
 
-Set `BEST_SEARCH` to the current best `search_score` from `results.tsv`. After gate 2,
-run gate 3 only if `Δsearch_score ≥ 0.006` vs best (quick noise at 100k is ~±0.003).
-Override with `triage.bat full` when you deliberately want a full eval.
+Set `BEST_SEARCH` to the current best `search_score` from `results.tsv`. Set `BEST_B4` for
+early exit: if B4 drops more than 0.005 below best, gate 2 skips B1/B0. `triage.bat full`
+runs gate 2 (quick) then gate 3 only when thresholds above are met.
+Override with `FORCE_FULL=1` when you deliberately want a full eval despite low delta.
 
 Rebuild during the loop: `durak\build.bat fast` (incremental; skip CMake reconfigure).
 Use `durak\build.bat test` only after a **keep**, or when unsure.
@@ -178,15 +277,21 @@ LOOP FOREVER:
 
 ```bat
 set BEST_SEARCH=<best search_score from results.tsv>
+set BEST_B4=<best B4 point_rate from results.tsv>
 scripts\triage.bat quick
 ```
 
    Read `durak\triage.log` (or console). Discard immediately if gate 0 fails or gate 2
    shows a clear regression vs `BEST_SEARCH`.
 
-4. Full eval only if gate 2 shows `Δsearch_score ≥ 0.006` (or you have a strong prior):
+4. Escalate by delta (or set `FORCE_FULL=1`):
 
 ```bat
+rem maybe zone (0.003–0.006):
+scripts\triage.bat medium
+scripts\triage.bat dual
+
+rem full keep/discard gate:
 scripts\triage.bat full
 ```
 
@@ -195,13 +300,58 @@ scripts\triage.bat full
 5. Read the summary from `durak\triage.log` or `durak\run.log`.
 6. Append row(s) to `results.tsv` (do NOT commit results.tsv).
 7. Apply the keep rule (full_eval only). If **keep**:
-   - `durak\build.bat test` (must pass),
    - `git add durak/src/strategy_heuristic.cpp && git commit`,
-   - memory ablation: `simulate --mode ablate --eval full`, log `B3vsB2` row,
-   - `scripts\run_analysis.bat` (refresh charts).
-   If **discard**: `git checkout -- durak/src/strategy_heuristic.cpp` (no commit was made).
+   - `scripts\post_keep.bat` (tests + ablation + analysis; skip slow steps when inert):
+
+```bat
+set SKIP_ABLATE=1
+set SKIP_ANALYSIS=1
+scripts\post_keep.bat
+```
+
+   Log `B3vsB2` row when ablation runs. Refresh charts with `scripts\run_analysis.bat`
+   when `SKIP_ANALYSIS` was set. If **discard**: `git checkout -- durak/src/strategy_heuristic.cpp` (no commit was made).
 8. Parameter sweeps (one numeric constant): prefer `scripts\sweep_atk_trump.py` pattern —
-   one rebuild per value, gate 1 (`match B4 --eval quick`) only until a winner emerges.
+   `build.bat fast` per value, gate 1 (`match B4 --eval quick`) only; stops early if no
+   B4 improvement.
+
+## Meta-review loop
+
+After every 5 experiment attempts:
+
+1. Review the last 5 rows or attempted rows in `results.tsv`, plus recent git diffs and logs.
+2. Classify each attempt:
+   - useful signal
+   - noisy/inconclusive
+   - obvious regression
+   - crash/bug
+   - repeated failed direction
+   - complexity-only change
+3. Identify the biggest feedback-loop bottleneck:
+   - slow build
+   - slow full eval
+   - weak quick/full correlation
+   - unclear logs
+   - repeated doomed ideas
+   - too many full evals
+   - too few promising candidates reaching full eval
+4. Make at least one concrete loop improvement if safe:
+   - update `program.md`
+   - improve `analysis.ipynb` diagnostics
+   - improve a helper script
+   - add a log parser
+   - prune research directions
+5. Append compressed notes to `## Loop notes`.
+6. Rewrite `## Editable research directions` with the next 5 experiments.
+7. Commit meta changes:
+
+```bat
+git add program.md analysis.ipynb scripts
+git commit -m "meta: tighten autoresearch feedback loop"
+```
+
+If there are no safe meta changes, append a note explaining why to `## Loop notes` and
+continue experiments.
 
 **Crashes**: if a run produces no summary, read the tail of `durak\run.log`. If it is a
 trivial bug you introduced, fix it and re-run. If the idea is fundamentally broken, log
@@ -213,3 +363,79 @@ stopped. If you run out of ideas, think harder: re-read the heuristics, try remo
 to simplify, try combining near-misses, reconsider the take/throw-in trade-offs, study
 where B4's memory actually helps (via the ablation and the win/loss/split breakdown). The
 loop runs until the human interrupts you.
+
+---
+
+# Durable agent memory
+
+The sections below are editable by the agent during meta mode.
+
+## Current best
+
+- Commit: `f86282d`
+- B4 point_rate: 0.61206
+- Search score: 0.77341
+- Lower CI: 0.61180
+- Complexity: 100
+- Why it is best: H1-only finish-mode pile trump dump (`deck<=6`, `opp<=5`, `>=1` trump); best B4 in series after pile-only widening (AC/AD). Memory ablation still 0.500.
+
+## Open questions
+
+- Which local situations does B4 exploit most? Likely midgame when B2 opens pairs too early or hoards trumps before finish window — open-strip widening regressed sharply (AK).
+- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack/finish** — pile trump dump axis drives all keeps since exp P; defense/take tweaks regressed (−0.01 B4).
+- Are B1/B0 gains misleading relative to B4? Yes — B1/B0 ~0.945/0.969 flat while B4 moved 0.49→0.61; search_score tracks B4 for keeps.
+- Does complexity reduction improve B4 parity? Already at complexity 100 (H1-only); further simplification neutral; widening open strip hurts.
+
+## Editable research directions
+
+Next 5 experiment ideas:
+
+1. **Pile deck sweep** — `deck<=5` vs `6` vs `7` with medium gate (micro window around sweet spot).
+2. **Pile opp sweep** — `opp<=4` vs `5` vs `6` on pile only (AE/AK show open widen bad; pile narrow may help).
+3. **Void pile penalty sweep** — `-7`/`-8`/`-9` with `triage.bat b4` only (AL neutral at −9).
+4. **Finish combo** — void pile −8 + pile dump only when `>=2` trumps AND `opp<=4` (combine near-misses without open strip).
+5. **Endgame attack** — when `deck=0` and `opp<=2`, prefer lowest non-trump pile over trump dump (inverse strip test).
+
+Rules for selecting ideas:
+
+- Prefer one-change experiments.
+- Prefer simplification when score is flat.
+- Prefer changes that can be screened by quick B4 signal.
+- Avoid retrying rejected directions unless a new mechanism is given.
+
+## Rejected directions
+
+Append failed idea classes here so they are not retried.
+
+```text
+- direction: open strip / endgame open widening (opp<=4+ or deck window on open path)
+  evidence: exp AK quick B4 0.598 (−0.014 vs best); prior open deck<=6 neutral
+  do not retry unless: pile-only axis with different trigger (not same-rank open strip)
+
+- direction: defense / voluntary take / pile cap / same-rank trump defense
+  evidence: exp K–N quick −0.01 B4; transcript probes
+  do not retry unless: new mechanism unrelated to take/pass
+
+- direction: pile opp<=6
+  evidence: exp AE probe regression; quick B4 drop
+  do not retry unless: paired with deck<=5 narrow window
+
+- direction: pile deck>=9
+  evidence: exp Z/Z2 quick worse than deck<=6
+  do not retry unless: —
+```
+
+## Loop notes
+
+Append compressed meta-review notes here.
+
+Format:
+
+```text
+date/window: jun22 batch-1 (5 attempts AK–AP)
+- attempts: 5 discards (1 regression AK, 4 neutral); 0 full evals; 0 keeps
+- bottleneck: plateau at AD — micro-tweaks within ±0.0005 B4 on quick; open widen fails
+- what changed: (prior session) triage medium/dual/full gates, post_keep.bat, analysis diagnostics
+- result: best unchanged f86282d B4 0.61206 search 0.77341
+- next bias: pile-only parameter sweeps via b4 gate; avoid open strip; batch combos only after single-axis sweep
+```
