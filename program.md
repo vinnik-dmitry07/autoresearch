@@ -785,6 +785,14 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-45 defense rank cap (JF–JJ)
   evidence: JF–JI flat; JJ take opp<=2 deck<=1 −0.231; axis closed
   do not retry unless: —
+
+- direction: EXPLORE batch-47 pile/hand (JK–JP)
+  evidence: JK rank-match −0.079; JO hand==1 −0.026; JN hand<=3 −0.010; JP only-trump −0.010
+  do not retry unless: —
+
+- direction: PIVOT batch-48 scoring (JQ–JT)
+  evidence: void/trump/pair-cap/pile-window all flat or regress; JT pile deck<=2 opp<=4 −0.018
+  do not retry unless: —
 ```
 
 ## Loop notes
