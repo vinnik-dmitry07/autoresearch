@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-82 — SD ablation map complete; deck==2 pair is sole search lift; SQ medium ties SD
-- Next batch type: EXPLOIT deck==2 pair refinements on SD/SV base (hand/opp gates); no pile/pair-cap COMBOs
+- Mode: **PIVOT**
+- Since: batch-83 — deck==2 pair refinements exhausted; SX/SZ tie SD; SY/TB opp gates kill lift; SV medium +0.0039 < SD +0.0042
+- Next batch type: PIVOT widen/narrow deck==2 window (deck==3, deck 1|2) or simplification path; no SV/SX–TB re-runs
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-82):** SD stack mapped — deck==2 pair = +0.004 search; deck==1 inert; SV (CZ + deck==2 additive) quick +0.0035 search, slightly below unified SD.
+- **Plateau (batch-83):** deck==2 pair gates (hand/opp/rank) inert or anti-synergize; SV split form below SD at medium (+0.0039 vs +0.0042).
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT** batch 83 — deck==2 pair refinement on SD base):
+Next 5 experiment ideas (**PIVOT** batch 84 — deck window around deck==2 pair):
 
-1. **SV medium** — CZ + additive `deck==2` pair block; compare to SD full.
-2. **SD deck==2 pair + hand>=4 gate** — pair-promotion only with sufficient hand size.
-3. **SD deck==2 pair + opp<=4 gate** — narrow to short-opponent endgame.
-4. **SD deck==2 pair + singleton rank<=8** — skip high-rank singleton promotion.
-5. **SD split blocks** — explicit `deck==0` CZ block + `deck==2` pair (no unified `deck<=2`).
+1. **SD deck<=3 pair** (strip `deck==0`) — widen pair window one step past deck==2.
+2. **SD deck==3 pair only** — isolate deck==3 component.
+3. **SD deck 1|2 pair** (strip `deck==0`) — explicit two-cell window without deck==0 pair extension.
+4. **SD deck==2|3 pair** — narrow widen to adjacent cells only.
+5. **SD midgame pair-off** — test if dropping `deck>=5` pair frees search headroom on SD base.
 
 Rules for selecting ideas:
 
@@ -905,6 +905,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: ABLATE batch-82 SD stack (SP–ST, SU–SV)
   evidence: SP deck==2 pair off → CZ neutral; SQ deck==1 off = SD; SR midgame +0.002; SS strip −0.003; ST pile −0.052; SU deck==2 only +0.0004; SV additive +0.0035
+  do not retry unless: —
+
+- direction: EXPLOIT batch-83 deck==2 pair refinements (SW–TB)
+  evidence: SX/SZ tie SD; SY/TB opp gates → CZ neutral; SW SV medium +0.0039 < SD +0.0042
   do not retry unless: —
 ```
 
@@ -1605,4 +1609,13 @@ date/window: jun22 batch-82 (SP–SV) ABLATE SD stack
 - what changed: SD ablation map complete; SV (CZ + deck==2 additive) +0.0035 quick, below unified SD
 - result: 167b02d unchanged
 - next bias: EXPLOIT batch-83 deck==2 pair refinements
+```
+
+```text
+date/window: jun22 batch-83 (SW–TB) EXPLOIT deck==2 pair refine
+- attempts: 5 quick + SW medium; 0 keeps
+- bottleneck: SX/SZ gates inert; SY/TB opp gates kill deck==2 lift; SV medium +0.0039 below SD +0.0042
+- what changed: closed hand/opp/rank gates on deck==2 pair; unified deck<=2 beats split SV form
+- result: 167b02d unchanged
+- next bias: PIVOT batch-84 deck window widen (deck==3) or simplification
 ```
