@@ -441,10 +441,10 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **meta**
-- Since: batch-111 — throw-in pass and total≤18 closed; structural plateau at f5bb135
-- Next batch type: halt single-knob PIVOTs unless qualitatively new mechanism
-- After next keep: **EXPLOIT** on kept stack
+- Mode: **meta / halt**
+- Since: batch-112 — WR ABLATE confirms all major components load-bearing; void trim −0.0006 only optional cut
+- Next batch type: halt unless qualitatively new mechanism; no further WR knob/ABLATE batches
+- After next keep: **EXPLOIT** + post-keep memory ablation
 
 ## Open questions
 
@@ -463,6 +463,7 @@ The sections below are editable by the agent during meta mode.
 - **WR PIVOT (batch-109):** XW −4 medium +0.00089; open trump hoard + void hand-gate inert.
 - **WR PIVOT (batch-110):** YB dual agrees +0.00054 quick, medium 0.79595 reconfirms XW; YC strip opp==1 −0.015 (load-bearing opp≤2); YD midgame hand-gate −0.0005 inert.
 - **WR PIVOT (batch-111):** YE pass n_table>=4 −0.016 (throw-in load-bearing); YF total≤18 −0.0006 inert (confirms ≤16 optimal).
+- **WR ABLATE (batch-112):** pile trump −0.039; midgame pair −0.011; deck≤2 pair −0.012; strip −0.014; void penalty −0.0006 mild. **Stack minimal** — no simplification keep.
 
 ## Editable research directions
 
