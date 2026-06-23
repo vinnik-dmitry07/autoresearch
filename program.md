@@ -437,13 +437,13 @@ The sections below are editable by the agent during meta mode.
 - **WR ablation map (batches 102–106):** load-bearing: `hand≥opp` (−0.0018), strip `opp≤2` (−0.014), deck≤2 pair (−0.012), pile trump `deck≤3` (−0.020). Optimal: `total≤16`, pile `opp≤5`, pile `deck≤3`. Inert/closed: rank-match, deck≥6, void mag, opp≤6, total 14–17, pair min+1/skip+2, suit tie-break, rank-aware void, pile-pass trump hoard.
 - **Plateau (batch-107):** WR full search **0.79506** stable (dual seed 0/1 agree); next keep needs **+0.005** search (bar **0.80006**). ~80 batches since CZ keep; 1 keep (WR) in batch-101.
 - **Defense rank-match SWEEP (batch-108):** quick peak **−2/−4** search ~0.7956 (+0.0005); **−3** medium flat (XT); **−6** regress; softer ultra-endgame inert.
-- **Top probe (unkept):** exp **XW** defense rank-match **−4** — medium search **0.79595 (+0.00089)** vs WR full; still **~0.0041** below keep bar. Occam WR+def−4: **198 lines** (+4).
+- **Top probe (unkept):** exp **YB/XW** WR+defense rank-match **−4** — dual quick **0.79560** (+0.00054 both seeds); medium **0.79595 (+0.00089)** reconfirmed; still **~0.0041** below keep bar. Occam **198 lines** (+4). **Do not full-eval** — below +0.003 medium gate.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-109 — XW −4 medium 0.79595 best unkept; attack trump-hoard/void-gate inert; defense axis closed without keep
-- Next batch type: COMBO WR+def−4 only if dual agrees; else new attack class
+- Mode: **meta**
+- Since: batch-111 — throw-in pass and total≤18 closed; structural plateau at f5bb135
+- Next batch type: halt single-knob PIVOTs unless qualitatively new mechanism
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -461,16 +461,18 @@ The sections below are editable by the agent during meta mode.
 - **WR PIVOT (batch-107):** ultra-endgame pass hand==1 −0.019; defense rank-match quick +0.0009 medium flat (0.79505); dual seeds stable.
 - **WR PIVOT (batch-108):** softer pass hand==2 opp==1 inert; defense rank-match −2/−4 quick +0.0005.
 - **WR PIVOT (batch-109):** XW −4 medium +0.00089; open trump hoard + void hand-gate inert.
+- **WR PIVOT (batch-110):** YB dual agrees +0.00054 quick, medium 0.79595 reconfirms XW; YC strip opp==1 −0.015 (load-bearing opp≤2); YD midgame hand-gate −0.0005 inert.
+- **WR PIVOT (batch-111):** YE pass n_table>=4 −0.016 (throw-in load-bearing); YF total≤18 −0.0006 inert (confirms ≤16 optimal).
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO / PIVOT** batch 110):
+Next 5 experiment ideas (**meta** batch 112):
 
-1. **COMBO: WR + defense rank-match −4** — dual then medium; XW alone medium 0.79595 unkept.
-2. **Do not full-eval XW** — +0.00089 medium below +0.003 gate; keep bar 0.80006 unreachable without +0.005 full.
-3. **PIVOT: strip only when opp==1 on WR** — endgame tighter than opp≤2 (not batch-101 WQ which failed on TQ).
-4. **PIVOT: midgame pair only when hand≥opp on WR** — hand gate on open path.
-5. **Halt defense rank-match SWEEP and open trump hoard** — batch-109 closed.
+1. **Accept structural plateau at `f5bb135`** — WR fully mapped; best unkept YB 0.79595.
+2. **Halt throw-in pass variants** — n_table>=3 (WS) and >=4 (YE) both catastrophic.
+3. **Halt total gate widening** — ≤18 inert; ≤16 optimal (batch-104).
+4. **Optional: ABLATE confirm WR minimal stack** — strip hand≥opp pile only if seeking simplification keep.
+5. **Do not pursue defense−4 or strip narrowing** — closed batch-110.
 
 Rules for selecting ideas:
 
@@ -1024,6 +1026,18 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-109 open trump hoard / pile void gate (XZ/YA)
   evidence: XZ deck>=4 trumps>=3 +5 penalty inert; YA void hand-gate inert
+  do not retry unless: —
+
+- direction: COMBO WR+defense rank-match -4 (YB/XW)
+  evidence: dual +0.00054 both seeds; medium 0.79595 reconfirmed; below keep bar and full gate
+  do not retry unless: new defense mechanism unrelated to rank-match bonus
+
+- direction: PIVOT batch-110 strip opp==1 / midgame hand-gate on WR (YC/YD)
+  evidence: YC strip opp==1 −0.015 (opp<=2 load-bearing); YD midgame hand>=opp −0.0005 inert
+  do not retry unless: —
+
+- direction: PIVOT batch-111 throw-in pass / total gate widen (YE/YF)
+  evidence: YE n_table>=4 −0.016; YF total<=18 −0.0006 inert (<=16 optimal)
   do not retry unless: —
 ```
 
@@ -1967,4 +1981,22 @@ date/window: jun22 batch-109 (XW/XZ/YA) medium −4 confirm + attack PIVOTs
 - what changed: defense rank-match −4 documented as top probe; attack trump hoard closed
 - result: f5bb135 unchanged; keep bar still ~0.0041 above XW medium
 - next bias: COMBO WR+def−4 dual; midgame hand gate on open
+```
+
+```text
+date/window: jun22 batch-110 (YB/YC/YD) COMBO dual+medium + attack PIVOTs
+- attempts: 1 dual + 1 medium + 2 quick; 0 keeps
+- bottleneck: YB medium 0.79595 reconfirms XW; YC strip opp==1 −0.015; YD inert
+- what changed: closed defense−4 COMBO path and strip opp==1 on WR; plateau at f5bb135
+- result: f5bb135 unchanged
+- next bias: meta batch-111; new attack timing class or accept plateau
+```
+
+```text
+date/window: jun22 batch-111 (YE/YF) throw-in pass + total gate PIVOT
+- attempts: 2 quick; 0 keeps
+- bottleneck: YE n_table>=4 −0.016; YF total<=18 inert
+- what changed: closed throw-in pass and total gate widen on WR
+- result: f5bb135 unchanged; structural plateau confirmed
+- next bias: meta halt or ABLATE simplification hunt
 ```

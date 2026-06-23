@@ -68,17 +68,19 @@ def run_triage(label: str, stage: str = 'quick') -> tuple[float, float, float]:
     print(out, flush=True)
     if stage == 'dual':
         m0 = re.search(
-            r'Dual seed 0: search=([\d.]+).*B4=([\d.]+)',
+            r'Dual seed 0: search=[\d.]+ .* B4=([\d.]+)',
             out,
         )
         m1 = re.search(
-            r'Dual seed 1: search=([\d.]+).*B4=([\d.]+)',
+            r'Dual seed 1: search=[\d.]+ .* B4=([\d.]+)',
             out,
         )
-        if not m0 or not m1:
+        ms0 = re.search(r'Dual seed 0: search=([\d.]+)', out)
+        ms1 = re.search(r'Dual seed 1: search=([\d.]+)', out)
+        if not m0 or not m1 or not ms0 or not ms1:
             raise RuntimeError(f'{label} dual parse failed')
-        search = (float(m0.group(1)) + float(m1.group(1))) / 2.0
-        b4 = (float(m0.group(2)) + float(m1.group(2))) / 2.0
+        search = (float(ms0.group(1)) + float(ms1.group(1))) / 2.0
+        b4 = (float(m0.group(1)) + float(m1.group(1))) / 2.0
         return b4, search, b4 - 0.00176
     m = re.search(r'Gate 2 search_score=([\d.]+)\s+B4 point_rate=([\d.]+)', out)
     if not m:
