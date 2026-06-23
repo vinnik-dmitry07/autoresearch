@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **deck<=5 sweep** — try `deck<=4` (neutral) and `deck<=3` (AU maybe +0.003); medium gate before full.
-2. **deck<=5 + opp<=5** — hold; do not narrow opp (AS opp<=4 regressed −0.009).
-3. **void pile −8** — keep at −8 (AT −7 slightly worse vs AQ).
-4. **deck<=5 + >=2 trumps for pile dump** — keep one trump for defense in late finish.
-5. **Inverse strip** — when `deck=0` and `opp<=2`, prefer non-trump pile over trump dump.
+1. **Hold `deck<=5`** — sweet spot confirmed; `deck<=3/2` maybe but below full gate; `deck<=1` regresses.
+2. **Dual confirm `deck<=3`** — AW medium +0.003 B4; run `triage.bat dual` before any full on narrow windows.
+3. **Pile dump when `opp<=5` and `deck<=5`** — unchanged; never narrow opp.
+4. **Open strip unchanged** — keep `deck==0`, `opp<=3`, `>=1` trump only.
+5. **Non-finish pile** — test stronger void pile −9 only when `deck>5` (split penalty by game phase).
 
 Rules for selecting ideas:
 
@@ -424,6 +424,18 @@ Append failed idea classes here so they are not retried.
   evidence: exp AS quick B4 −0.009 vs AQ
   do not retry unless: —
 
+- direction: pile dump requires >=2 trumps (pile path only)
+  evidence: exp AX quick B4 −0.010 vs AQ
+  do not retry unless: —
+
+- direction: inverse strip (skip trump dump when deck=0 opp<=2)
+  evidence: exp AY quick B4 −0.002 vs AQ
+  do not retry unless: —
+
+- direction: pile deck<=1
+  evidence: exp BB quick B4 −0.020 vs AQ
+  do not retry unless: —
+
 - direction: pile deck>=9
   evidence: exp Z/Z2 quick worse than deck<=6
   do not retry unless: —
@@ -451,4 +463,13 @@ date/window: jun22 batch-2 (AQ–AV)
 - what changed: exp AQ committed d5bca3c
 - result: B4 0.61938 search 0.77742 (+0.007 B4 vs AD)
 - next bias: refine deck<=5 only; medium gate for AU deck<=3; skip opp narrow
+```
+
+```text
+date/window: jun22 batch-3 (AW–BB)
+- attempts: 5 discards (2 regressions AX/BB, 1 mild AY, 2 maybe AW/BA below gate); 0 keeps
+- bottleneck: deck window asymmetric — narrower than 5 hurts; 3/2 need dual before full
+- what changed: none (best unchanged)
+- result: d5bca3c B4 0.61938 search 0.77742
+- next bias: hold deck<=5; dual for deck<=3; no >=2-trump pile gate
 ```
