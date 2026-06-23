@@ -372,29 +372,29 @@ The sections below are editable by the agent during meta mode.
 
 ## Current best
 
-- Commit: `7912e0c`
-- B4 point_rate: 0.62635
-- Search score: 0.78125
-- Lower CI: 0.62610
+- Commit: `167b02d`
+- B4 point_rate: 0.63676
+- Search score: 0.78941
+- Lower CI: 0.63652
 - Complexity: 100
-- Why it is best: Combo — pair-open only when `deck>=5` (CI axis) + narrow pile trump dump to `deck<=3` (from BC maybe zone); +0.007 B4 vs AQ at full; split 0.502.
+- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2` (was 3); +0.010 B4 vs CQ at full; split 0.481, win 0.418.
 
 ## Open questions
 
-- Which local situations does B4 exploit most? Pair-delay alone was +0.0023 (CI); adding pile `deck<=3` synergizes to +0.007 — likely late midgame trump timing on both open and pile paths.
-- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open + pile finish combo** — defense unchanged; memory still inert (B3vsB2 0.500).
-- Are B1/B0 gains misleading relative to B4? Yes — B1/B0 ~0.947/0.969 flat while B4 moved; search tracks B4.
-- Does complexity reduction improve B4 parity? At complexity 100; combo adds no parameters.
+- Which local situations does B4 exploit most? Open strip opp<=2 synergizes with CQ combo (+0.010) though neutral alone at AQ (BV) — endgame trump timing when opponent nearly empty.
+- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip combo** — defense unchanged; memory inert (B3vsB2 0.500).
+- Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
+- Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
 
 ## Editable research directions
 
 Next 5 experiment ideas:
 
-1. **Hold CQ combo** — pile `deck<=3` + pair `deck>=5` locked; pile<=2/4 and pair>=6/7 all worse on quick.
-2. **Pile opp<=4 + CQ** — test opp narrow on pile path only (AS regressed alone at AQ; retry with pair delay).
-3. **Void open -6 + CQ combo** — void on open path with locked CQ pair/pile windows.
-4. **Pair deck>=5 pile deck<=3 opp<=4** — three-knob only if quick >= +0.003 on two-change first.
-5. **Hold** — no keep without full gate; CQ pile==3 exact regresses −0.061.
+1. **Hold CZ** — CQ + open strip opp<=2 locked; pile opp<=4 regresses with CQ (CW −0.020).
+2. **Open strip opp<=1** — tighten further from CZ (risk AK-like regression; screen on quick).
+3. **Open strip opp<=2 pile opp<=4** — two-change; only if opp<=1 single-axis neutral.
+4. **Void open tweak + CZ** — CX/CY neutral on CQ; skip unless new void mechanism.
+5. **Pair cap / pile deck** — DA/CR regress vs CQ; hold deck<=3 and min+2 pair cap.
 
 Rules for selecting ideas:
 
@@ -515,6 +515,18 @@ Append failed idea classes here so they are not retried.
 - direction: pile deck==3 only (exact)
   evidence: exp CU quick B4 0.565 (−0.061 vs CQ)
   do not retry unless: —
+
+- direction: pile opp<=4 + CQ combo (pile path)
+  evidence: exp CW quick B4 0.606 (−0.020 vs CQ)
+  do not retry unless: open-path opp tweak only (not pile)
+
+- direction: void open -6/-7 + CQ
+  evidence: exp CX/CY quick neutral vs CQ
+  do not retry unless: —
+
+- direction: pair cap min+1 + CQ
+  evidence: exp DA quick −0.002 vs CQ
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -629,4 +641,13 @@ date/window: jun22 batch-12 (CR–CV)
 - what changed: analysis.ipynb nbformat fixed; charts refreshed (progress/occam/score_alignment)
 - result: 7912e0c B4 0.62635 search 0.78125 unchanged
 - next bias: hold CQ; test pile opp narrow + CQ; avoid exact deck windows
+```
+
+```text
+date/window: jun22 batch-13 (CW–DA)
+- attempts: 3 discards (CW −0.020, CX/CY/DA mild), 1 keep CZ full; escalated on +0.010 B4 quick
+- bottleneck: open strip opp<=2 synergizes with CQ; pile opp<=4 anti-synergy; void neutral
+- what changed: exp CZ committed 167b02d; B3vsB2 0.500; split 0.481 win 0.418
+- result: B4 0.63676 search 0.78941 (+0.010 B4 vs CQ)
+- next bias: tighten open strip opp<=1 cautiously; hold pile deck<=3 pair>=5
 ```
