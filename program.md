@@ -441,9 +441,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **meta / halt**
-- Since: batch-112 — WR ABLATE confirms all major components load-bearing; void trim −0.0006 only optional cut
-- Next batch type: halt unless qualitatively new mechanism; no further WR knob/ABLATE batches
+- Mode: **halt (terminal plateau)**
+- Since: batch-113 — new mechanism class (suit geometry, pile depth, tight-beat, open pass) all inert; WR dual quick stable
+- Next batch type: none unless human adds new hypothesis; post-keep memory ablation only after a keep
 - After next keep: **EXPLOIT** + post-keep memory ablation
 
 ## Open questions
@@ -464,6 +464,7 @@ The sections below are editable by the agent during meta mode.
 - **WR PIVOT (batch-110):** YB dual agrees +0.00054 quick, medium 0.79595 reconfirms XW; YC strip opp==1 −0.015 (load-bearing opp≤2); YD midgame hand-gate −0.0005 inert.
 - **WR PIVOT (batch-111):** YE pass n_table>=4 −0.016 (throw-in load-bearing); YF total≤18 −0.0006 inert (confirms ≤16 optimal).
 - **WR ABLATE (batch-112):** pile trump −0.039; midgame pair −0.011; deck≤2 pair −0.012; strip −0.014; void penalty −0.0006 mild. **Stack minimal** — no simplification keep.
+- **WR PIVOT (batch-113):** shortest-suit open −0.0003; pile depth / tight-beat / open pass inert. **Terminal plateau** — accept `f5bb135`.
 
 ## Editable research directions
 
