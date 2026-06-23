@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-27 ABLATE — CZ stack confirmed minimal; pile dump −0.059 / endgame pair −0.010 / midgame pair −0.005 at quick; void bonus −0.001 (removable but not free)
-- Next batch type: two orthogonal changes on new axis; or void-stripped base + one timing tweak
+- Mode: **PIVOT**
+- Since: batch-28 — COMBO batch all discard; FZ strip opp<=3 −0.011 reconfirms opp<=2; no combo lift
+- Next batch type: qualitatively new sort keys / battle-state triggers (not void/strip/pile window combos)
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 28 — two changes each):
+Next 5 experiment ideas (**PIVOT** batch 29 — one change, new mechanisms):
 
-1. **Void-stripped + pair-delay** — remove void bonus entirely (FQ) + pair-open only `deck>=6` (hold CZ pile/strip).
-2. **Void-stripped + narrow pile** — open-only void (FS) + pile dump only `deck<=2` (test if pile window can tighten with void stripped).
-3. **Split pressure** — pile pass when `split would rise`: skip pile if `opp>=4` and `deck>=4` AND best card is non-trump rank 8+ (high-rank pile guard combo).
-4. **Open rank match** — bonus −6 on open when card rank on table + keep CZ pile/strip windows unchanged.
-5. **Endgame strip earlier** — strip when `deck==0 opp<=3` (widen from 2) + hold pile `deck<=3` (retest synergy class after ABLATE map locked).
+1. **Longest-suit open** — on initial attack, prefer lowest card from the non-trump suit with most cards in hand.
+2. **Pile pass on table trump** — `AttackDone` on pile if any uncovered attack card on table is trump.
+3. **Shortest-suit pile** — on pile, prefer lowest card from shortest non-trump suit in hand (new tie-break in pick).
+4. **Open trump when hand is trump-only** — if no non-trump in hand at open, play lowest trump (any phase).
+5. **Pile only if opp hand <= deck** — skip pile when `opp_hand_count > deck_count` (relative pressure gate).
 
 Rules for selecting ideas:
 
@@ -724,6 +724,10 @@ Append failed idea classes here so they are not retried.
 - direction: ABLATE batch-27 simplification (FQ-FU)
   evidence: FQ void remove −0.001; FR midgame pair −0.005; FS open-only void neutral; FT endgame pair −0.010; FU pile dump −0.059 — CZ stack minimal
   do not retry unless: —
+
+- direction: COMBO batch-28 (FV-FZ)
+  evidence: FV void+pair>=6 −0.001; FW/FX/FY neutral; FZ strip opp<=3 −0.011 (reconfirms opp<=2)
+  do not retry unless: new second axis with quick >= +0.003
 ```
 
 ## Loop notes
@@ -982,4 +986,13 @@ date/window: jun22 batch-27 (FQ–FU) ABLATE
 - what changed: ablation map refreshed at quick — pile −0.059 / endgame pair −0.010 / midgame pair −0.005 / void −0.001
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: COMBO batch-28 — void-stripped base + timing tweak; or rank-match open combo
+```
+
+```text
+date/window: jun22 batch-28 (FV–FZ) COMBO
+- attempts: 5 discards (1 regression FZ −0.011, 4 neutral/mild); 0 full evals; 0 keeps
+- bottleneck: 4th zero-keep batch; COMBO void/strip/pile combos flat — CZ windows locked
+- what changed: FZ reconfirms open strip opp<=2 optimal vs <=3
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: PIVOT batch-29 — suit-length sort keys, table-trump pile gate, relative pressure
 ```
