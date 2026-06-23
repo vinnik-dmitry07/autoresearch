@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **ABLATE**
-- Since: batch-26 — two PIVOT batches (25-26) all neutral except FL −0.004; attack-timing pivots invisible at quick
-- Next batch type: simplification / remove one mechanism; confirm load-bearing or find simpler equal score
+- Mode: **COMBO**
+- Since: batch-27 ABLATE — CZ stack confirmed minimal; pile dump −0.059 / endgame pair −0.010 / midgame pair −0.005 at quick; void bonus −0.001 (removable but not free)
+- Next batch type: two orthogonal changes on new axis; or void-stripped base + one timing tweak
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**ABLATE** batch 27 — disable one mechanism each):
+Next 5 experiment ideas (**COMBO** batch 28 — two changes each):
 
-1. **Remove void open bonus** — drop void-suit −5 entirely; test if pile void −8 alone suffices.
-2. **Remove midgame pair-open** — deck>=5 pair loop off; keep endgame pair + strip (DZ ablation reconfirm at quick).
-3. **Remove pile void bonus** — void −5 open only, pile void −8 removed (mirror of FO).
-4. **Remove endgame pair promotion** — deck==0 singleton→pair search off; keep strip fallback only.
-5. **Remove finish pile trump dump** — deck<=3 pile path off; keep open strip (DR ablation reconfirm at quick).
+1. **Void-stripped + pair-delay** — remove void bonus entirely (FQ) + pair-open only `deck>=6` (hold CZ pile/strip).
+2. **Void-stripped + narrow pile** — open-only void (FS) + pile dump only `deck<=2` (test if pile window can tighten with void stripped).
+3. **Split pressure** — pile pass when `split would rise`: skip pile if `opp>=4` and `deck>=4` AND best card is non-trump rank 8+ (high-rank pile guard combo).
+4. **Open rank match** — bonus −6 on open when card rank on table + keep CZ pile/strip windows unchanged.
+5. **Endgame strip earlier** — strip when `deck==0 opp<=3` (widen from 2) + hold pile `deck<=3` (retest synergy class after ABLATE map locked).
 
 Rules for selecting ideas:
 
@@ -720,6 +720,10 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-26 attack geometry (FL-FP)
   evidence: FL n_table>=4 pile pass −0.004 B4; FM-FP all quick 0.63607 neutral
   do not retry unless: —
+
+- direction: ABLATE batch-27 simplification (FQ-FU)
+  evidence: FQ void remove −0.001; FR midgame pair −0.005; FS open-only void neutral; FT endgame pair −0.010; FU pile dump −0.059 — CZ stack minimal
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -969,4 +973,13 @@ date/window: jun22 batch-26 (FL–FP) PIVOT
 - what changed: none on best; search mode → ABLATE for batch 27
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: ABLATE batch — remove void/pair/pile/strip components one at a time; look for simplification wins
+```
+
+```text
+date/window: jun22 batch-27 (FQ–FU) ABLATE
+- attempts: 5 discards (3 regressions FR/FT/FU confirm load-bearing; FQ/FS mild/neutral); 0 full evals; 0 keeps
+- bottleneck: plateau trigger (batches 25-27 zero keeps); CZ stack is minimal — no simplification win
+- what changed: ablation map refreshed at quick — pile −0.059 / endgame pair −0.010 / midgame pair −0.005 / void −0.001
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: COMBO batch-28 — void-stripped base + timing tweak; or rank-match open combo
 ```
