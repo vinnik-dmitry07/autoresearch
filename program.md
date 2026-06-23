@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold CZ** — CQ + open strip opp<=2 locked; pile opp<=4 regresses with CQ (CW −0.020).
-2. **Open strip opp<=1** — tighten further from CZ (risk AK-like regression; screen on quick).
-3. **Open strip opp<=2 pile opp<=4** — two-change; only if opp<=1 single-axis neutral.
-4. **Void open tweak + CZ** — CX/CY neutral on CQ; skip unless new void mechanism.
-5. **Pair cap / pile deck** — DA/CR regress vs CQ; hold deck<=3 and min+2 pair cap.
+1. **Hold CZ** — open strip opp<=2 is sharp optimum (DB −0.012, DC −0.011); pile deck<=3 locked.
+2. **Pile deck<=2** — DD −0.001 vs CZ; closed unless combo with new axis.
+3. **Split→win via pair cap** — DF min+3 neutral (+0.0006 medium); split drops to 0.456 but B4 flat.
+4. **New combo axis** — CZ three-window stack saturated; need qualitatively new mechanism for next +0.005 keep.
+5. **Avoid open/pile opp on pile path** — CW showed pile opp narrow anti-synergy; open-path opp only.
 
 Rules for selecting ideas:
 
@@ -527,6 +527,14 @@ Append failed idea classes here so they are not retried.
 - direction: pair cap min+1 + CQ
   evidence: exp DA quick −0.002 vs CQ
   do not retry unless: —
+
+- direction: open strip opp<=1 / opp<=3 vs CZ
+  evidence: exp DB/DC quick −0.012/−0.011 vs CZ; opp<=2 optimal
+  do not retry unless: —
+
+- direction: pile deck<=4 vs CZ / pair min+3 vs CZ
+  evidence: exp DE −0.006; DF neutral (+0.0006 medium)
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -650,4 +658,13 @@ date/window: jun22 batch-13 (CW–DA)
 - what changed: exp CZ committed 167b02d; B3vsB2 0.500; split 0.481 win 0.418
 - result: B4 0.63676 search 0.78941 (+0.010 B4 vs CQ)
 - next bias: tighten open strip opp<=1 cautiously; hold pile deck<=3 pair>=5
+```
+
+```text
+date/window: jun22 batch-14 (DB–DF)
+- attempts: 5 discards (2 regressions DB/DC open opp, 2 mild DD/DE, 1 neutral DF); 0 full evals; 0 keeps
+- bottleneck: CZ local optimum — open strip opp<=2 sharp; pile<=3 beats <=2/4; pair min+3 flat
+- what changed: closed open opp sweep around 2; pile deck sweep around 3 at CZ baseline
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: hold CZ stack; need new axis for next keep (+0.005 gate)
 ```
