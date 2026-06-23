@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-80 — SD COMBOs all below keep bar; SF full = KZ tradeoff (B4 +0.0066 search +0.0039); SJ confirms deck==2 pair is SD signal
-- Next batch type: PIVOT search-lift outside pair-cap/pile/void class on SD base; no SF/KZ re-full
+- Mode: **ABLATE**
+- Since: batch-81 meta-review — 3 consecutive zero-keep batches (79–81); SD search-lift PIVOTs exhausted; SL full search +0.0041 (below SD)
+- Next batch type: ABLATE SD stack decomposition (pair deck==2 vs deck==1 vs strip vs pile vs midgame pair); map load-bearing parts before new PIVOT
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-80):** 51+ zero-keep batches; SD search ceiling ~0.7936; pair `min+3` lifts B4 not search; deck==2 pair-promotion is the SD lift component.
+- **Plateau (batch-81):** 52+ zero-keep batches; SD search ceiling ~0.7936 confirmed; void remove (SL) ties at medium, regresses at full; midgame pair, unbounded endgame pair search, pile all load-bearing on SD.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 81 — SD base, search-lift outside pair-cap/pile/void):
+Next 5 experiment ideas (**ABLATE** batch 82 — SD stack decomposition):
 
-1. **SD midgame pair-off** — disable `deck>=5` pair loop; keep endgame pair `deck<=2` only.
-2. **SD void bonus remove** — set void suit penalty to 0 globally; test if B1/B0 drag hides B4 lift.
-3. **SD pile pass when hand has 1 card** — skip trump pile dump on tiny hand.
-4. **SD endgame pair cap min+1** — tighten pair search within endgame block only (not midgame).
-5. **SD ablate pile trump path** — disable pile trump dump; confirm pile still load-bearing on SD.
+1. **SD ablate deck==2 pair only** — pair-promotion when `deck==2` disabled; keep `deck<=1`.
+2. **SD ablate deck==1 pair only** — pair when `deck==1` disabled; keep `deck==0` + `deck==2`.
+3. **SD ablate midgame pair** — SK reconfirm on SD base at medium if regression ≥ −0.003.
+4. **SD ablate strip** — SH reconfirm at medium.
+5. **SD ablate pile trump** — SO reconfirm at medium.
 
 Rules for selecting ideas:
 
@@ -898,6 +898,10 @@ Append failed idea classes here so they are not retried.
 - direction: EXPLOIT batch-80 SD COMBOs (SF–SJ)
   evidence: SF/KZ-class min+3 full B4 0.64337 search 0.79335; SG/SI flat vs SD; SH strip ablate −0.003; SJ skip deck==2 pair → neutral (deck==2 is lift)
   do not retry unless: search-lift axis outside pair-cap/pile/void-on-SD class
+
+- direction: PIVOT batch-81 SD search-lift (SK–SO)
+  evidence: SK midgame pair-off +0.002 search; SL void remove medium ties SD full search, full +0.0041; SM pile pass +0.003; SN endgame cap min+1 −0.011; SO pile off −0.052
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1579,4 +1583,13 @@ date/window: jun22 batch-80 (SF–SJ) EXPLOIT SD COMBOs
 - what changed: closed SD+min+3, void/pile deck<=2 COMBOs; SD search ceiling ~0.7936 documented
 - result: 167b02d unchanged
 - next bias: PIVOT batch-81 search-lift outside pair-cap class on SD base
+```
+
+```text
+date/window: jun22 batch-81 (SK–SO) PIVOT SD search-lift
+- attempts: 5 quick + SL medium/full; 0 keeps; 1 full eval
+- bottleneck: SL void remove medium search +0.0042 ties SD; full +0.0041 below keep bar; SN/SO regress −0.011/−0.052
+- what changed: closed void remove, endgame cap min+1, pile pass hand==1 on SD; meta plateau trigger (3 batches 0 keeps)
+- result: 167b02d unchanged
+- next bias: ABLATE batch-82 SD stack decomposition (deck==1 vs deck==2 pair)
 ```
