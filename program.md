@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-42 PIVOT — defense/pile/strip-split all flat (IY −0.003); HD sub-gate persists; attack-side exhausted except HD one-liner
-- Next batch type: COMBO HD strip + B1/B0 ladder boosters or CQ-stack replay on HD base
+- Mode: **EXPLOIT**
+- Since: batch-43 — HD dual/medium stable (+0.006 B4, +0.004 search); COMBO void/pile/high-trump no beat; gap to keep bar ~0.0008 search
+- Next batch type: max 3 HD refinements or accept sub-gate; consider full re-run only on new quick >= +0.006
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 43 — HD + ladder boost hunt):
+Next 5 experiment ideas (**EXPLOIT** batch 44 — HD sub-gate final pass):
 
-1. **HD + void remove** — simplification retest (HP +0.0057 quick).
-2. **HD + pile deck<=5** — AQ-class widen on HD base (HY neutral).
-3. **HD + strip opp<=2 + pile opp<=5** — full CZ stack with deck<=2 strip (should equal HD).
-4. **HD medium + dual** — reconfirm sub-gate before new COMBO.
-5. **HD + open strip highest trump** — IT neutral alone; combo retest.
+1. **HD full re-run** — variance check only if medium search ≥ +0.0045 (currently +0.0042).
+2. **HD strip deck<=2 opp<=2** — confirm no opp window left (HM was −0.005).
+3. **HD manifest-only** — update manifest if HD ever kept; else skip.
+4. **Stop HD loop** — if batch 44 flat, meta pivot to new research axis (memory-free defense rank cap).
+5. **Post-keep prep** — document HD as `probe HD` commit candidate if full clears keep bar.
 
 Rules for selecting ideas:
 
@@ -1169,4 +1169,13 @@ date/window: jun22 batch-42 (IR–JA) PIVOT
 - what changed: closed defense take, pile deck==0, high-trump deck==1, n_table pile cap, split pair/strip
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: COMBO batch-43 HD + ladder boost hunt
+```
+
+```text
+date/window: jun22 batch-43 (HD/JB–JD) COMBO
+- attempts: dual + 3 b4 + HD medium; 0 keeps
+- bottleneck: HD stable sub-gate; JB/JD ~HD; JC pile deck<=5 −0.0004; search gap ~0.0008 below keep bar
+- what changed: closed HD COMBO hunt; dual agrees +0.0058
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: EXPLOIT batch-44 HD final pass or axis pivot
 ```
