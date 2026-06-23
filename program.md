@@ -372,29 +372,29 @@ The sections below are editable by the agent during meta mode.
 
 ## Current best
 
-- Commit: `d5bca3c`
-- B4 point_rate: 0.61938
-- Search score: 0.77742
-- Lower CI: 0.61913
+- Commit: `7912e0c`
+- B4 point_rate: 0.62635
+- Search score: 0.78125
+- Lower CI: 0.62610
 - Complexity: 100
-- Why it is best: Narrowed finish pile trump dump window to `deck<=5` (was 6); +0.007 B4 vs AD. Pile-only; open strip unchanged.
+- Why it is best: Combo — pair-open only when `deck>=5` (CI axis) + narrow pile trump dump to `deck<=3` (from BC maybe zone); +0.007 B4 vs AQ at full; split 0.502.
 
 ## Open questions
 
-- Which local situations does B4 exploit most? Likely midgame when B2 opens pairs too early or hoards trumps before finish window — open-strip widening regressed sharply (AK). **Full-eval W/L/S at AQ:** win=0.379 loss=0.113 split=0.509 — ~51% split games; next gains need split→win via attack timing, not defense.
-- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack/finish + pair timing** — pile trump dump axis drove keeps since P; pair-delay `deck>=5` confirmed at full (+0.0023 B4) but below keep gate (+0.005).
-- Are B1/B0 gains misleading relative to B4? Yes — B1/B0 ~0.945/0.969 flat while B4 moved 0.49→0.61; search_score tracks B4 for keeps.
-- Does complexity reduction improve B4 parity? Already at complexity 100 (H1-only); further simplification neutral; widening open strip hurts.
+- Which local situations does B4 exploit most? Pair-delay alone was +0.0023 (CI); adding pile `deck<=3` synergizes to +0.007 — likely late midgame trump timing on both open and pile paths.
+- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open + pile finish combo** — defense unchanged; memory still inert (B3vsB2 0.500).
+- Are B1/B0 gains misleading relative to B4? Yes — B1/B0 ~0.947/0.969 flat while B4 moved; search tracks B4.
+- Does complexity reduction improve B4 parity? At complexity 100; combo adds no parameters.
 
 ## Editable research directions
 
 Next 5 experiment ideas:
 
-1. **Hold AQ** — pair-delay `deck>=5` full CI confirms +0.0023 B4; do not keep without search +0.005 gate.
-2. **New axis required** — pair-delay cluster closed at full sub-gate; endgame pair promotion required (CK −0.008 if removed).
-3. **Defense untouched** — all recent signal is attack open timing; avoid defense/take retries.
-4. **Combo only after single-axis** — if retrying pair-delay, pair with pile finish tweak only (two-change, last resort).
-5. **Ablation refresh** — after any future keep, confirm B3vsB2 still 0.500 (memory inert).
+1. **Hold CQ baseline** — combo locked; pile `deck<=3` + pair `deck>=5`.
+2. **Pile deck<=2** — narrow pile further (BB regressed deck<=1; test deck<=2 only with CQ pair delay).
+3. **Pile deck<=4 + pair deck>=5** — CP was +0.002 alone; confirm CQ beats CP at medium.
+4. **Pair deck>=6 + pile deck<=3** — swap pair threshold with pile combo fixed.
+5. **Refresh analysis** — run `scripts\run_analysis.bat` after keep row logged.
 
 Rules for selecting ideas:
 
@@ -603,4 +603,13 @@ date/window: jun22 batch-10 (CI–CO)
 - what changed: closed pair-delay at full; endgame pair promotion required; CD deck>=5 wins tie-break
 - result: d5bca3c B4 0.61938 search 0.77742 unchanged
 - next bias: need qualitatively new axis; pair-delay alone insufficient for keep
+```
+
+```text
+date/window: jun22 batch-11 (CP–CQ)
+- attempts: 1 discard CP (+0.002 quick), 1 keep CQ full; escalated quick→medium→dual→full
+- bottleneck: single-axis pair-delay capped at +0.0023; pile deck<=3 combo unlocks +0.007 B4
+- what changed: exp CQ committed 7912e0c; B3vsB2 0.500 confirmed
+- result: B4 0.62635 search 0.78125 (+0.007 B4 vs AQ); W/L/S win 0.392 loss 0.106 split 0.502
+- next bias: refine pile deck window around 3; hold pair deck>=5; avoid defense axes
 ```
