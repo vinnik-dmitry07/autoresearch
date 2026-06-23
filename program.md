@@ -467,13 +467,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**meta halt** batch 113):
+Next 5 experiment ideas (**halt — terminal plateau**):
 
-1. **Accept structural plateau at `f5bb135`** — WR stack minimal (batch-112 ABLATE); best unkept YB 0.79595.
-2. **Halt WR ABLATE/PIVOT/SWEEP** — all major components load-bearing; void trim −0.0006 not worth keep.
-3. **Do not full-eval YB/XW** — defense−4 closed at 0.79595 medium.
-4. **Optional future: qualitatively new class** — e.g. defense take threshold, throw-in rank geometry (only if new mechanism hypothesis).
-5. **Post-keep only:** B3 vs B2 memory ablation via `post_keep.bat`.
+1. **No further batches** without a new mechanism hypothesis from human review.
+2. **Locked best `f5bb135` (WR)** — full search 0.79506; best unkept YB 0.79595 medium (+0.00089).
+3. **Summary for paper/README:** memoryless local heuristics reach ~0.645 B4 vs memory-counting B4; WR stack is minimal and mapped.
+4. **Optional manual follow-up:** B3 vs B2 memory ablation on WR (`post_keep.bat`) — only meaningful after accepting WR as final keep candidate.
+5. **Do not retry:** attack knobs, defense rank-match, throw-in passes, ABLATE components — all closed batches 102–113.
 
 Rules for selecting ideas:
 
@@ -1044,6 +1044,10 @@ Append failed idea classes here so they are not retried.
 - direction: ABLATE batch-112 WR stack decomposition (YG–YK)
   evidence: pile trump −0.039; midgame pair −0.011; deck<=2 pair −0.012; strip −0.014; void −0.0006 mild
   do not retry unless: —
+
+- direction: PIVOT batch-113 new mechanism class (YL–YO)
+  evidence: shortest-suit −0.0003; pile depth / tight-beat / open pass inert at quick
+  do not retry unless: qualitatively different local feature hypothesis
 ```
 
 ## Loop notes
@@ -2013,4 +2017,13 @@ date/window: jun22 batch-112 (YG–YK) ABLATE WR stack minimal confirm
 - what changed: WR stack declared minimal; halt further knob search on attack path
 - result: f5bb135 unchanged
 - next bias: meta halt; accept plateau unless new mechanism class
+```
+
+```text
+date/window: jun22 batch-113 (YP/YL–YO) dual reconfirm + new mechanism PIVOT
+- attempts: 1 dual + 4 quick; 0 keeps
+- bottleneck: all new-class probes inert (±0.0006); dual quick 0.79451 stable vs full 0.79506
+- what changed: closed suit geometry, pile depth, defense tight-beat, open pass; terminal plateau
+- result: f5bb135 unchanged
+- next bias: halt loop; human review or accept WR as final challenger
 ```
