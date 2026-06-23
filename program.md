@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **COMBO**
-- Since: batch-38 — all deck<=2 COMBOs sub-gate; HR pair>=6 full B4 +0.0063 search +0.0041; HD single-axis still best
-- Next batch type: COMBO deck<=2 strip + pile/pair/strip synergy (historical keep pattern: AQ→CQ→CZ)
+- Mode: **ABLATE**
+- Since: batch-39 — pile COMBOs on HD all regress/neutral; HD dual agrees +0.0058; 13+ zero-keep batches on strip axis
+- Next batch type: ABLATE HD strip components (deck==1 drag, deck==2-only vs <=2, pile/pair off on HD base)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO** batch 39 — deck<=2 strip + CZ-stack synergy):
+Next 5 experiment ideas (**ABLATE** batch 40 — HD strip load-bearing parts):
 
-1. **deck<=2 + pile deck<=3 opp<=4** — widen pile vs HR/HQ (AC/AD class on HD base).
-2. **deck<=2 + open strip opp<=2 unchanged** — retest HD alone at dual seed (reconfirm).
-3. **deck<=2 + pile deck<=4** — pile widen on HD (watch CS/DE regression class).
-4. **deck<=2 + pair deck>=5 unchanged** — HD + CZ pair (should match HR direction).
-5. **Full re-run HD** — only if dual seed disagrees; else skip redundant full.
+1. **HD minus deck==1** — strip `deck==0|2` only (HO retest at medium if b4 ≥ +0.005).
+2. **HD minus deck==0 strip** — strip `deck==1|2` only (HL class; expect regress).
+3. **HD minus pile dump** — deck<=2 strip + pile off (DR class on HD base).
+4. **HD minus pair-open** — deck<=2 strip + pair deck>=6 (FR/DZ class).
+5. **HD minus strip entirely** — revert to CQ (confirm +0.010 gap vs CZ).
 
 Rules for selecting ideas:
 
@@ -764,6 +764,10 @@ Append failed idea classes here so they are not retried.
 - direction: strip deck 0|2 only (HO)
   evidence: full B4 +0.0057 search +0.0039 — strictly worse than HD deck<=2 at full
   do not retry unless: combined with second axis
+
+- direction: COMBO batch-39 pile on HD (HT–HZ)
+  evidence: HT opp<=4 −0.008; HZ opp<=3 −0.021; HV/HY neutral; pile+strip no synergy
+  do not retry unless: new non-pile second axis
 ```
 
 ## Loop notes
@@ -1121,4 +1125,13 @@ date/window: jun22 batch-38 (HP–HS) COMBO
 - what changed: void/pile/pair COMBOs all ~HD level; no synergy beat single-axis HD
 - result: 167b02d B4 0.63676 search 0.78941 unchanged; HD remains top probe
 - next bias: COMBO batch-39 deck<=2 + pile widen synergy
+```
+
+```text
+date/window: jun22 batch-39 (HT–IE) COMBO
+- attempts: 5 b4 + HU dual + IE medium; 0 keeps
+- bottleneck: pile COMBOs regress (HT −0.008, HZ −0.021); HV/HY neutral; HD dual +0.0058 both seeds
+- what changed: closed pile+strip COMBO axis; IE additive deck==2 = HO class (+0.0051)
+- result: 167b02d B4 0.63676 search 0.78941 unchanged; HD single-axis still top probe
+- next bias: ABLATE batch-40 HD strip component map
 ```
