@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold CZ stack** — all single-knob deltas within ±0.001 except anti-synergy axes.
-2. **No pile opp narrow** — DG pile opp<=2 −0.044; CW pile opp<=4 −0.020; pile stays opp<=5.
-3. **No strip trump gates** — DJ >=2 trumps −0.009; keep >=1 trump on strip.
-4. **Void global on CZ** — DH void pile -9 neutral; skip void unless combo hypothesis.
-5. **Qualitative new axis** — CZ saturated; consider simplification (drop endgame pair loop?) at risk CK −0.008.
+1. **CZ component ablations** — skip pile dump / skip endgame strip to locate marginal value.
+2. **Void pressure on open** — stronger void penalty on initial attack (not pile path).
+3. **Hold CZ gates** — pile opp<=5, strip opp<=2, pair deck>=5, pile deck<=3.
+4. **Midgame pair timing** — opp-hand or deck upper bound gates (not pair cap).
+5. **Defense axis (last resort)** — only if ablations flat; rational take unchanged so far.
 
 Rules for selecting ideas:
 
@@ -547,6 +547,22 @@ Append failed idea classes here so they are not retried.
 - direction: void pile -9 / open strip high trump + CZ
   evidence: exp DH/DL neutral quick
   do not retry unless: —
+
+- direction: endgame deck==0 without singleton gate
+  evidence: exp DM quick +0.00005 medium +0.001 B4; below escalate/keep gates
+  do not retry unless: paired with second axis showing >= +0.003 quick
+
+- direction: skip midgame pair-open / skip endgame pair promotion on CZ
+  evidence: exp DN/DO quick neutral −0.0007 (pair loop inert at quick resolution on CZ)
+  do not retry unless: full ablation shows >= +0.005 B4 (unlikely)
+
+- direction: open strip opp==1 on CZ
+  evidence: exp DP quick −0.012 B4 (same class as DB opp<=1)
+  do not retry unless: —
+
+- direction: attack trump penalty +95 on CZ
+  evidence: exp DQ quick neutral vs +100
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -688,4 +704,13 @@ date/window: jun22 batch-15 (DG–DL)
 - what changed: closed pile opp<=2 on pile path; strip trump count; pair deck>=4 on CZ
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: hold CZ; no pile opp tweaks; need qualitatively new mechanism
+```
+
+```text
+date/window: jun22 batch-16 (DM–DQ)
+- attempts: 5 discards (1 regression DP −0.012, 1 maybe DM +0.001 medium, 3 neutral); 0 full evals; 0 keeps
+- bottleneck: CZ simplifications inert at quick; singleton gate not binding; strip opp==1 re-confirms opp<=2
+- what changed: closed endgame singleton / pair-skip / trump+95 axes on CZ; DM medium +0.001 below gate
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: CZ component ablations (pile dump vs endgame strip); void open pressure; midgame opp gate
 ```
