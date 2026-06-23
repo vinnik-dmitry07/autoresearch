@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **TQ** SD + deck==2 pair when total≤16 — medium search **0.79376 (+0.0044)**, full **0.79368 (+0.0043)** / B4 0.64332; ~0.0007 below keep bar. exp **SD** full search 0.79358 (+0.0042). **Ablation (batch-82):** deck==2 pair = entire lift; deck==1 inert.
+- **Top probe (unkept):** exp **TQ/TS** total≤16–17 + deck==2 pair — medium search **0.79376 (+0.00435)**, full **0.79368 (+0.0043)**; ~0.00065 below keep bar. **SD** full +0.0042.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-86 — TQ total≤16 medium search +0.0044 beats SD +0.0042; full +0.0043 still below keep bar
-- Next batch type: EXPLOIT fine SWEEP total threshold 14–18 around TQ peak; dual on TQ medium
+- Mode: **COMBO**
+- Since: batch-87 — total threshold 15–17 saturated at medium 0.79376; TU pile COMBO flat; dual agrees
+- Next batch type: COMBO search-lift on TQ base (total≤16); no total-threshold re-sweeps
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-86):** TQ total≤16 best unkept (+0.0043 full search); lift requires total>10 at deck==2 (TM=SD, TH/TN/TO neutral).
+- **Plateau (batch-87):** total≤15–17 all medium search 0.79373–0.79376; structural ceiling ~0.00065 below keep bar.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT** batch 87 — total threshold fine sweep around TQ):
+Next 5 experiment ideas (**COMBO** batch 88 — TQ base total≤16, search-lift second axis):
 
-1. **total ≤ 15** — between TP (+0.0038) and TQ (+0.0044 medium).
-2. **total ≤ 17** — between TQ quick and unconditional SD.
-3. **total ≤ 18** — upper bound probe.
-4. **TQ dual medium** — two-seed confirm on total≤16.
-5. **total ≤ 16 + pile deck≤2** — COMBO best total gate with batch-85 TK.
+1. **TQ + pair cap min+3 midgame** — SF-class on TQ base.
+2. **TQ + void remove** — SL-class on TQ base.
+3. **TQ + pile deck<=2** — TU reconfirm at medium.
+4. **TQ ablate midgame pair** — SR on TQ base.
+5. **TQ total<=16 dual + medium seed 1** — full dual ladder if quick agrees.
 
 Rules for selecting ideas:
 
@@ -922,6 +922,10 @@ Append failed idea classes here so they are not retried.
 - direction: SWEEP batch-86 total threshold (TM–TQ)
   evidence: TM total>10 = SD; TN/TO neutral; TP +0.0038; TQ medium +0.0044 full +0.0043 — best unkept; lift needs total>10
   do not retry unless: EXPLOIT fine sweep 14–18 on TQ peak
+
+- direction: EXPLOIT batch-87 fine total threshold (TR–TV)
+  evidence: TR/TR medium 0.79373; TS/TQ medium 0.79376 tie; TT +0.0038; TU flat; TV dual agrees
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1657,4 +1661,13 @@ date/window: jun22 batch-86 (TM–TQ) SWEEP total threshold
 - what changed: TM total>10 = SD; lift requires total>10 at deck==2; TQ beats SD at medium
 - result: 167b02d unchanged
 - next bias: EXPLOIT batch-87 fine total threshold 14–18 + TQ dual
+```
+
+```text
+date/window: jun22 batch-87 (TR–TV) EXPLOIT fine total threshold
+- attempts: 4 quick + TV dual + TR/TS/TQ medium; 0 keeps
+- bottleneck: TS/TQ medium search 0.79376 (+0.00435) tie peak; TR 0.79373; TU COMBO flat
+- what changed: closed total threshold 14–18; ceiling ~0.00065 below keep bar
+- result: 167b02d unchanged
+- next bias: COMBO batch-88 search-lift on TQ base
 ```
