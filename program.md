@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLORE**
-- Since: batch-90 — throw-in/pass PIVOT all neutral (UI/UK/UL) or regress (UJ −0.012, UM −0.0026); pile trump deck<=3 load-bearing
-- Next batch type: EXPLORE rank/suit structure outside timing (e.g. defend rank tie-break, throw-in rank ordering); no throw-in pass re-runs
+- Mode: **SWEEP**
+- Since: batch-92 — trump>=1 and strip opp<=2 load-bearing (UX/UY/UZ/VA regress); rank/ordering + hand guards closed
+- Next batch type: SWEEP pile `opp` threshold and `deck` window on CZ; no trump-count or strip-opp re-tweaks
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-89):** TQ medium 0.79376 stable ceiling; 60+ zero-keep batches; keep bar needs +0.005 search (0.79441).
+- **Plateau (batch-92):** CZ stack locally optimal; TQ unkept ceiling 0.79376 medium; 62+ zero-keep batches.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLORE** batch 91 — rank/ordering outside timing):
+Next 5 experiment ideas (**SWEEP** batch 93 — pile opp threshold on CZ):
 
-1. **Throw-in prefer higher non-trump rank** — invert pile dump to shed high junk first.
-2. **Defense prefer matching suit over rank** — tie-break non-trump cover by suit balance.
-3. **Open prefer suit with most cards** — break ties in lowest-non-trump selection.
-4. **Void bonus stronger on open only** — increase open-phase void penalty vs pile.
-5. **AttackDone when throw-in rank > mnt+4** — cap throw-in depth.
+1. **Pile trump opp<=3** — tighten from <=5.
+2. **Pile trump opp<=4** — intermediate cell.
+3. **Pile trump opp<=6** — widen (prior regress but reconfirm).
+4. **Pile trump opp<=7** — upper bound probe.
+5. **Pile trump opp<=5 deck<=2** — narrow deck window at best opp gate.
 
 Rules for selecting ideas:
 
@@ -937,6 +937,14 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-90 throw-in/pass (UI–UM)
   evidence: UI/UK/UL neutral; UJ sole-trump pass −0.012; UM n_table>=5 take −0.0026
+  do not retry unless: —
+
+- direction: EXPLORE batch-91 rank/ordering (UN–UR)
+  evidence: UN/UO/UQ neutral; UP −0.00015; UR throw-in cap −0.019
+  do not retry unless: —
+
+- direction: PIVOT batch-92 trump/hand guards (UX–VB)
+  evidence: UX/UY/UZ/VA regress −0.008..−0.019; VB deck>=6 pair neutral; trumps>=1 essential
   do not retry unless: —
 ```
 
@@ -1709,4 +1717,22 @@ date/window: jun22 batch-90 (UI–UM) PIVOT throw-in/pass
 - what changed: closed throw-in pass/take timing axis; return to rank/ordering EXPLORE
 - result: 167b02d unchanged
 - next bias: EXPLORE batch-91 rank/suit ordering outside timing windows
+```
+
+```text
+date/window: jun22 batch-91 (UN–UR) EXPLORE rank/ordering
+- attempts: 5 quick; 0 keeps
+- bottleneck: all neutral or slight regress; UR throw-in rank cap −0.019; void open split inert (UQ)
+- what changed: closed rank/suit tie-break and throw-in depth axes
+- result: 167b02d unchanged
+- next bias: PIVOT batch-92 trump/hand guards on CZ
+```
+
+```text
+date/window: jun22 batch-92 (UX–VB) PIVOT trump/hand guards
+- attempts: 5 quick; 0 keeps
+- bottleneck: trumps>=1 and strip opp<=2 load-bearing; UX/UY/UZ/VA regress −0.008..−0.019
+- what changed: confirmed CZ guard rails; closed hand-size pile gate; VB deck>=6 pair neutral
+- result: 167b02d unchanged
+- next bias: SWEEP batch-93 pile opp threshold on CZ
 ```
