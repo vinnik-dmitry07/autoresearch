@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLORE**
-- Since: batch-98 — defense rank-cap/take-threshold catastrophic (WA −0.047, WE −0.311); attack priors neutral
-- Next batch type: EXPLORE attack-side only (no defense take/cap); meta documents TQ ceiling
+- Mode: **PIVOT**
+- Since: batch-99 — CZ micro-tweaks all regress or neutral; pile opp<=5 and trumps>=1 reconfirmed
+- Next batch type: meta plateau review; only qualitatively new mechanisms (not CZ knob sweeps)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -453,13 +453,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLORE** batch 99 — attack-only micro-tweaks):
+Next 5 experiment ideas (**meta / PIVOT** batch 100):
 
-1. **Midgame pair cap min+1** — tighten from min+2 on CZ.
-2. **Endgame pair cap min+4** — widen singleton skip search.
-3. **Pile trump only when opp<=4** — narrow on CZ (not TQ).
-4. **Strip when trumps>=2 AND opp<=2** — compound guard on CZ.
-5. **Void open -6 pile -10** — asymmetric void split (not batch-32 grid).
+1. **Document TQ stack formula** in Current best for handoff (no eval).
+2. **Occam: CZ vs TQ line-count** — simplification audit only.
+3. **PIVOT: rank-match throw-in on TQ base** — VH was neutral on CZ only.
+4. **PIVOT: early-game trump hoard** — never open trump before deck<=2.
+5. **Stop CZ knob sweeps** unless new game-phase hypothesis.
 
 Rules for selecting ideas:
 
@@ -970,6 +970,10 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-98 defense/priors (WA–WE)
   evidence: WA rank cap −0.047; WE take threshold −0.311; WB/WD/WC neutral
   do not retry unless: new mechanism unrelated to take/cap
+
+- direction: EXPLORE batch-99 CZ micro-tweaks (WF–WJ)
+  evidence: WF/WG/WJ neutral; WH opp<=4 −0.016; WI trumps>=2 −0.011
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1813,4 +1817,13 @@ date/window: jun22 batch-98 (WA–WE) PIVOT defense/priors
 - what changed: closed defense rank-cap and voluntary take; attack priors inert
 - result: 167b02d unchanged
 - next bias: EXPLORE batch-99 attack-only micro-tweaks on CZ
+```
+
+```text
+date/window: jun22 batch-99 (WF–WJ) EXPLORE CZ micro-tweaks
+- attempts: 5 quick; 0 keeps
+- bottleneck: all neutral or regress; pile opp<=5 and strip trumps>=1 load-bearing
+- what changed: closed pair-cap/void micro-sweeps on CZ; meta plateau 69+ zero-keep
+- result: 167b02d unchanged
+- next bias: meta review batch-100; halt CZ knob sweeps
 ```
