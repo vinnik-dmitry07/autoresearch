@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLORE**
-- Since: batch-44/45/46 — HD loop closed (medium search +0.0042 stable, skip full); defense rank cap flat (JJ −0.23); attack explore JL/JM regress
-- Next batch type: EXPLORE pile rank-match fix + hand-pressure triggers; HD archived as top probe pending keep-bar breakthrough
+- Mode: **PIVOT**
+- Since: batch-47/48 — pile/hand/scoring explore all regress or flat; HD archived; 22+ zero-keep batches
+- Next batch type: qualitatively new endgame timing (opp hand count, last-card triggers) or COMBO HD only on quick >= +0.006
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLORE** batch 47 — pile/hand pressure):
+Next 5 experiment ideas (**PIVOT** batch 49 — endgame opp-hand triggers):
 
-1. **Pile rank-match throw-in** — prefer legal card matching table rank (JK fix/retry).
-2. **Pair-open when hand<=3 cards** — tighter JL variant.
-3. **Pile pass when hand has 1 card left** — endgame pass trigger.
-4. **AttackDone when only trump left and deck==0** — dump avoidance.
-5. **HD strip** — do not re-run unless new quick >= +0.006 from another axis COMBO.
+1. **Open strip when opp==1** — single-opponent-card timing (not opp<=2).
+2. **Pile trump when opp<=2 and deck<=1** — tighter finish pile.
+3. **AttackDone when opp==0 cards** — pass vs empty opponent (if legal).
+4. **COMBO HD + defense trump cost 60** — JV neutral; skip unless medium beats +0.0045.
+5. **Do not retry JK pile rank-match** — −0.079 regression class.
 
 Rules for selecting ideas:
 
@@ -1214,4 +1214,22 @@ date/window: jun22 batch-46 (JL–JM) EXPLORE
 - what changed: hand-pressure explore regress; pivot off HD re-runs
 - result: 167b02d unchanged
 - next bias: EXPLORE batch-47 pile rank-match + hand pressure
+```
+
+```text
+date/window: jun22 batch-47 (JK–JP) EXPLORE
+- attempts: 4 b4; 0 keeps; JK −0.079 strong regression
+- bottleneck: pile rank-match catastrophic; hand-pressure all regress
+- what changed: closed pile rank-match and hand-size pass axes
+- result: 167b02d unchanged; HD archived top probe
+- next bias: PIVOT batch-48 scoring micro-tweaks
+```
+
+```text
+date/window: jun22 batch-48 (JQ–JT) PIVOT
+- attempts: 4 b4; 0 keeps; JT pile window −0.018
+- bottleneck: void/trump/pair-cap flat; no new signal
+- what changed: closed scoring micro-tweak axis; JV HD+defense neutral
+- result: 167b02d unchanged
+- next bias: PIVOT batch-49 endgame opp-hand triggers
 ```
