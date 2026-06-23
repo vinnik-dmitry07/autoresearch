@@ -438,27 +438,27 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLORE**
-- Since: batch-64 — PIVOT attack geometry closed (OA–PB); HD+new-suit bonus (OY) ties HD search +0.0042, no keep lift
-- Next batch type: EXPLORE defense-side timing (attack geometry exhausted; HD sub-gate archived)
+- Mode: **PIVOT**
+- Since: batch-67 — EXPLORE defense closed (PC/PD catastrophic; PH–PM neutral); attack refinements flat
+- Next batch type: PIVOT hand-count / phase triggers (defense and attack geometry exhausted)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
 
 - Which local situations does B4 exploit most? **Strip deck<=2** (HD) +0.006 B4 full, search +0.004 — must keep `deck==0` strip; `deck==2` adds signal; `deck==1` drags (HO 0|2 slightly worse than HD <=2).
-- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — batch-42 defense/pile pivots flat; HD strip `deck<=2` remains only strong signal.
+- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLORE** batch 65 — defense timing):
+Next 5 experiment ideas (**PIVOT** batch 68 — hand-count phase):
 
-1. **Take when covering requires trump and deck<=3** — conserve trumps mid-endgame defense.
-2. **Defend with lowest trump only when attack card is trump** — targeted trump spend.
-3. **Defend cost += rank gap to attack** — penalize overkill covers.
-4. **Take when n_table>=4 and any cover needs trump** — table-depth trump conservation.
-5. **Defend prefer same-color non-trump when rank sufficient** — suit-following without new heuristic class.
+1. **Trump-strip when own hand count <= 3** (not deck gate) — endgame by hand size.
+2. **Pile trump dump when own hand count <= 4** — finish by hand pressure.
+3. **Pair-open only when opponent hand count >= 5** — delay pair vs short opponent.
+4. **AttackDone pile when own hand count <= 2 and best card is trump** — hand-size pass.
+5. **Open lowest trump when hand count <= 2 and no non-trump** — desperate open timing.
 
 Rules for selecting ideas:
 
@@ -845,6 +845,14 @@ Append failed idea classes here so they are not retried.
 - direction: HD + new-suit pile bonus SWEEP (OY/PE–PG)
   evidence: −2/−3/−5/−8 all ~+0.0056 quick B4; medium search +0.00418 — ties HD, no search lift
   do not retry unless: combined with search-lifting third axis
+
+- direction: EXPLORE batch-65–66 defense timing (PC–PM)
+  evidence: PC all-trump take deck<=3 −0.553; PD skip trump vs NT −0.583; PF −0.012; PE/PG/PH–PM neutral
+  do not retry unless: per-target trump conservation (not global all-trump check)
+
+- direction: PIVOT batch-67 attack refine (PN–PR)
+  evidence: PN/PQ strip opp<=3 −0.011/−0.005; PR pair opp<=4 −0.005; PP HD+pile deck<=2 +0.0055 (same as MP)
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1427,4 +1435,22 @@ date/window: jun22 batch-64 (OX–PB, OY sweep) COMBO/SWEEP
 - what changed: closed HD+new-suit bonus sweep; table-depth pass on HD +0.0053 B4 only
 - result: 167b02d unchanged; HD remains top unkept probe
 - next bias: EXPLORE batch-65 defense timing
+```
+
+```text
+date/window: jun22 batch-65–66 (PC–PM) EXPLORE defense
+- attempts: 10 quick; 0 keeps
+- bottleneck: PC/PD mis-implemented all-trump take −0.55; corrected PH neutral; trump penalty sweep neutral
+- what changed: closed defense timing axis; rank-gap and same-suit neutral
+- result: 167b02d unchanged
+- next bias: batch-67 attack refine
+```
+
+```text
+date/window: jun22 batch-67 (PN–PR) PIVOT
+- attempts: 5 b4; 0 keeps
+- bottleneck: HD+pile deck<=2 +0.0055 (known); strip opp<=3 and pair-delay regress
+- what changed: closed batch-67 attack refinements
+- result: 167b02d unchanged; HD remains top unkept probe ~0.0008 below search keep bar
+- next bias: PIVOT batch-68 hand-count phase triggers
 ```
