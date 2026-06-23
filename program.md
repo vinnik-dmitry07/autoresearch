@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **TQ/TS** total≤16–17 + deck==2 pair — medium search **0.79376 (+0.00435)**, full **0.79368**; ~0.00065 below keep bar. exp **TW** (TQ+min+3) full B4 **0.64351** but search **0.79345** — B4/search tradeoff.
+- **Top probe (unkept):** exp **TQ** — medium search **0.79376 (+0.00435)**, full **0.79368**; ~0.00065 below keep bar. Stack: SD (`deck<=2` pair + strip `deck==0`) + deck==2 pair gated `total≤16` (lift window 11–16). **SD** alone medium 0.79365; total gate +0.00011 medium.
 
 ## Search mode
 
-- Mode: **ABLATE**
-- Since: batch-88 meta-review — TQ COMBOs all below TQ peak; TW B4/search tradeoff; 59+ zero-keep batches
-- Next batch type: ABLATE TQ stack (total gate vs deck==2 pair) + meta plateau; no TQ COMBO re-runs
+- Mode: **EXPLORE**
+- Since: batch-90 — throw-in/pass PIVOT all neutral (UI/UK/UL) or regress (UJ −0.012, UM −0.0026); pile trump deck<=3 load-bearing
+- Next batch type: EXPLORE rank/suit structure outside timing (e.g. defend rank tie-break, throw-in rank ordering); no throw-in pass re-runs
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-88):** TQ medium 0.79376 is search ceiling; TW full B4 0.64351 but search 0.79345 — no COMBO breaks +0.00435.
+- **Plateau (batch-89):** TQ medium 0.79376 stable ceiling; 60+ zero-keep batches; keep bar needs +0.005 search (0.79441).
 
 ## Editable research directions
 
-Next 5 experiment ideas (**ABLATE** batch 89 — TQ stack vs SD):
+Next 5 experiment ideas (**EXPLORE** batch 91 — rank/ordering outside timing):
 
-1. **Remove total≤16 gate** — revert to SD; quantify TQ delta.
-2. **Remove deck==2 pair entirely** — CZ baseline on TQ pile/strip paths.
-3. **TQ total gate only at deck==2** — confirm TH/TM ablation on full TQ.
-4. **TW ablate min+3** — TW vs TQ B4 delta at medium.
-5. **SD + total≤16 without deck<=2** — test if total gate alone lifts.
+1. **Throw-in prefer higher non-trump rank** — invert pile dump to shed high junk first.
+2. **Defense prefer matching suit over rank** — tie-break non-trump cover by suit balance.
+3. **Open prefer suit with most cards** — break ties in lowest-non-trump selection.
+4. **Void bonus stronger on open only** — increase open-phase void penalty vs pile.
+5. **AttackDone when throw-in rank > mnt+4** — cap throw-in depth.
 
 Rules for selecting ideas:
 
@@ -929,6 +929,14 @@ Append failed idea classes here so they are not retried.
 
 - direction: COMBO batch-88 TQ second-axis (TW–UA)
   evidence: TW full B4 0.64351 search 0.79345; TX/TY flat; TZ +0.002; UA = TS; all below TQ medium 0.79376
+  do not retry unless: —
+
+- direction: ABLATE batch-89 TQ stack (UB–UG)
+  evidence: UB=SD 0.79322; UC=CZ 0.78896; UE/UD=TQ 0.79329; UF split 0.79294; UH medium 0.79376 reconfirm
+  do not retry unless: —
+
+- direction: PIVOT batch-90 throw-in/pass (UI–UM)
+  evidence: UI/UK/UL neutral; UJ sole-trump pass −0.012; UM n_table>=5 take −0.0026
   do not retry unless: —
 ```
 
@@ -1683,4 +1691,22 @@ date/window: jun22 batch-88 (TW–UA) COMBO TQ second-axis
 - what changed: closed TQ+min+3/void/pile/midgame COMBOs; meta plateau 59+ zero-keep batches
 - result: 167b02d unchanged
 - next bias: ABLATE batch-89 TQ stack decomposition vs SD
+```
+
+```text
+date/window: jun22 batch-89 (UB–UG,UH) ABLATE TQ stack
+- attempts: 6 quick + UH medium; 0 keeps
+- bottleneck: TQ medium 0.79376 stable; total gate +0.00054 vs SD medium; deck==2 pair entire lift vs CZ
+- what changed: closed TQ ablation map; unified deck<=2 beats split deck==2-only (UF); pivot to throw-in timing
+- result: 167b02d unchanged
+- next bias: PIVOT batch-90 throw-in/pass timing outside open-pile-strip
+```
+
+```text
+date/window: jun22 batch-90 (UI–UM) PIVOT throw-in/pass
+- attempts: 5 quick; 0 keeps
+- bottleneck: all neutral or regress; UJ catastrophic; pile trump deck<=3 essential
+- what changed: closed throw-in pass/take timing axis; return to rank/ordering EXPLORE
+- result: 167b02d unchanged
+- next bias: EXPLORE batch-91 rank/suit ordering outside timing windows
 ```
