@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **SD** endgame pair `deck<=2` (strip `deck==0`) — full search **0.79358 (+0.0042)** / B4 0.64318. **Ablation (batch-82):** entire lift from **deck==2 pair only**; deck==1 inert; pile −0.052, midgame pair +0.002, strip −0.003 on SD.
+- **Top probe (unkept):** exp **TQ** SD + deck==2 pair when total≤16 — medium search **0.79376 (+0.0044)**, full **0.79368 (+0.0043)** / B4 0.64332; ~0.0007 below keep bar. exp **SD** full search 0.79358 (+0.0042). **Ablation (batch-82):** deck==2 pair = entire lift; deck==1 inert.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-84 — deck window SWEEP closed; deck==2 is sharp optimum; SD full remains top unkept (+0.0042 search)
-- Next batch type: PIVOT qualitatively new mechanism outside deck pair window; or total-cards / table-state triggers on SD base
+- Mode: **EXPLOIT**
+- Since: batch-86 — TQ total≤16 medium search +0.0044 beats SD +0.0042; full +0.0043 still below keep bar
+- Next batch type: EXPLOIT fine SWEEP total threshold 14–18 around TQ peak; dual on TQ medium
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-84):** deck==2 pair window is sharp — widen to deck<=3/2|3 regresses; deck==3 alone hurts; TE split 1|2 ties SD.
+- **Plateau (batch-86):** TQ total≤16 best unkept (+0.0043 full search); lift requires total>10 at deck==2 (TM=SD, TH/TN/TO neutral).
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 85 — new trigger class on SD base):
+Next 5 experiment ideas (**EXPLOIT** batch 87 — total threshold fine sweep around TQ):
 
-1. **SD deck==2 pair when total cards left <= 10** — phase transition by combined deck+hands.
-2. **SD deck==2 pair when n_table == 0** — fresh-attack gate (first card of battle).
-3. **SD deck==2 pair when opponent has >= 3 cards** — inverse of failed opp<=4 gate.
-4. **SD + pile pass when deck >= 4** — conserve trump mid-finish on SD base.
-5. **SD deck==2 pair + strip when trump count >= 2** — compound endgame trigger.
+1. **total ≤ 15** — between TP (+0.0038) and TQ (+0.0044 medium).
+2. **total ≤ 17** — between TQ quick and unconditional SD.
+3. **total ≤ 18** — upper bound probe.
+4. **TQ dual medium** — two-seed confirm on total≤16.
+5. **total ≤ 16 + pile deck≤2** — COMBO best total gate with batch-85 TK.
 
 Rules for selecting ideas:
 
@@ -914,6 +914,14 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-84 deck window (TC–TG)
   evidence: TC deck<=3 +0.0031; TD deck==3 −0.001; TE 1|2 = SD; TF 2|3 +0.0028; TG midgame +0.002
   do not retry unless: —
+
+- direction: PIVOT batch-85 SD triggers (TH–TL)
+  evidence: TH total<=10 → CZ neutral; TI/TJ inert (=SD); TK pile<=2 +0.0036; TL strip trump>=2 −0.015
+  do not retry unless: total-cards SWEEP batch-86
+
+- direction: SWEEP batch-86 total threshold (TM–TQ)
+  evidence: TM total>10 = SD; TN/TO neutral; TP +0.0038; TQ medium +0.0044 full +0.0043 — best unkept; lift needs total>10
+  do not retry unless: EXPLOIT fine sweep 14–18 on TQ peak
 ```
 
 ## Loop notes
@@ -1631,4 +1639,22 @@ date/window: jun22 batch-84 (TC–TG) PIVOT deck window
 - what changed: closed deck window around deck==2; SD unified deck<=2 confirmed optimal formulation
 - result: 167b02d unchanged
 - next bias: PIVOT batch-85 new trigger class (total-cards, n_table) on SD base
+```
+
+```text
+date/window: jun22 batch-85 (TH–TL) PIVOT SD triggers
+- attempts: 5 quick; 0 keeps
+- bottleneck: TH total<=10 kills deck==2 lift; TI/TJ inert; best = SD tie; TL strip trump>=2 −0.015
+- what changed: closed n_table/opp>=3 gates; TH implies lift needs total>10 at deck==2
+- result: 167b02d unchanged
+- next bias: SWEEP batch-86 total-cards threshold for deck==2 pair
+```
+
+```text
+date/window: jun22 batch-86 (TM–TQ) SWEEP total threshold
+- attempts: 5 quick + TQ medium/full; 0 keeps; 1 full eval
+- bottleneck: TQ total<=16 medium search +0.0044 best unkept; full +0.0043 ~0.0007 below keep bar
+- what changed: TM total>10 = SD; lift requires total>10 at deck==2; TQ beats SD at medium
+- result: 167b02d unchanged
+- next bias: EXPLOIT batch-87 fine total threshold 14–18 + TQ dual
 ```
