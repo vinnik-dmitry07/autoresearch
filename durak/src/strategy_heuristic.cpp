@@ -13,7 +13,7 @@
 // MANIFEST (keep in sync with the constants below):
 //   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame pair
 //                                       deck>=5 within min+2; endgame pair-open + trump-strip;
-//                                       finish deck<=3 pile trump opp<=5 / open strip opp<=3; >=1 trump
+//                                       finish deck<=3 pile trump opp<=5 / open strip opp<=2; >=1 trump
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -98,7 +98,7 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
                     break;
                 }
             }
-            if (open_rank == mnt && L.opponent_hand_count <= 3 &&
+            if (open_rank == mnt && L.opponent_hand_count <= 2 &&
                 popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 1) {
                 Move low_trump{MoveType::AttackDone, NO_CARD, 0};
                 for (int i = 0; i < legal.count; ++i) {
