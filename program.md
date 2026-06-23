@@ -433,14 +433,14 @@ The sections below are editable by the agent during meta mode.
 - Search score: 0.78941
 - Lower CI: 0.63652
 - Complexity: 100
-- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation: pile −0.059, strip −0.010, pair −0.005 medium.
+- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
 - **Top probe (unkept):** exp HD strip `deck<=2` — medium B4 0.64323 (+0.0065), search 0.79365 (+0.0042), full B4 0.64318; ~0.0008 below search keep bar. One-line delta from CZ: `deck==0` → `deck<=2` on open strip path.
 
 ## Search mode
 
 - Mode: **COMBO**
-- Since: batch-49 — endgame opp-hand triggers all regress (JX −0.045); HD remains only sub-gate; 25+ zero-keep batches
-- Next batch type: COMBO HD strip + one novel axis only if quick screen >= +0.006; else ABLATE CZ simplification
+- Since: batch-50 — CZ ablation map refreshed; HD full re-run search +0.00417 stable; KE/KS no beat HD; KU additive strip neutral
+- Next batch type: COMBO must pair HD strip with mechanism that lifts search ≥ +0.005; try attack-phase structural combos only
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**COMBO/ABLATE** batch 50):
+Next 5 experiment ideas (**COMBO** batch 51 — HD structural synergy):
 
-1. **ABLATE void bonus off** — CZ simplification (GK neutral medium).
-2. **ABLATE pair-open off** — confirm DZ −0.005 on current CZ.
-3. **COMBO HD + void remove** — HP class retest at medium.
-4. **COMBO HD + pile deck<=3 unchanged** — should equal HD; skip if redundant.
-5. **Do not retry JW/JX/JY endgame opp triggers** — all regress.
+1. **HD strip (deck<=2 block) + void pile-only** — KS = HD; skip unless new variant.
+2. **HD + pile dump deck<=4** — HT class on HD (was −0.008); skip.
+3. **Full HD strip block + pair deck>=6** — HR class; skip unless quick >= +0.006.
+4. **CZ ablation confirm** — KD/KC/KB done batch-50; no re-run.
+5. **New COMBO axis only** — e.g. open-phase rank filter; must clear +0.006 quick to escalate.
 
 Rules for selecting ideas:
 
@@ -1253,4 +1253,13 @@ date/window: jun22 batch-49 (JW–JZ) PIVOT
 - what changed: closed endgame opp-hand trigger axis
 - result: 167b02d unchanged; HD archived top probe
 - next bias: COMBO/ABLATE batch-50 simplification vs HD COMBO
+```
+
+```text
+date/window: jun22 batch-50 (KA–KF) ABLATE/COMBO
+- attempts: 4 CZ ablations + KE medium + KF HD full + KR/KS/KU; 0 keeps
+- bottleneck: ablation map refreshed; HD full search +0.00417 x2; gap ~0.00083 to keep bar
+- what changed: KD pile −0.059 KC strip −0.010 KB pair −0.005 KA void −0.001; KE/KS no beat HD
+- result: 167b02d unchanged; HD remains archived top probe (one-line CZ delta)
+- next bias: COMBO batch-51 HD structural synergy only if quick >= +0.006
 ```
