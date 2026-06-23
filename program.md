@@ -428,19 +428,18 @@ The sections below are editable by the agent during meta mode.
 
 ## Current best
 
-- Commit: `167b02d`
-- B4 point_rate: 0.63676
-- Search score: 0.78941
-- Lower CI: 0.63652
+- Commit: `f5bb135`
+- B4 point_rate: 0.64489
+- Search score: 0.79506
+- Lower CI: 0.64464
 - Complexity: 100
-- Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **TQ** — medium search **0.79376 (+0.00435)** remains peak (~**0.00065** below keep bar search≥0.79441). **TQ stack (SD + total gate):** pair-promotion when `deck<=2` (was `deck==0` only on CZ); gate `deck==2` pair only when `total≤16` where `total=deck+hand+opp+n_table`; strip stays `deck==0` + `opp<=2`. Occam: **+3 lines** vs CZ (189→192). Reconfirmed batch-100 (WN/WP medium 0.79376).
+- Why it is best: **WR** = TQ stack (pair `deck<=2` + `total≤16` gate at deck==2; strip `deck==0` `opp<=2`) plus **pile trump only when `hand≥opp`** within finish window (`deck<=3`, `opp<=5`, `trumps≥1`). Full +0.00813 B4 / +0.00565 search vs CZ (`167b02d`). Breaks 71-batch zero-keep plateau (batch-101).
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-100 — meta plateau doc + trump hoard / void-timing / pile-deck probes closed; TQ ceiling reconfirmed
-- Next batch type: qualitatively new attack-phase mechanisms only (not CZ/TQ knob sweeps or reconfirms)
+- Mode: **EXPLOIT**
+- Since: batch-101 keep **WR** — hand-size pile gate on TQ stack crosses full keep bar
+- Next batch type: second-axis COMBO / SWEEP on WR base; ablate hand>=opp load-bearing
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +448,18 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-100):** 70+ zero-keep batches; TQ structural ceiling ~0.00065 below keep bar; rank-match on TQ inert (WP=VQ).
+- **WR keep (batch-101):** hand≥opp pile gate is the missing +0.0003 search lift over TQ ceiling; strip opp<=2 and total≤16 remain load-bearing.
+- Does complexity reduction improve B4 parity? Still complexity 100; four timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 101):
+Next 5 experiment ideas (**EXPLOIT** batch 102 on WR base):
 
-1. **PIVOT: strip opp==1 only on TQ base** — tighter endgame than opp<=2.
-2. **PIVOT: pile when hand_count ≥ opp_count on TQ base** — relative hand-size gate.
-3. **PIVOT: skip throw-in when n_table≥3 on TQ base** — table-depth pass (distinct from batch-95 n_table pass on CZ).
-4. **ABLATE: TQ total gate bounds** — total≤14 vs ≤18 on TQ (single-axis, not deck>=6 COMBO).
-5. **Do not re-run bare TQ/WN/WP** — ceiling documented; need new mechanism for keep.
+1. **ABLATE: pile hand>=opp off** — confirm load-bearing vs TQ alone.
+2. **COMBO: WR + rank-match pile throw-in** — retest VQ axis on WR base.
+3. **SWEEP: hand>=opp+1 vs hand>=opp vs hand>opp** — pile gate sharpness.
+4. **COMBO: WR + deck>=6 midgame pair** — retest VS axis on new base.
+5. **Do not revert to CZ/TQ-only** — WR is locked best.
 
 Rules for selecting ideas:
 
@@ -977,6 +977,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-100 trump hoard / void timing / pile deck (WL–WO)
   evidence: WL +200 open trump penalty neutral; WM void deck<=4 neutral; WO pile deck<=1 −0.019; WP rank-match ties TQ 0.79376
+  do not retry unless: —
+
+- direction: PIVOT batch-101 strip opp==1 / n_table pass / total gate (WQ/WS/WT/WU)
+  evidence: WQ strip opp==1 −0.010; WS n_table>=3 −0.027; WT/WU total≤14/≤18 ≤ TQ 0.79376
   do not retry unless: —
 ```
 
@@ -1839,4 +1843,13 @@ date/window: jun22 batch-100 (WL–WP) meta + PIVOT trump hoard / TQ reconfirm
 - what changed: TQ formula + Occam (+3 lines) documented; closed trump hoard and pile deck<=1 on TQ
 - result: 167b02d unchanged; keep bar still ~0.00065 above TQ medium
 - next bias: PIVOT batch-101 qualitatively new mechanisms on TQ base (strip opp==1, hand-size pile, n_table pass)
+```
+
+```text
+date/window: jun22 batch-101 (WQ–WU) PIVOT TQ second mechanisms
+- attempts: 5 quick + WR/WT/WU medium + WR full; **1 keep**
+- bottleneck: WR hand>=opp pile gate breaks TQ ceiling; WQ/WS regress; WT/WU ≤ TQ
+- what changed: committed f5bb135 WR; search mode → EXPLOIT; 71-batch plateau broken
+- result: f5bb135 B4 0.64489 search 0.79506 lower_ci 0.64464 (+0.00813 B4 vs CZ)
+- next bias: EXPLOIT batch-102 ablate hand>=opp; COMBO rank-match / deck>=6 on WR base
 ```
