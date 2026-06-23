@@ -13,7 +13,7 @@
 // MANIFEST (keep in sync with the constants below):
 //   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame open
 //                                       low pair within min+2; endgame pair-open + trump-strip;
-//                                       void pile -8; finish strip open+pile trump dump
+//                                       finish mode deck=0 opp<=3: strip open + pile trump dump
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -98,7 +98,7 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
                     break;
                 }
             }
-            if (open_rank == mnt && L.opponent_hand_count <= 2 &&
+            if (open_rank == mnt && L.opponent_hand_count <= 3 &&
                 popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 2) {
                 Move low_trump{MoveType::AttackDone, NO_CARD, 0};
                 for (int i = 0; i < legal.count; ++i) {
@@ -119,7 +119,7 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
     // Optional throw-in / pile-on: dump lowest non-trump; finish pile may dump low trump.
     const Card pile_card = legal.moves[best].card;
     if (!is_trump(pile_card, L.trump_suit)) return legal.moves[best];
-    if (L.deck_count == 0 && L.opponent_hand_count <= 2 &&
+    if (L.deck_count == 0 && L.opponent_hand_count <= 3 &&
         popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 2) {
         Move low_trump{MoveType::AttackDone, NO_CARD, 0};
         for (int i = 0; i < legal.count; ++i) {
