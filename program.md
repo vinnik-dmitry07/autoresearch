@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **SWEEP**
-- Since: batch-31 — void-stripped COMBO flat; GK medium −0.00012 best (no simplification keep); GO strip opp==2 −0.002
-- Next batch type: void bonus SWEEP open −3..−6 and pile −6..−10 on CZ base via b4
+- Mode: **COMBO**
+- Since: batch-32 SWEEP — void bonus grid flat on b4 (all ~0.63607); GR open5/pile6 best at −0.00068
+- Next batch type: CQ-class pile/pair window combos (orthogonal 2-change); escalate on ΔB4 ≥ +0.005 quick
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**SWEEP** batch 32 — void bonus grid on CZ, b4 gate):
+Next 5 experiment ideas (**COMBO** batch 33 — pile/pair window replay):
 
-1. **Open void −3** — `attack_value` open path void bonus 3 (pile stays −8).
-2. **Open void −6** — open path void bonus 6.
-3. **Pile void −6** — pile path void bonus 6 (open stays −5).
-4. **Pile void −10** — pile path void bonus 10.
-5. **Open −4 / pile −9 split** — asymmetric void (GM/GN combo as one cell).
+1. **pair>=5 + pile<=2** — CQ-class tighter pile (CR was −0.001 quick vs CQ).
+2. **pair>=5 + pile<=4** — widen pile vs CZ `<=3`.
+3. **pair>=6 + pile<=3** — CT was −0.001 vs CQ; quick reconfirm.
+4. **pair>=4 + pile<=3** — CF regression class control.
+5. **void remove + pile<=3 + strip** — CZ minus void (GK simplification + hold timing).
 
 Rules for selecting ideas:
 
@@ -740,6 +740,10 @@ Append failed idea classes here so they are not retried.
 - direction: COMBO batch-31 void-stripped (GK–GO)
   evidence: GK medium −0.00012; GL medium −0.00024; GM/GN neutral; GO opp==2 strip −0.002
   do not retry unless: void remove paired with new axis showing quick >= +0.003
+
+- direction: SWEEP batch-32 void bonus grid (GP–GT)
+  evidence: all b4 B4 ~0.63607; GR open5/pile6 −0.00068 best; axis inert on CZ
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1034,4 +1038,13 @@ date/window: jun22 batch-31 (GK–GO) COMBO
 - what changed: GK/GL medium reconfirm void-stripped sub-gate; GO opp==2 strip −0.002
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: SWEEP batch-32 void bonus open/pile grid via b4
+```
+
+```text
+date/window: jun22 batch-32 (GP–GT) SWEEP
+- attempts: 5 discards (void bonus grid); 0 full evals; 0 keeps
+- bottleneck: 8th zero-keep batch; void open/pile bonuses inert on b4 — all ~0.63607
+- what changed: closed void bonus sweep; GR open5/pile6 −0.00068 best cell
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: COMBO batch-33 CQ-class pile/pair window replay
 ```
