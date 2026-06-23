@@ -436,12 +436,13 @@ The sections below are editable by the agent during meta mode.
 - Why it is best: **WR** = TQ stack (pair `deck<=2` + `total≤16` gate at deck==2; strip `deck==0` `opp<=2`) plus **pile trump only when `hand≥opp`** within finish window (`deck<=3`, `opp<=5`, `trumps≥1`). Full +0.00813 B4 / +0.00565 search vs CZ (`167b02d`). Occam: **194 lines** (+5 vs CZ 189).
 - **WR ablation map (batches 102–106):** load-bearing: `hand≥opp` (−0.0018), strip `opp≤2` (−0.014), deck≤2 pair (−0.012), pile trump `deck≤3` (−0.020). Optimal: `total≤16`, pile `opp≤5`, pile `deck≤3`. Inert/closed: rank-match, deck≥6, void mag, opp≤6, total 14–17, pair min+1/skip+2, suit tie-break, rank-aware void, pile-pass trump hoard.
 - **Plateau (batch-107):** WR full search **0.79506** stable (dual seed 0/1 agree); next keep needs **+0.005** search (bar **0.80006**). ~80 batches since CZ keep; 1 keep (WR) in batch-101.
+- **Defense rank-match SWEEP (batch-108):** quick peak **−2/−4** search ~0.7956 (+0.0005); **−3** medium flat (XT); **−6** regress; softer ultra-endgame inert.
 
 ## Search mode
 
 - Mode: **meta / PIVOT**
-- Since: batch-107 — dual reconfirm stable; defense rank-match quick spike medium-flat; ultra-endgame pass −0.019
-- Next batch type: COMBO defense rank-match variants only if retested; else new attack class
+- Since: batch-108 — defense rank-match SWEEP closed at −2/−4 quick; medium unlikely to keep
+- Next batch type: halt defense rank-match unless dual+medium on −4; attack-side only
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -457,16 +458,17 @@ The sections below are editable by the agent during meta mode.
 - **WR PIVOT (batch-105):** pile trump deck≤3 essential (XM deck==0 only −0.020); midgame pair min+1 −0.0016; rank-aware void inert.
 - **WR PIVOT (batch-106):** pile-pass only-trump deck>0 −0.020 (same as XM); suit tie-break inert; endgame pair skip min+2 −0.0015.
 - **WR PIVOT (batch-107):** ultra-endgame pass hand==1 −0.019; defense rank-match quick +0.0009 medium flat (0.79505); dual seeds stable.
+- **WR PIVOT (batch-108):** softer pass hand==2 opp==1 inert; defense rank-match −2/−4 quick +0.0005.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT/COMBO** batch 108):
+Next 5 experiment ideas (**meta** batch 109):
 
-1. **SWEEP: defense rank-match bonus −2/−4/−6 on WR** — XT quick spike, medium flat at −3.
-2. **COMBO: WR + defense rank-match −3 only** — retest with dual before medium.
-3. **PIVOT: attack pass when opp==1 and hand==2 deck==0** — softer ultra-endgame than XS.
-4. **Meta: document search gap** — 0.79506 vs 0.80006 keep bar in loop notes.
-5. **Do not retry ultra-endgame hand==1 pass (XS)** — −0.019 regress.
+1. **Optional: dual+medium on XV/XW (−2/−4)** — only if quick signal worth confirming; expect flat like XT.
+2. **PIVOT: attack defer non-trump open when trumps≥3 and deck≥4 on WR** — trump conservation (new class).
+3. **PIVOT: pile void only when opp hand ≤ our hand on WR** — combine hand≥opp with void timing.
+4. **Meta: Occam WR+defense −4 line count** — if medium flat, document closed axis.
+5. **Halt defense rank-match SWEEP** — −2/−4/−6 mapped; −3 medium flat.
 
 Rules for selecting ideas:
 
@@ -1013,6 +1015,10 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-107 ultra-endgame pass (XS)
   evidence: XS hand==1 deck==0 pass −0.019; XT defense rank-match medium 0.79505 flat vs WR
   do not retry unless: softer trigger (hand==2 opp==1)
+
+- direction: SWEEP batch-108 defense rank-match bonus (XV–XX) + XY softer pass
+  evidence: XV/XW quick +0.0005; XT/−3 medium flat; XX −6 regress; XY inert
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -1937,4 +1943,13 @@ date/window: jun22 batch-107 (XS–XU) meta plateau + PIVOT + dual
 - what changed: plateau summary in Current best; closed XS hand==1 pass
 - result: f5bb135 unchanged; keep bar 0.80006 ~0.005 above WR
 - next bias: SWEEP defense rank-match bonus; softer ultra-endgame
+```
+
+```text
+date/window: jun22 batch-108 (XV–XY) SWEEP defense rank-match + softer pass
+- attempts: 4 quick; 0 keeps
+- bottleneck: XV/XW quick +0.0005 below medium gate; XX −6 regress; XY inert
+- what changed: closed defense rank-match SWEEP and softer ultra-endgame pass
+- result: f5bb135 unchanged
+- next bias: meta batch-109; optional dual+medium −4; attack-side trump conservation
 ```
