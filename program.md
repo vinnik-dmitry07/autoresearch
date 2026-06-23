@@ -434,13 +434,13 @@ The sections below are editable by the agent during meta mode.
 - Lower CI: 0.63652
 - Complexity: 100
 - Why it is best: CQ combo (pair `deck>=5` + pile `deck<=3`) plus endgame open trump-strip when `opp<=2`; +0.010 B4 vs CQ at full. Ablation (batch-50): pile −0.059 (KD), strip −0.010 (KC), pair −0.005 (KB), void −0.001 (KA).
-- **Top probe (unkept):** exp **HD** strip `deck<=2` — medium search **0.79365 (+0.0042)**, full B4 0.64318; closest to keep bar (~0.0008). exp **KZ** = HD + pair cap `min+3` (midgame only) — full B4 **0.64337** (+0.0066) but search **0.79335 (+0.0039)**; B4/search tradeoff.
+- **Top probe (unkept):** exp **SD** endgame pair-promotion `deck<=2` (strip stays `deck==0`) — full B4 **0.64318 (+0.0064)**, search **0.79358 (+0.0042)**; ties HD at full, ~0.0008 below search keep bar. exp **KZ** = HD + pair cap `min+3` — B4/search tradeoff.
 
 ## Search mode
 
-- Mode: **SWEEP**
-- Since: batch-78 — opponent-relative PIVOT (76–77) and rank/deck PIVOT (78) all below maybe; RW endgame pair `deck<=1` neutral at medium (+0.0004 search, +0.0008 B4)
-- Next batch type: SWEEP endgame pair-promotion deck window on CZ base (not strip); no HD re-runs unless RW sweep clears +0.003 medium
+- Mode: **EXPLOIT**
+- Since: batch-79 — SWEEP SD `deck<=2` pair-promotion (strip `deck==0`) full B4 +0.0064 search +0.0042; ties HD; SB/SE regress
+- Next batch type: EXPLOIT SD base — search-lift COMBOs only; no bare HD/SD re-full unless new axis
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -449,17 +449,17 @@ The sections below are editable by the agent during meta mode.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
-- **Plateau (batch-78):** 49+ zero-keep batches; HD search +0.00424 remains top unkept (~0.0008 below keep bar); CZ-base RW endgame pair `deck<=1` neutral at medium (+0.0004 search).
+- **Plateau (batch-79):** 50+ zero-keep batches; SD/HD full search +0.0042 (~0.0008 below keep bar); pair-promotion `deck<=2` is the signal (strip widening redundant when strip stays `deck==0`).
 
 ## Editable research directions
 
-Next 5 experiment ideas (**SWEEP** batch 79 — endgame pair-promotion deck window on CZ):
+Next 5 experiment ideas (**EXPLOIT** batch 80 — SD base `deck<=2` pair-promotion, strip `deck==0`):
 
-1. **Endgame pair-promotion when deck == 0 only** — CZ control (singleton skip + strip path unchanged).
-2. **Endgame pair-promotion when deck == 1 only** — extend pair loop one draw earlier.
-3. **Endgame pair-promotion when deck <= 1** — RW reconfirm (medium +0.0004 search).
-4. **Endgame pair-promotion when deck <= 2** — wider than RW without touching strip gate.
-5. **Endgame pair-promotion when deck == 2 only** — isolate deck==2 component (HD strip class).
+1. **SD + pair cap min+3 midgame** — KZ-class on SD base; watch B4/search tradeoff.
+2. **SD + void −10 when opp<=3 pile** — RS neutral on CZ; retest on SD.
+3. **SD ablate strip** — confirm strip still load-bearing with widened pair window.
+4. **SD + pile deck<=2** — narrow finish pile to match pair window.
+5. **SD + skip pair when deck==2 only** — isolate deck==2 pair component without deck==1.
 
 Rules for selecting ideas:
 
@@ -886,6 +886,14 @@ Append failed idea classes here so they are not retried.
 - direction: RW endgame pair deck<=1 at medium
   evidence: quick neutral; medium search +0.0004 B4 +0.0008 — below +0.003 escalate; sweep deck window before COMBO
   do not retry unless: SWEEP batch-79 finds deck cell >= +0.003 medium
+
+- direction: SWEEP batch-79 endgame pair deck window (SA–SE except SD)
+  evidence: SB deck==1 only −0.019; SC deck<=1 neutral; SE deck==2 only −0.011; SA control noise
+  do not retry unless: —
+
+- direction: HD strip deck<=2 as sole change
+  evidence: SD deck<=2 pair + strip deck==0 ties HD full (B4 0.64318 search 0.79358); strip widening redundant
+  do not retry unless: paired with search-lift second axis on SD base
 ```
 
 ## Loop notes
@@ -1549,4 +1557,13 @@ date/window: jun22 batch-78 (RU–RY) PIVOT rank/deck + RW medium
 - what changed: closed pair deck>=4, trump==1 strip, void asymmetric, pile hand>=3; RW archived for SWEEP
 - result: 167b02d unchanged
 - next bias: SWEEP batch-79 endgame pair-promotion deck window
+```
+
+```text
+date/window: jun22 batch-79 (SA–SE) SWEEP endgame pair deck window
+- attempts: 5 quick + SD medium/dual/full; 0 keeps; 1 full eval
+- bottleneck: SD deck<=2 pair (strip deck==0) full B4 +0.0064 search +0.0042 — ties HD, ~0.0008 below keep bar
+- what changed: closed deck==1-only and deck==2-only pair paths; SD replaces HD as cleaner unkept top probe
+- result: 167b02d unchanged
+- next bias: EXPLOIT batch-80 SD base search-lift COMBOs
 ```
