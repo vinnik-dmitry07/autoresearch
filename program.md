@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLOIT**
-- Since: batch-51 — KZ HD+pair min+3 synergy (+0.0066 B4 full) but search +0.0039 < HD alone +0.0042; pair cap alone neutral (LB)
-- Next batch type: SWEEP pair cap min+2/3/4 on HD base; escalate if medium search >= +0.0045
+- Mode: **COMBO**
+- Since: batch-52 SWEEP — pair cap min+3 optimal for B4 on HD base; HD min+2 still best for search (+0.0042 vs KZ +0.0040)
+- Next batch type: COMBO HD strip + pair min+3 + third axis only if lifts search; else hold HD as keep candidate
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -452,13 +452,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**SWEEP** batch 52 — pair cap on HD strip base):
+Next 5 experiment ideas (**COMBO** batch 53 — lift search on best B4 stack):
 
-1. **HD + pair min+2** — CZ control cell (LA class).
-2. **HD + pair min+3** — KZ best B4 cell (+0.0066 full).
-3. **HD + pair min+4** — extend cap grid.
-4. **HD + pair min+1** — tighter cap control.
-5. **Medium/full on best cell** — only if quick >= +0.006 and medium search >= +0.0045.
+1. **HD strip + pair min+3 + void remove** — simplification test on KZ.
+2. **HD strip + pair min+3 + pile opp<=5 unchanged** — control.
+3. **HD strip only (min+2)** — search-optimized keep candidate; medium/full if policy allows.
+4. **HD + pair min+3 dual seed** — reconfirm KZ B4; skip if search < HD.
+5. **Do not sweep pair cap again** — grid closed min+3 best B4, min+2 best search.
 
 Rules for selecting ideas:
 
@@ -794,9 +794,9 @@ Append failed idea classes here so they are not retried.
   evidence: void/trump/pair-cap/pile-window all flat or regress; JT pile deck<=2 opp<=4 −0.018
   do not retry unless: —
 
-- direction: PIVOT batch-49 endgame opp-hand (JW–JZ)
-  evidence: JW opp==1 −0.012; JX pile deck<=1 −0.045; JY HD opp==1 −0.006; JZ −0.001
-  do not retry unless: —
+- direction: SWEEP batch-52 pair cap on HD (LC–LF)
+  evidence: min+3 best B4 +0.0064; min+2 = HD search-best; min+4 decline; axis closed
+  do not retry unless: combined with search-lift third axis
 ```
 
 ## Loop notes
@@ -1271,4 +1271,13 @@ date/window: jun22 batch-51 (KV–KZ) COMBO
 - what changed: pair cap min+3 alone neutral; synergy with HD strip lifts B4 not search; KW pair deck<=2 −0.014
 - result: 167b02d unchanged; KZ new top B4 probe, HD top search probe
 - next bias: SWEEP batch-52 pair cap grid on HD base
+```
+
+```text
+date/window: jun22 batch-52 (LC–LF) SWEEP
+- attempts: 4 b4 + LE medium; 0 keeps
+- bottleneck: pair cap min+3 best B4 (+0.0064 quick); min+4 declines; HD min+2 still best search medium (+0.0042)
+- what changed: closed pair cap grid on HD; B4 vs search tradeoff (KZ vs HD)
+- result: 167b02d unchanged
+- next bias: COMBO batch-53 search lift on KZ/HD stack
 ```
