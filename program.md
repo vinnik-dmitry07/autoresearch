@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **CZ component ablations** — skip pile dump / skip endgame strip to locate marginal value.
-2. **Void pressure on open** — stronger void penalty on initial attack (not pile path).
-3. **Hold CZ gates** — pile opp<=5, strip opp<=2, pair deck>=5, pile deck<=3.
-4. **Midgame pair timing** — opp-hand or deck upper bound gates (not pair cap).
-5. **Defense axis (last resort)** — only if ablations flat; rational take unchanged so far.
+1. **Defense trump cost** — only untouched axis on CZ; +40/+55 probes.
+2. **Endgame strip timing** — strip before pair loop or without singleton prerequisite.
+3. **Pile void pressure** — pile-phase void -10 (open void neutral on DT).
+4. **Hold load-bearing paths** — pile dump deck<=3 and endgame strip opp<=2 are essential (DR/DS).
+5. **Midgame pair ablation at medium** — DN neutral quick; confirm inert vs marginal.
 
 Rules for selecting ideas:
 
@@ -563,6 +563,18 @@ Append failed idea classes here so they are not retried.
 - direction: attack trump penalty +95 on CZ
   evidence: exp DQ quick neutral vs +100
   do not retry unless: —
+
+- direction: skip pile trump dump (ablation)
+  evidence: exp DR quick B4 0.578 (−0.059 vs CZ); pile deck<=3 path is load-bearing
+  do not retry unless: —
+
+- direction: skip endgame trump strip (ablation)
+  evidence: exp DS quick −0.010 B4 (~full CZ gain over CQ from strip axis)
+  do not retry unless: —
+
+- direction: void open -10 / midgame pair opp>=4 / pile deck<=2 only
+  evidence: exp DT/DU/DV quick neutral or −0.001
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -713,4 +725,13 @@ date/window: jun22 batch-16 (DM–DQ)
 - what changed: closed endgame singleton / pair-skip / trump+95 axes on CZ; DM medium +0.001 below gate
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: CZ component ablations (pile dump vs endgame strip); void open pressure; midgame opp gate
+```
+
+```text
+date/window: jun22 batch-17 (DR–DV)
+- attempts: 5 discards (2 regressions DR −0.059 / DS −0.010 ablations, 3 neutral); 0 full evals; 0 keeps
+- bottleneck: pile dump + endgame strip are load-bearing; micro void/pair/pile-window knobs flat
+- what changed: ablation map — CQ combo value mostly pile path; CZ delta mostly endgame strip
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: defense trump cost; endgame strip reorder; pile void -10; confirm midgame pair inert at medium
 ```
