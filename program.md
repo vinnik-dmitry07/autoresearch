@@ -466,13 +466,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**meta** batch 112):
+Next 5 experiment ideas (**meta halt** batch 113):
 
-1. **Accept structural plateau at `f5bb135`** — WR fully mapped; best unkept YB 0.79595.
-2. **Halt throw-in pass variants** — n_table>=3 (WS) and >=4 (YE) both catastrophic.
-3. **Halt total gate widening** — ≤18 inert; ≤16 optimal (batch-104).
-4. **Optional: ABLATE confirm WR minimal stack** — strip hand≥opp pile only if seeking simplification keep.
-5. **Do not pursue defense−4 or strip narrowing** — closed batch-110.
+1. **Accept structural plateau at `f5bb135`** — WR stack minimal (batch-112 ABLATE); best unkept YB 0.79595.
+2. **Halt WR ABLATE/PIVOT/SWEEP** — all major components load-bearing; void trim −0.0006 not worth keep.
+3. **Do not full-eval YB/XW** — defense−4 closed at 0.79595 medium.
+4. **Optional future: qualitatively new class** — e.g. defense take threshold, throw-in rank geometry (only if new mechanism hypothesis).
+5. **Post-keep only:** B3 vs B2 memory ablation via `post_keep.bat`.
 
 Rules for selecting ideas:
 
@@ -1038,6 +1038,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-111 throw-in pass / total gate widen (YE/YF)
   evidence: YE n_table>=4 −0.016; YF total<=18 −0.0006 inert (<=16 optimal)
+  do not retry unless: —
+
+- direction: ABLATE batch-112 WR stack decomposition (YG–YK)
+  evidence: pile trump −0.039; midgame pair −0.011; deck<=2 pair −0.012; strip −0.014; void −0.0006 mild
   do not retry unless: —
 ```
 
@@ -1999,4 +2003,13 @@ date/window: jun22 batch-111 (YE/YF) throw-in pass + total gate PIVOT
 - what changed: closed throw-in pass and total gate widen on WR
 - result: f5bb135 unchanged; structural plateau confirmed
 - next bias: meta halt or ABLATE simplification hunt
+```
+
+```text
+date/window: jun22 batch-112 (YG–YK) ABLATE WR stack minimal confirm
+- attempts: 5 quick ablations; 0 keeps; 0 simplification wins
+- bottleneck: pile trump −0.039; midgame pair −0.011; deck<=2 pair −0.012; strip −0.014; void −0.0006 only trim
+- what changed: WR stack declared minimal; halt further knob search on attack path
+- result: f5bb135 unchanged
+- next bias: meta halt; accept plateau unless new mechanism class
 ```
