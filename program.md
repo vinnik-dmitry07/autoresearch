@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **SWEEP**
-- Since: batch-29 — 5th zero-keep batch (25–29); suit-length / battle-state PIVOT all neutral (GA −0.001 best)
-- Next batch type: attack trump penalty grid 92/96/100/104/108 via `triage.bat b4` on CZ base
+- Mode: **COMBO**
+- Since: batch-30 SWEEP — trump penalty 92–108 all B4 0.63607 on b4 gate (axis inert)
+- Next batch type: void-stripped simplification + one CZ timing tweak; or void/pile bonus SWEEP
 - After next keep: switch to **EXPLOIT** (3 attempts max, then meta-review)
 
 ## Open questions
@@ -451,15 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**SWEEP** batch 30 — trump penalty grid on CZ base):
+Next 5 experiment ideas (**COMBO** batch 31):
 
-1. **Trump penalty 92** — `attack_value` trump +92 (manifest kParameterCount=1 if !=100).
-2. **Trump penalty 96**
-3. **Trump penalty 100** — baseline control (expect ~0.63607 quick).
-4. **Trump penalty 104**
-5. **Trump penalty 108**
-
-Use `triage.bat b4` per cell; full ladder only if ΔB4 ≥ +0.003 vs best. Restore +100 after sweep.
+1. **Void remove + hold CZ** — FQ void strip (−0.001 alone); medium confirm if simplification keep possible.
+2. **Void remove + pair deck>=6** — FV re-test at medium (was −0.001 quick).
+3. **Open void −4** — reduce open void bonus from −5 (single knob on open path).
+4. **Pile void −9** — increase pile void from −8 (single knob on pile path).
+5. **COMBO void remove + strip opp==2 only** — exact opp gate on strip (not <=2 window).
 
 Rules for selecting ideas:
 
@@ -734,6 +732,10 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-29 suit-length / battle-state (GA-GE)
   evidence: GA longest-suit −0.001; GB-GE all quick 0.63607 neutral
   do not retry unless: —
+
+- direction: SWEEP batch-30 attack trump penalty 92–108
+  evidence: GF–GJ all b4 B4 0.63607 (−0.0007 vs full best); axis inert on CZ stack
+  do not retry unless: paired with pile-phase separate penalty
 ```
 
 ## Loop notes
@@ -1010,4 +1012,13 @@ date/window: jun22 batch-29 (GA–GE) PIVOT
 - what changed: none on best
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: SWEEP batch-30 attack trump penalty 92–108 via b4 gate
+```
+
+```text
+date/window: jun22 batch-30 (GF–GJ) SWEEP
+- attempts: 5 discards (trump penalty 92/96/100/104/108); 0 full evals; 0 keeps
+- bottleneck: 6th zero-keep batch; trump penalty axis flat on b4 gate — all 0.63607
+- what changed: closed attack trump penalty sweep on CZ stack
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: COMBO batch-31 void-stripped + timing; void/pile bonus knobs
 ```
