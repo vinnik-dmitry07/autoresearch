@@ -15,11 +15,13 @@
 //                                       low pair within min+2; endgame pair-open + trump-strip
 //   H2  opp_void_suit_attack        -- prefer suits opponent trumped off-suit on this table
 //   H3  opp_shown_suit_deprioritize -- avoid pile-on in suits opponent beat in-suit this table
+//   H4  ev_hand_score               -- score hand strength (trumps, low cards, pairs, suits)
+//   H5  ev_refill_compare           -- defense cost vs expected draw quality from deck
 // Parameters: (none)
 // ============================================================================
 namespace durak {
 
-constexpr int kHeuristicCount = 3;
+constexpr int kHeuristicCount = 5;
 constexpr int kParameterCount = 0;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
@@ -64,6 +66,66 @@ double opp_suit_attack_adjust(Card c, int trump, const OppSuitClues& clues) {
     if (clues.likely_void[s]) adj -= 5.0;
     if (clues.has_non_trump[s] && !clues.likely_void[s]) adj += 1.5;
     return adj;
+}
+
+// H4: strategic hand strength (higher = better). Memoryless, from hand + trump only.
+double hand_value(CardMask hand, int trump) {
+    if (!hand) return 0.0;
+    double v = 0.0;
+    const int tr = popcount(hand & SUIT_MASK[trump]);
+    v += 4.5 * double(tr);
+    int non_trump_suits = 0;
+    for (int s = 0; s < NUM_SUITS; ++s) {
+        if (s == trump) continue;
+        const CardMask sm = hand & SUIT_MASK[s];
+        const int n = popcount(sm);
+        if (n == 0) continue;
+        ++non_trump_suits;
+        for (CardMask m = sm; m; m &= m - 1)
+            v += 0.45 * double(NUM_RANKS - rank_of(lowest(m)));
+    }
+    v += 1.5 * double(non_trump_suits);
+    for (int r = 0; r < NUM_RANKS; ++r) {
+        const int cnt = popcount(hand & RANK_MASK[r] & ~SUIT_MASK[trump]);
+        if (cnt >= 2) v += 1.0 + 0.35 * double(cnt - 2);
+    }
+    return v;
+}
+
+CardMask visible_cards(const LocalFeatures& L) {
+    return L.hand | L.table_attack | L.table_defense;
+}
+
+// H4: per-card hand quality (higher = structurally stronger hand).
+double hand_quality(CardMask hand, int trump) {
+    if (!hand) return 0.0;
+    return hand_value(hand, trump) / double(popcount(hand));
+}
+
+// Expected quality of one random draw from the deck (memoryless split over unknown cards).
+double expected_draw_quality(const LocalFeatures& L) {
+    const int pool = L.deck_count + L.opponent_hand_count;
+    if (L.deck_count <= 0 || pool <= 0) return hand_quality(L.hand, L.trump_suit);
+
+    const CardMask unknown = ALL_CARDS & ~visible_cards(L);
+    double sum = 0.0;
+    int n = 0;
+    for (int ci = 0; ci < NUM_CARDS; ++ci) {
+        const Card c = Card(ci);
+        if (!(unknown & card_bit(c))) continue;
+        ++n;
+        sum += hand_quality(L.hand | card_bit(c), L.trump_suit);
+    }
+    if (n == 0) return hand_quality(L.hand, L.trump_suit);
+    return sum / double(pool);
+}
+
+// H5 defense: penalize beaters that drop per-card quality below expected draw benchmark.
+double defense_ev_adjust(Card d, int trump, CardMask hand, double draw_q_benchmark) {
+    const double after = hand_quality(hand & ~card_bit(d), trump);
+    const double gap = draw_q_benchmark - after;
+    if (gap <= 0.0) return 0.0;
+    return 0.12 * gap;
 }
 
 // Lower is better. Trumps are heavily penalized so non-trump dumps win; the
@@ -158,6 +220,7 @@ Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const Leg
         if (L.def[i] == NO_CARD && !coverable[i]) return {MoveType::DefendTake, NO_CARD, 0};
     if (!any_defend) return {MoveType::DefendTake, NO_CARD, 0};
 
+    const double draw_q = expected_draw_quality(L);
     int best = -1;
     double best_c = 1e18;
     for (int i = 0; i < legal.count; ++i) {
@@ -166,6 +229,7 @@ Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const Leg
         const Card d = m.card;
         double cost = double(rank_of(d));
         if (is_trump(d, L.trump_suit)) cost += 50.0;  // prefer non-trump (rational base)
+        cost += defense_ev_adjust(d, L.trump_suit, L.hand, draw_q);
         if (mem) cost -= 0.001 * double(mem->unknown_rank_count[rank_of(d)]);
         if (cost < best_c) {
             best_c = cost;
