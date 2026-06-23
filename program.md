@@ -438,9 +438,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **SWEEP**
-- Since: batch-92 — trump>=1 and strip opp<=2 load-bearing (UX/UY/UZ/VA regress); rank/ordering + hand guards closed
-- Next batch type: SWEEP pile `opp` threshold and `deck` window on CZ; no trump-count or strip-opp re-tweaks
+- Mode: **PIVOT**
+- Since: batch-93 — pile opp<=5 sharp optimum (VC/VD regress −0.016..−0.022; VE/VF widen −0.0014); deck<=3 beats deck<=2 (VG)
+- Next batch type: PIVOT qualitatively new — e.g. rank-match throw-in, table-depth gates; no pile opp/deck re-sweeps on CZ
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -453,13 +453,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**SWEEP** batch 93 — pile opp threshold on CZ):
+Next 5 experiment ideas (**PIVOT** batch 94 — table-depth / rank-match):
 
-1. **Pile trump opp<=3** — tighten from <=5.
-2. **Pile trump opp<=4** — intermediate cell.
-3. **Pile trump opp<=6** — widen (prior regress but reconfirm).
-4. **Pile trump opp<=7** — upper bound probe.
-5. **Pile trump opp<=5 deck<=2** — narrow deck window at best opp gate.
+1. **Throw-in rank-match only** — pile prefer cards matching lowest table rank.
+2. **Open rank-match when pair exists** — open same rank as table if legal (transfer-like).
+3. **Pile pass when n_table>=4** — AttackDone early on deep tables.
+4. **Strip when n_table==0 only** — forbid strip if table non-empty (sanity).
+5. **Defense trump only when attacked card is trump** — narrow trump spend.
 
 Rules for selecting ideas:
 
@@ -945,6 +945,10 @@ Append failed idea classes here so they are not retried.
 
 - direction: PIVOT batch-92 trump/hand guards (UX–VB)
   evidence: UX/UY/UZ/VA regress −0.008..−0.019; VB deck>=6 pair neutral; trumps>=1 essential
+  do not retry unless: —
+
+- direction: SWEEP batch-93 pile opp threshold (VC–VG)
+  evidence: opp<=5 optimum; opp<=4 −0.016; opp<=3 −0.022; opp>=6 −0.0014; deck<=2 −0.00065
   do not retry unless: —
 ```
 
@@ -1735,4 +1739,13 @@ date/window: jun22 batch-92 (UX–VB) PIVOT trump/hand guards
 - what changed: confirmed CZ guard rails; closed hand-size pile gate; VB deck>=6 pair neutral
 - result: 167b02d unchanged
 - next bias: SWEEP batch-93 pile opp threshold on CZ
+```
+
+```text
+date/window: jun22 batch-93 (VC–VG) SWEEP pile opp/deck
+- attempts: 5 quick (corrected opp patch); 0 keeps
+- bottleneck: opp<=5 sharp optimum; opp<=4/3 regress; opp>=6 slight regress; deck<=3 beats <=2
+- what changed: closed pile opp 3–7 sweep on CZ; confirms CQ pile window
+- result: 167b02d unchanged
+- next bias: PIVOT batch-94 table-depth / rank-match throw-in
 ```
