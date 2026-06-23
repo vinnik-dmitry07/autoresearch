@@ -437,9 +437,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **SWEEP**
-- Since: batch-40 ABLATE — pile −0.052 load-bearing; deck==1 +0.0007 in <=2; IH pair>=6 best COMBO quick +0.0057 (HR class, full search +0.004)
-- Next batch type: pair-delay grid on HD base (`deck>=5/6/7/8/9`) via b4
+- Mode: **PIVOT**
+- Since: batch-41 SWEEP — pair>=5 optimal on HD base; delay >=6/7/8 monotonic decline; HD single-axis still top probe (full search +0.004)
+- Next batch type: qualitatively new mechanism beyond strip/pair/pile (defense, take threshold, or new endgame trigger)
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
@@ -451,13 +451,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**SWEEP** batch 41 — pair delay on HD strip base):
+Next 5 experiment ideas (**PIVOT** batch 42 — new mechanisms):
 
-1. **HD + pair deck>=5** — CZ control (baseline cell).
-2. **HD + pair deck>=6** — IH/HR best COMBO cell.
-3. **HD + pair deck>=7** — IL quick +0.0053.
-4. **HD + pair deck>=8** — extend delay grid.
-5. **HD + pair deck>=4** — CF regression class control.
+1. **Defense prefer take when opp<=2 and deck==0** — voluntary take threshold (K class retest with HD strip context).
+2. **Pile trump when opp hand empty (deck==0)** — new endgame pile trigger.
+3. **Open highest trump strip when deck==1** — single-card-deck timing (not deck<=2 block).
+4. **Skip pile when table full (6 cards)** — pass vs max-table defender.
+5. **Medium/full on HD** — only if new PIVOT shows quick >= +0.006.
 
 Rules for selecting ideas:
 
@@ -768,6 +768,10 @@ Append failed idea classes here so they are not retried.
 - direction: COMBO batch-39 pile on HD (HT–HZ)
   evidence: HT opp<=4 −0.008; HZ opp<=3 −0.021; HV/HY neutral; pile+strip no synergy
   do not retry unless: new non-pile second axis
+
+- direction: SWEEP batch-41 pair delay on HD (IM–IQ)
+  evidence: pair>=5 best (+0.0058); >=6/7/8 decline; >=4 −0.001; axis closed on HD base
+  do not retry unless: new strip timing change
 ```
 
 ## Loop notes
@@ -1143,4 +1147,13 @@ date/window: jun22 batch-40 (IF–IL) ABLATE
 - what changed: deck==1 mild +0.0007 vs 0|2; pair delay >=6 helps on HD base (opposite CZ-alone ablation)
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: SWEEP batch-41 pair delay grid on HD base
+```
+
+```text
+date/window: jun22 batch-41 (IM–IQ) SWEEP
+- attempts: 5 b4 discards; 0 keeps
+- bottleneck: HD pair>=5 best (+0.0058 quick); pair delay >=6 monotonic decline — axis closed
+- what changed: confirmed IH/HR pair>=6 was false lead vs HD alone at quick
+- result: 167b02d B4 0.63676 search 0.78941 unchanged; HD remains top probe
+- next bias: PIVOT batch-42 new mechanisms (strip/pair/pile exhausted)
 ```
