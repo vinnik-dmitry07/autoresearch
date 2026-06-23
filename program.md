@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold AQ baseline** — all single-knob axes at plateau; pile `deck<=5 opp<=5` locked.
-2. **Split→win combo** — delay pair to `deck>=6` only (between baseline and neutral BQ/BX).
-3. **Void open pressure** — void open bonus −7 or −8 on open path only (pile stays −8).
-4. **Pile pass early** — when `deck>5` and only trump would pile-on, pass (AttackDone) instead of trump dump.
-5. **Pair cap min+3** — widen pair search to min+3 ranks (opposite of neutral BR min+1).
+1. **Pair delay sweep** — BY showed +0.002 at `deck>=6`; try `deck>=5` and `deck>=7` (quick then medium on best).
+2. **Pair delay + hold finish** — combine BY `deck>=6` with unchanged AQ pile window (confirm no interaction).
+3. **Pair delay medium/full** — if deck threshold crosses +0.003 on medium, run dual then full on best threshold only.
+4. **Late-midgame singleton** — when `deck<=5` skip pair-open loop (inverse of BY: pairs early only via deck>=6).
+5. **Hold AQ baseline** — do not commit sub-gate deltas; full gate still search +0.005 and B4 +0.005 with lower_ci.
 
 Rules for selecting ideas:
 
@@ -483,6 +483,10 @@ Append failed idea classes here so they are not retried.
 - direction: pile deck<=4 / open strip opp<=2 / void pile -7 / pair deck>=10
   evidence: exp BU/BV/BW/BX quick neutral vs AQ
   do not retry unless: —
+
+- direction: void open -7 / void -8 global / skip pile deck>5 / pair cap min+3
+  evidence: exp BZ/CA/CB/CC quick neutral vs AQ
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -552,4 +556,13 @@ date/window: jun22 batch-7 (BS–BX)
 - what changed: closed batch-6 directions (BU/BV/BW/BX); logged BS W/L/S side effect
 - result: d5bca3c B4 0.61938 search 0.77742
 - next bias: partial pair delay deck>=6; void open-only; early pile pass; pair cap min+3
+```
+
+```text
+date/window: jun22 batch-8 (BY–CC)
+- attempts: 5 discards (1 maybe BY +0.002 quick/medium, 4 neutral); 0 full evals; 0 keeps
+- bottleneck: first measurable B4 lift since AQ but below full/medium gate (+0.003); split 0.509→0.502 on BY
+- what changed: closed void-open / pile-pass / pair-cap / void-8 axes; opened pair-delay deck threshold sweep
+- result: d5bca3c B4 0.61938 search 0.77742 (BY best probe 0.62155 medium)
+- next bias: sweep deck>=5/6/7 for pair-open; medium/full only if >= +0.003 B4 on quick
 ```
