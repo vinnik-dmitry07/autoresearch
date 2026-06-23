@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Hold `deck<=5`** — sweet spot confirmed; `deck<=3/2` maybe but below full gate; `deck<=1` regresses.
-2. **Dual confirm `deck<=3`** — AW medium +0.003 B4; run `triage.bat dual` before any full on narrow windows.
-3. **Pile dump when `opp<=5` and `deck<=5`** — unchanged; never narrow opp.
-4. **Open strip unchanged** — keep `deck==0`, `opp<=3`, `>=1` trump only.
-5. **Non-finish pile** — test stronger void pile −9 only when `deck>5` (split penalty by game phase).
+1. **Hold AQ baseline** — `deck<=5`, `opp<=5`, pile `>=1` trump; do not narrow deck or opp.
+2. **deck<=6 regression check** — one b4 quick only (expect regression vs AQ); close deck sweep.
+3. **Global void −9** — not phase-split (BD/BF neutral); single b4 if retrying void axis.
+4. **Open strip** — frozen at `deck==0`, `opp<=3`; no widening.
+5. **Qualitative new axis** — e.g. defense trump cost tuning (+45 vs +50) with b4 gate only.
 
 Rules for selecting ideas:
 
@@ -436,6 +436,14 @@ Append failed idea classes here so they are not retried.
   evidence: exp BB quick B4 −0.020 vs AQ
   do not retry unless: —
 
+- direction: phase-split void pile -9/-10 when deck>5
+  evidence: exp BD/BF quick neutral vs AQ
+  do not retry unless: global void change (not phase-split)
+
+- direction: pile deck<=3/4 dual/medium without dual agreement
+  evidence: exp BC/BG/BW medium +0.003 B4, dual disagree, below full gate
+  do not retry unless: dual agrees on two seeds AND medium >= +0.005 B4
+
 - direction: pile deck>=9
   evidence: exp Z/Z2 quick worse than deck<=6
   do not retry unless: —
@@ -472,4 +480,13 @@ date/window: jun22 batch-3 (AW–BB)
 - what changed: none (best unchanged)
 - result: d5bca3c B4 0.61938 search 0.77742
 - next bias: hold deck<=5; dual for deck<=3; no >=2-trump pile gate
+```
+
+```text
+date/window: jun22 batch-4 (BC–BG)
+- attempts: 5 discards; 0 full evals; 0 keeps
+- bottleneck: deck<=3 stable maybe (+0.003) but never crosses gate; phase-split void neutral
+- what changed: none
+- result: d5bca3c B4 0.61938 search 0.77742
+- next bias: hold AQ; close deck/void sweeps; need qualitative new axis for next keep
 ```
