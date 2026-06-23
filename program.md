@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **EU vs EO at dual/full** — deck==2 alone medium +0.0011; full EO +0.0012; escalate if dual >= +0.003.
-2. **Deck==2 + strip/pile synergy** — pair at deck==2 only when opp<=5 or singleton (one gate).
-3. **Throw-in rank match** — closed at -12 deck==3 (EX); skip unless paired with EU pair extension.
-4. **Hold CZ geometry** — deck==1/3 alone hurt; need full 1-3 window or deck==2 only.
-5. **No single-component keeps** — all EO-class below +0.003 medium gate so far.
+1. **Deck==2 gated pair** — EU +0.0011 medium; add opp<=5 or pile-phase gate on deck==2 extension only.
+2. **EO plateau accepted** — full 1-3 window +0.0012 medium max; no dual/full without >= +0.003.
+3. **New mechanism hunt** — CZ+EO micro-combo saturated; consider defense or belief-free rank inference.
+4. **Hold CZ stack** — keep pile/strip/endgame geometry fixed.
+5. **No forced full** — EO/EY/EZ dual all below escalate gate.
 
 Rules for selecting ideas:
 
@@ -839,4 +839,13 @@ date/window: jun22 batch-22 (ET–EX)
 - what changed: decomposed EO combo — deck==2 ≈ 90% of EO signal; throw-in rank -12 deck==3 inert
 - result: 167b02d B4 0.63676 search 0.78941 unchanged
 - next bias: dual on EU/EO; deck==2 gated combos; full only if dual >= +0.003 B4
+```
+
+```text
+date/window: jun22 batch-23 (EY–EZ)
+- attempts: 2 discards (dual reconfirm EU/EO); 0 full evals; 0 keeps
+- bottleneck: dual agrees but both below +0.003 escalate — EU +0.0006 quick / +0.0011 medium; EO +0.0008 dual / +0.0012 medium
+- what changed: closed dual escalation path for EO-class until new combo axis
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: deck==2 gated pair (opp/singleton); or accept EO plateau and hunt new mechanism
 ```
