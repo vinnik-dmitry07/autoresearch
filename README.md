@@ -67,6 +67,14 @@ used by the helper script.
 :: Windows: configure, build, and run the test suite
 durak\build.bat test
 
+:: Incremental rebuild during the experiment loop (skip CMake reconfigure)
+durak\build.bat fast
+
+:: Fast triage after editing strategy_heuristic.cpp (gates 0–2; see program.md)
+set BEST_SEARCH=0.73239
+scripts\triage.bat quick
+scripts\triage.bat full
+
 :: Run the baseline ladder (challenger B2 vs B4 / B1 / B0)
 durak\build\simulate.exe --mode ladder --eval full --batch 500000 > durak\run.log 2>&1
 ```
@@ -92,9 +100,9 @@ Point your agent at `program.md` and let it iterate:
 Have a look at program.md and let's kick off a new Durak experiment. Do the setup first.
 ```
 
-The agent edits only `durak/src/strategy_heuristic.cpp`, rebuilds, evaluates, and keeps or
-reverts based on the protocol in `program.md`. After logging rows in `results.tsv`,
-refresh charts:
+The agent edits only `durak/src/strategy_heuristic.cpp`, runs `scripts\triage.bat` (eval
+first, commit only on keep), and reverts the file on discard. See `program.md` for gate
+thresholds. After a **keep**, refresh charts:
 
 ```bash
 jupyter nbconvert --execute analysis.ipynb
@@ -114,7 +122,11 @@ durak/
   tests/          engine_tests.cpp, simulation_tests.cpp (golden + sanity), test_util.hpp
   cmake/          check_forbidden.cmake (no static/IO/clock/random in the heuristic file)
   CMakeLists.txt
-  build.bat       Windows build/test helper
+  build.bat       Windows build helper (full / fast / test)
+scripts/
+  triage.bat      fast eval gates 0–2 (+ optional full)
+  run_analysis.bat refresh progress.png after a keep
+  sweep_atk_trump.py example parameter sweep (quick B4 only)
 program.md        agent instructions and the experiment loop
 analysis.ipynb    visualize experiment progress from results.tsv (point_rate, search_score)
 results.tsv       experiment log (untracked)

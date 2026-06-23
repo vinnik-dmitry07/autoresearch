@@ -69,11 +69,31 @@ is a win. A tiny gain that adds an extra heuristic or parameter is usually not w
 
 ## Evaluation protocol (no peeking)
 
-Two stages. Do not stop on the first time a confidence interval crosses a threshold during
-a batch — that is sequential peeking. Decide keep/discard **only** on the full stage.
+Four gates for fast feedback; decide keep/discard **only** on gate 3 (full). Do not stop
+on the first time a confidence interval crosses a threshold during a batch — that is
+sequential peeking.
 
-- `quick_eval`: `--eval quick` (100k seeds). Smoke test / crash detection / rough signal.
-- `full_eval`: `--eval full` (5M seeds). The only stage used for keep/discard.
+| Gate | Command | Seeds | Purpose |
+|------|---------|-------|---------|
+| 0 smoke | `match --opponent B4 --seeds 5000` | 5k | crash / illegal move |
+| 1 B4 | `match --opponent B4 --eval quick` | 100k | cheap signal vs B4 (~1s) |
+| 2 ladder | `ladder --eval quick` | 100k × 3 | composite `search_score` (~5s) |
+| 3 full | `ladder --eval full` | 5M × 3 | **keep/discard only here** (~4 min) |
+
+Shortcut (rebuild + gates 0–2, optional gate 3):
+
+```bat
+set BEST_SEARCH=0.73239
+scripts\triage.bat quick
+scripts\triage.bat full
+```
+
+Set `BEST_SEARCH` to the current best `search_score` from `results.tsv`. After gate 2,
+run gate 3 only if `Δsearch_score ≥ 0.006` vs best (quick noise at 100k is ~±0.003).
+Override with `triage.bat full` when you deliberately want a full eval.
+
+Rebuild during the loop: `durak\build.bat fast` (incremental; skip CMake reconfigure).
+Use `durak\build.bat test` only after a **keep**, or when unsure.
 
 Confidence intervals are normal-approximation by default (`--ci normal`); `--ci bootstrap`
 is available but unnecessary at 5M seeds.
@@ -151,22 +171,37 @@ The loop runs on a dedicated branch (e.g. `autoresearch/jun22`).
 
 LOOP FOREVER:
 
-1. Look at the git state: the branch/commit you are on.
+1. Note the current best commit and its `search_score` from `results.tsv`.
 2. Edit `durak/src/strategy_heuristic.cpp` with one experimental idea (and update the
    manifest). Keep changes minimal and Occam-friendly.
-3. Rebuild: `durak\build.bat` (and `durak\build.bat test` if you touched anything subtle —
-   the forbidden check and engine tests must pass).
-4. `git commit` the change.
-5. `quick_eval` first: `simulate --mode ladder --eval quick > durak\run.log 2>&1`. If it
-   crashed or is clearly worse, discard early.
-6. If promising, `full_eval`: `simulate --mode ladder --eval full > durak\run.log 2>&1`.
-7. Read the summary from `durak\run.log`.
-8. Record the row(s) in `results.tsv` (do NOT commit results.tsv). Re-run or execute
-   `analysis.ipynb` to refresh `progress.png` and the Occam scatter plot.
-9. Apply the keep rule. If improved, keep the commit and advance the branch. If equal or
-   worse, `git reset --hard` back to where you started this step.
-10. After any `keep`, run the memory ablation (`--mode ablate --eval full`) and log the
-    `B3vsB2` row.
+3. Fast triage (do **not** commit yet):
+
+```bat
+set BEST_SEARCH=<best search_score from results.tsv>
+scripts\triage.bat quick
+```
+
+   Read `durak\triage.log` (or console). Discard immediately if gate 0 fails or gate 2
+   shows a clear regression vs `BEST_SEARCH`.
+
+4. Full eval only if gate 2 shows `Δsearch_score ≥ 0.006` (or you have a strong prior):
+
+```bat
+scripts\triage.bat full
+```
+
+   Or: `durak\build\simulate.exe --mode ladder --eval full --batch 500000 > durak\run.log 2>&1`
+
+5. Read the summary from `durak\triage.log` or `durak\run.log`.
+6. Append row(s) to `results.tsv` (do NOT commit results.tsv).
+7. Apply the keep rule (full_eval only). If **keep**:
+   - `durak\build.bat test` (must pass),
+   - `git add durak/src/strategy_heuristic.cpp && git commit`,
+   - memory ablation: `simulate --mode ablate --eval full`, log `B3vsB2` row,
+   - `scripts\run_analysis.bat` (refresh charts).
+   If **discard**: `git checkout -- durak/src/strategy_heuristic.cpp` (no commit was made).
+8. Parameter sweeps (one numeric constant): prefer `scripts\sweep_atk_trump.py` pattern —
+   one rebuild per value, gate 1 (`match B4 --eval quick`) only until a winner emerges.
 
 **Crashes**: if a run produces no summary, read the tail of `durak\run.log`. If it is a
 trivial bug you introduced, fix it and re-run. If the idea is fundamentally broken, log
