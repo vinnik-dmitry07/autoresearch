@@ -437,27 +437,27 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT**
-- Since: batch-41 SWEEP — pair>=5 optimal on HD base; delay >=6/7/8 monotonic decline; HD single-axis still top probe (full search +0.004)
-- Next batch type: qualitatively new mechanism beyond strip/pair/pile (defense, take threshold, or new endgame trigger)
+- Mode: **COMBO**
+- Since: batch-42 PIVOT — defense/pile/strip-split all flat (IY −0.003); HD sub-gate persists; attack-side exhausted except HD one-liner
+- Next batch type: COMBO HD strip + B1/B0 ladder boosters or CQ-stack replay on HD base
 - After next keep: **EXPLOIT** on kept stack
 
 ## Open questions
 
 - Which local situations does B4 exploit most? **Strip deck<=2** (HD) +0.006 B4 full, search +0.004 — must keep `deck==0` strip; `deck==2` adds signal; `deck==1` drags (HO 0|2 slightly worse than HD <=2).
-- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip combo** — defense unchanged; memory inert (B3vsB2 0.500).
+- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — batch-42 defense/pile pivots flat; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
 - Does complexity reduction improve B4 parity? Still complexity 100; three timing windows, zero parameters.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**PIVOT** batch 42 — new mechanisms):
+Next 5 experiment ideas (**COMBO** batch 43 — HD + ladder boost hunt):
 
-1. **Defense prefer take when opp<=2 and deck==0** — voluntary take threshold (K class retest with HD strip context).
-2. **Pile trump when opp hand empty (deck==0)** — new endgame pile trigger.
-3. **Open highest trump strip when deck==1** — single-card-deck timing (not deck<=2 block).
-4. **Skip pile when table full (6 cards)** — pass vs max-table defender.
-5. **Medium/full on HD** — only if new PIVOT shows quick >= +0.006.
+1. **HD + void remove** — simplification retest (HP +0.0057 quick).
+2. **HD + pile deck<=5** — AQ-class widen on HD base (HY neutral).
+3. **HD + strip opp<=2 + pile opp<=5** — full CZ stack with deck<=2 strip (should equal HD).
+4. **HD medium + dual** — reconfirm sub-gate before new COMBO.
+5. **HD + open strip highest trump** — IT neutral alone; combo retest.
 
 Rules for selecting ideas:
 
@@ -772,6 +772,10 @@ Append failed idea classes here so they are not retried.
 - direction: SWEEP batch-41 pair delay on HD (IM–IQ)
   evidence: pair>=5 best (+0.0058); >=6/7/8 decline; >=4 −0.001; axis closed on HD base
   do not retry unless: new strip timing change
+
+- direction: PIVOT batch-42 defense/pile/novel strip (IR–JA)
+  evidence: all b4 flat ±0.001 except IY pile deck==0 −0.003; split pair/strip neutral
+  do not retry unless: combined with HD strip as COMBO
 ```
 
 ## Loop notes
@@ -1156,4 +1160,13 @@ date/window: jun22 batch-41 (IM–IQ) SWEEP
 - what changed: confirmed IH/HR pair>=6 was false lead vs HD alone at quick
 - result: 167b02d B4 0.63676 search 0.78941 unchanged; HD remains top probe
 - next bias: PIVOT batch-42 new mechanisms (strip/pair/pile exhausted)
+```
+
+```text
+date/window: jun22 batch-42 (IR–JA) PIVOT
+- attempts: 9 b4 (1 medium JA neutral); 0 keeps
+- bottleneck: 16+ zero-keep batches; defense/pile/novel-strip all flat; HD still only +0.006 B4 sub-gate
+- what changed: closed defense take, pile deck==0, high-trump deck==1, n_table pile cap, split pair/strip
+- result: 167b02d B4 0.63676 search 0.78941 unchanged
+- next bias: COMBO batch-43 HD + ladder boost hunt
 ```
