@@ -382,7 +382,7 @@ The sections below are editable by the agent during meta mode.
 ## Open questions
 
 - Which local situations does B4 exploit most? Likely midgame when B2 opens pairs too early or hoards trumps before finish window — open-strip widening regressed sharply (AK). **Full-eval W/L/S at AQ:** win=0.379 loss=0.113 split=0.509 — ~51% split games; next gains need split→win via attack timing, not defense.
-- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack/finish** — pile trump dump axis drives all keeps since exp P; defense trump ±5 (BJ/BK) and take tweaks regressed or neutral.
+- Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack/finish + pair timing** — pile trump dump axis drove keeps since P; pair-delay `deck>=5` confirmed at full (+0.0023 B4) but below keep gate (+0.005).
 - Are B1/B0 gains misleading relative to B4? Yes — B1/B0 ~0.945/0.969 flat while B4 moved 0.49→0.61; search_score tracks B4 for keeps.
 - Does complexity reduction improve B4 parity? Already at complexity 100 (H1-only); further simplification neutral; widening open strip hurts.
 
@@ -390,11 +390,11 @@ The sections below are editable by the agent during meta mode.
 
 Next 5 experiment ideas:
 
-1. **Pair delay deck>=5 vs 6** — CD medium 0.62160 vs BY 0.62155; pick one via medium/dual only (no new knobs).
-2. **Full eval gate** — run `triage.bat full` on deck>=5 only if willing to spend ~1.7m to confirm sub-gate +0.002 (likely discard).
-3. **Pair delay + pile unchanged** — manifest-only confirm; no code change (skip as experiment).
-4. **Split diagnostic on CD** — compare W/L/S vs AQ on medium logs (split ~0.501 vs 0.509).
-5. **Hold AQ** — do not keep sub +0.002 without full gate; pile finish window still locked.
+1. **Hold AQ** — pair-delay `deck>=5` full CI confirms +0.0023 B4; do not keep without search +0.005 gate.
+2. **New axis required** — pair-delay cluster closed at full sub-gate; endgame pair promotion required (CK −0.008 if removed).
+3. **Defense untouched** — all recent signal is attack open timing; avoid defense/take retries.
+4. **Combo only after single-axis** — if retrying pair-delay, pair with pile finish tweak only (two-change, last resort).
+5. **Ablation refresh** — after any future keep, confirm B3vsB2 still 0.500 (memory inert).
 
 Rules for selecting ideas:
 
@@ -495,6 +495,18 @@ Append failed idea classes here so they are not retried.
 - direction: pair-open deck>=8 / deck>=10 alone
   evidence: exp CG/BQ/BX quick +0.002 but below gate; deck>=5/6/7/8 cluster similar
   do not retry unless: combined with second axis OR full eval shows >= +0.005
+
+- direction: pair-open deck>=5 / deck>=6 alone
+  evidence: exp CI/CJ full B4 +0.0023/+0.0022 search +0.0015; lower_ci 0.62139/0.62130; below keep gate
+  do not retry unless: new combo axis with measurable quick >= +0.003
+
+- direction: skip endgame pair promotion
+  evidence: exp CK quick −0.008 B4
+  do not retry unless: —
+
+- direction: pair deck>=5 opp>=4 / deck 5-15 / deck==5 only
+  evidence: exp CM/CN/CO neutral quick
+  do not retry unless: —
 ```
 
 ## Loop notes
@@ -582,4 +594,13 @@ date/window: jun22 batch-9 (CD–CH)
 - what changed: deck threshold mapped — best CD deck>=5 medium 0.62160 (+0.0022 B4); split ~0.501
 - result: d5bca3c B4 0.61938 search 0.77742 unchanged
 - next bias: deck>=5 vs 6 tie-break on medium; optional full on CD only; no keep without gate
+```
+
+```text
+date/window: jun22 batch-10 (CI–CO)
+- attempts: 2 full discards (CI CD +0.0023, CJ BY +0.0022), 1 regression CK −0.008, 3 neutral; 0 keeps
+- bottleneck: pair-delay best real signal since AQ but full eval still −0.003 short of keep gate on search
+- what changed: closed pair-delay at full; endgame pair promotion required; CD deck>=5 wins tie-break
+- result: d5bca3c B4 0.61938 search 0.77742 unchanged
+- next bias: need qualitatively new axis; pair-delay alone insufficient for keep
 ```
