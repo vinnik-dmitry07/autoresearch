@@ -1,0 +1,55 @@
+commit	opponent	point_rate	search_score	lower_ci	games	complexity	status	description
+228791f	B4	0.492110	0.684040	0.492000	10000000	310	keep	baseline B2 H1-H3
+2415f53	B4	0.504610	0.700020	0.504470	10000000	210	keep	exp A: drop H3 same-rank trump defense
+35330ec	B4	0.524340	0.725620	0.524090	10000000	100	keep	exp B: drop H2 group-attack H1-only
+c263a3a	B4	0.537480	0.732390	0.537230	10000000	100	keep	exp G: endgame open low pair singleton
+84c9321	B4	0.545070	0.736500	0.544850	10000000	100	keep	exp H: midgame pair-open + endgame trump-strip
+069959b	B4	0.545160	0.736540	0.544930	10000000	100	discard	exp J: void-suit pile pressure (below keep bar)
+probe	B4	0.533970	0.730940	0.532410	200000	100	discard	exp K: defense voluntary take (quick regression)
+probe	B4	0.544090	0.737270	0.542460	200000	100	discard	exp L: relaxed trump-strip opp<=4 (quick)
+probe	B4	0.545510	0.736790	0.543910	200000	100	discard	exp M: late pair-open deck<=6 (quick neutral)
+f36cda7	B4	0.547140	0.736890	0.546910	10000000	100	keep	exp P: void pile -8 + finish trump-strip open
+7bb300c	B4	0.557490	0.744180	0.557260	10000000	100	keep	exp Q: finish pile low-trump dump endgame
+41b5857	B4	0.565430	0.749880	0.565200	10000000	100	keep	exp R: finish mode opp<=3
+65e8104	B4	0.580630	0.754520	0.580400	10000000	100	keep	exp S: finish trump dump >=1 trump
+f6b5d93	B4	0.585600	0.757360	0.585370	10000000	100	keep	exp V: pile trump dump deck<=3
+d7ed0c0	B4	0.591610	0.761110	0.591380	10000000	100	keep	exp Y: pile trump dump deck<=6
+bd8b6c5	B4	0.607080	0.770750	0.606850	10000000	100	keep	exp AC: pile trump dump opp<=4
+f86282d	B4	0.612060	0.773410	0.611830	10000000	100	keep	exp AD: pile trump dump opp<=5
+probe	B4	0.598000	0.760000	0.596000	200000	100	discard	exp AK: open strip opp<=4 (regression)
+probe	B4	0.613000	0.772000	0.611000	200000	100	discard	exp AL-AP: pile/open micro probes neutral
+d5bca3c	B4	0.619380	0.777420	0.619130	10000000	100	keep	exp AQ: pile trump dump deck<=5
+probe	B4	0.621220	0.778500	0.619000	200000	100	discard	exp BY: pair-open deck>=6 maybe (+0.002 quick)
+probe	B4	0.621650	0.778870	0.621390	10000000	100	discard	exp CI: pair-open deck>=5 full (+0.0023 sub-gate)
+7912e0c	B4	0.626350	0.781250	0.626100	10000000	100	keep	exp CQ: pair deck>=5 + pile trump dump deck<=3
+167b02d	B4	0.636760	0.789410	0.636520	10000000	100	keep	exp CZ: CQ combo + endgame open strip opp<=2
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FG: early-trump guard deck>=4 pass if trump best but non-trump exists
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FH: throw-in rank match -10 on pile deck<=3
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FI: endgame pair cap min+4 when deck==0
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FJ: skip pile-on when opp>=5 and deck>=4
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FK: lowest non-trump open when deck==0 opp==1
+probe	B4	0.632690	0.787130	0.631000	200000	100	discard	exp FL: pile pass when n_table>=4 and deck>=4
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FM: midgame pair-open only when opp>=2
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FN: pile pass if throw-in rank > min_non_trump+3
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FO: void bonus open path only (no pile void)
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FP: desperate trump open deck==0 trump-only opp<=2
+probe	B4	0.635920	0.788870	0.634180	200000	100	discard	exp FQ ablate: remove void bonus entirely
+probe	B4	0.631320	0.779620	0.629580	200000	100	discard	exp FR ablate: remove midgame pair-open deck>=5
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FS ablate: open-only void bonus (no pile -8)
+probe	B4	0.626310	0.777110	0.624570	200000	100	discard	exp FT ablate: remove endgame pair promotion
+probe	B4	0.578110	0.753010	0.576370	200000	100	discard	exp FU ablate: remove finish pile trump dump
+probe	B4	0.635790	0.788840	0.634050	200000	100	discard	exp FV combo: void removed + pair deck>=6
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FW combo: open-only void + pile deck<=2
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FX combo: high-rank pile pass opp>=4 deck>=4
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp FY combo: open rank match -6 on table rank
+probe	B4	0.625590	0.776750	0.623850	200000	100	discard	exp FZ combo: endgame strip opp<=3 + pile deck<=3
+probe	B4	0.636160	0.788870	0.634420	200000	100	discard	exp GA: longest-suit open
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp GB: pile pass on uncovered table trump
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp GC: shortest-suit pile bias
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp GD: trump-only hand open lowest trump
+probe	B4	0.636070	0.788960	0.634330	200000	100	discard	exp GE: pile only when opp hand <= deck
+probe	B4	0.636070	0.788960	0.634070	200000	110	discard	exp GF sweep trump penalty +92
+probe	B4	0.636070	0.788960	0.634070	200000	110	discard	exp GG sweep trump penalty +96
+probe	B4	0.636070	0.788960	0.634070	200000	100	discard	exp GH sweep trump penalty +100
+probe	B4	0.636070	0.788960	0.634070	200000	110	discard	exp GI sweep trump penalty +104
+probe	B4	0.636070	0.788960	0.634070	200000	110	discard	exp GJ sweep trump penalty +108

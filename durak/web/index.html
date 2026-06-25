@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дурак — B2 Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon">♠</span>
+        <div>
+          <h1>Подкидной дурак</h1>
+          <p>Против агента B2 — лучшая эвристика</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <label class="seed-field">
+          Seed
+          <input id="seed" type="number" min="0" placeholder="random">
+        </label>
+        <button id="new-game" class="btn btn-primary">Новая игра</button>
+      </div>
+    </header>
+
+    <main class="table-area">
+      <section class="opponent">
+        <div class="player-label">
+          <span>AI</span>
+          <span id="opp-count" class="badge">6</span>
+        </div>
+        <div id="opp-hand" class="card-back-row"></div>
+      </section>
+
+      <section class="center-panel">
+        <div class="info-strip">
+          <div class="info-pill">
+            <span class="label">Колода</span>
+            <strong id="deck-count">24</strong>
+          </div>
+          <div class="info-pill trump-pill">
+            <span class="label">Козырь</span>
+            <div id="trump-card" class="card trump-card mini"></div>
+          </div>
+          <div class="info-pill">
+            <span class="label">Роль</span>
+            <strong id="role">—</strong>
+          </div>
+        </div>
+
+        <div id="table" class="battle-table"></div>
+        <div id="status" class="status-banner">Нажмите «Новая игра»</div>
+      </section>
+
+      <section class="player">
+        <div class="player-label you">
+          <span>Вы</span>
+          <span id="your-role" class="badge muted">—</span>
+        </div>
+        <div id="your-hand" class="hand-row"></div>
+        <div id="actions" class="actions"></div>
+      </section>
+    </main>
+
+    <aside class="log-panel">
+      <h2>Ход игры</h2>
+      <ul id="log"></ul>
+    </aside>
+  </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="modal">
+      <h2 id="result-title">Игра окончена</h2>
+      <p id="result-text"></p>
+      <button id="play-again" class="btn btn-primary">Сыграть ещё</button>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

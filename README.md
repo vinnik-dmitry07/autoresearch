@@ -2,6 +2,8 @@
 
 An autonomous-research lab for a single question in an imperfect-information card game.
 
+![](progress_ladder.png)
+
 ## What are we testing?
 
 Can a **memoryless** local heuristic policy compete with a fixed **memory-counting**

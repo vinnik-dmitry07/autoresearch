@@ -27,8 +27,25 @@ add_library(durak_engine STATIC
 target_include_directories(durak_engine PUBLIC include)
 target_compile_features(durak_engine PUBLIC cxx_std_23)
 
+add_library(play_ui STATIC
+    src/play_ui.cpp
+    src/play_session.cpp
+)
+target_link_libraries(play_ui PUBLIC durak_engine)
+
 add_executable(simulate src/simulate.cpp)
 target_link_libraries(simulate PRIVATE durak_engine)
+
+add_executable(play src/play.cpp)
+target_link_libraries(play PRIVATE durak_engine)
+
+add_executable(web_server src/web_server.cpp)
+target_compile_definitions(web_server PRIVATE "DURAK_WEB_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/web\"")
+target_include_directories(web_server PRIVATE third_party)
+target_link_libraries(web_server PRIVATE play_ui durak_engine)
+if(WIN32)
+    target_link_libraries(web_server PRIVATE ws2_32)
+endif()
 
 enable_testing()
 
