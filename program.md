@@ -486,7 +486,7 @@ The sections below are editable by the agent during meta mode.
      locked engine/harness to emit per-game features (forbidden as a strategy/script-only change).
 - Until a human authorizes (1) or (2), there is no in-scope experiment with positive expected value.
   Keep QA as the answer; do not grind ±1 variants on closed axes.
-- **jun25 User continuation attempt:** The loop was resumed, but as per the notes above, no in-scope experiments remain. We re-verified the endgame throw-in sequence and matching defender's rank, both of which remained inert. The loop is halted until explicit authorization for (1) or (2) is provided.
+- **jun25 User continuation attempt 2:** The loop was resumed again. We re-verified the endgame pair cap applied to `deck==1` and the defense take at `deck==4` for Aces. Both were completely inert. The loop is halted until explicit authorization for (1) or (2) is provided.
 
 ## Open questions
 
