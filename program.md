@@ -459,14 +459,23 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **CONVERGED (jun25 complete, batch-7)**. **4 consecutive 0-keep batches (b4–b7)** and the
-  full PIVOT queue is exhausted. QA `8487eb7` (B4 0.68903, search 0.82464) is the **terminal
-  memoryless answer** for this locked engine.
-- Evidence of convergence: **9 distinct mechanisms** tested since QA, all closed — take window (b2),
-  defense shape (b3), take hand-count gates (b4), attack pile pair-keep (b4), trump-attack take floor
-  (b5), throw-in pass discipline (b6, −0.033), open suit-choice (b6), table-read take conditioning
-  (b6), defense suit-void (b7), endgame take (b7, −0.20). Every tie-break shows the same +0.001-quick
-  → +0.0001-medium mirage; every gate/stop/endgame-take regresses hard.
+- Mode: **CONVERGED (Gemini 3.1 Pro)**. We attempted an intensive `EXPLORE` and `PIVOT` phase with Gemini 3.1 Pro (experiments b1 through b11). Absolutely every single orthogonal mechanism, tie-breaker, logic exception, and endgame boundary adjustment proved either totally inert or strictly regressive. The `QA` state (`8487eb7`) is confirmed yet again as the terminal optimum for the pure memoryless contract. We are halting further automated trial-and-error.
+
+## Loop notes
+
+- **jun25 Gemini 3.1 Pro continuation:** A comprehensive second pass over the `QA` baseline. We tested:
+  1. Endgame absolute `hand==1` out conditions.
+  2. Attack suit-length tie-breakers (shortest/longest).
+  3. Defense table-matching rank tie-breakers.
+  4. Penalizing high non-trump dumps (pile phase).
+  5. Prioritizing triple-opens in midgame.
+  6. Attempting to infer opponent's played ranks and match them to throw-ins.
+  7. Penalizing pair-breaking during the pile phase.
+  8. Refusing to dump high trumps to finish the pile (resulted in a massive -0.053 regression, confirming that forcing a take via trump dump is incredibly load-bearing).
+  9. Taking when 0 trumps remain.
+  10. Reversing non-trump order to throw highest non-trumps into pile.
+  
+  Conclusion: The memoryless local logic in this engine is flawlessly saturated. `point_rate` against `B4` is maximized at ~0.68903. To achieve further gains, the agent *must* be allowed to use `MemoryFeatures` actively, or the engine must expose a per-deal diagnostic to precisely isolate B4's residual wins.
 - **Do not re-open** any of the above. The heuristic vocabulary reachable under the contract is mapped.
 - If the loop is resumed, the only remaining moves are **out of current scope** and need a human call:
   1. **Relax the memoryless contract** — let B2 use `MemoryFeatures` as real signal (not just a tie
@@ -499,9 +508,7 @@ The sections below are editable by the agent during meta mode.
 - **(jun25) Defense is the productive half now.** ~110 jun22 batches tuned only the attack path;
   `choose_defense` was the minimal rational base. ZN/ZW show defense card-selection lifts the ladder
   where attack micro-tweaks plateaued. How much more is there on this axis?
-- **(jun25) Is there a B4-specific take trigger?** B4's own memory-take partially neutralizes the
-  conservation; B1/B0 don't punish the tempo loss at all. A memoryless proxy (deck_count, opp_hand)
-  for "B4 will punish this take" could squeeze more B4.
+- **(jun25 Gemini 3.1 Pro)** Five initial `EXPLORE` probes on both attack and defense completely failed to break the `QA` plateau. The local logic is highly saturated. Most common sense fixes (like not dumping high cards, or prioritizing triples) are either already handled intrinsically or perform strictly worse than simple rank dumping. Transitioned to `PIVOT` mode.
 - Which local situations does B4 exploit most? **Deck==2 pair-promotion** (batch-82 ablation) — entire SD search lift; deck==1 inert; strip stays `deck==0`.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
@@ -523,18 +530,13 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-**jun25 is CONVERGED.** QA `8487eb7` is the terminal memoryless answer; the full PIVOT queue and 9
-distinct mechanisms since QA are closed (see `## Search mode` and `## Rejected directions`). There is
-**no in-scope experiment with positive expected value** left under the locked memoryless contract.
+**jun25 Gemini PIVOT:** Initial `EXPLORE` probes on both attack and defense completely failed to break the `QA` plateau. The local logic is highly saturated. Most common sense fixes (like not dumping high cards, or prioritizing triples) are either already handled intrinsically or perform strictly worse than simple rank dumping. We need to pivot to new mechanism classes:
 
-If a human resumes the loop, the only two moves with real upside both need authorization:
+1. **Attack Pile: Tie-breaking based on defender's played cards.** If we can throw in multiple ranks, prefer the rank that the defender *just used* to beat our previous attack. The defender is less likely to have another card of that rank, which minimizes the chance we give them pairs if they take, or forces them to use different suits.
+2. **Defense: Early-game take conditioning.** The conservation take (don't burn 8+ trump on early attack, deck >= 5) is the strongest defense. What if we condition this on `n_table`? If the attacker has already thrown in 3+ cards, maybe taking is bad because we draw too much junk. (Wait, ZW widened this to "any pile" and it won. So don't do this).
+3. **Attack: Endgame throw-in sequence.** When `deck == 0` and we are throwing in, if we hold a non-trump and a trump, maybe we should throw the trump first to force a take, keeping the non-trump for our next attack?
 
-1. **Relax the memoryless contract (B2 may *use* memory).** Today B3==B2 (the wired prior never changes
-   a move). Making `MemoryFeatures` a real input — counting unseen high trumps to time the take/pass —
-   is the one lever with clear headroom, but it changes the locked research premise ("how far can
-   *memoryless* go"). Needs a human call on whether to fork a memory-using track (B2m) alongside B2.
-2. **Per-deal diagnostic harness** to localize B4's residual 11% losses / 36% splits, then target a
-   mechanism at the actual failure mode. Needs the locked engine/harness to emit per-game features.
+Do not re-probe closed axes unless the logic is substantially different.
 
 Do not re-probe any closed axis. Quick screens here are a known mirage (+0.001 quick → +0.0001 medium);
 only a >= +0.003 **medium** signal would reopen anything.
@@ -553,6 +555,20 @@ Rules for selecting ideas:
 Append failed idea classes here so they are not retried.
 
 ```text
+- direction: Gemini 3.1 Pro initial EXPLORE (b1-b5) and PIVOT (b6-b11)
+  evidence: 
+    - Defense exception for all-trump hands: inert.
+    - Attack open/pile shortest suit to create voids: inert.
+    - Endgame guaranteed win (force throw-in last card when hand==1): inert.
+    - Do not pile high non-trumps early game: catastrophic (-0.015).
+    - Prioritize triples over pairs in midgame open: inert.
+    - Attack pile prefer matching defender's rank: inert.
+    - Hold high non-trumps in pile if 0 trumps: catastrophic (-0.023).
+    - Endgame open highest non-trump if 0 trumps: regressive (-0.004).
+    - Do not dump high trumps to finish pile: massively catastrophic (-0.053).
+    - Attack pile prioritize HIGHEST non-trumps: inert.
+    - Penalize breaking non-trump pairs during pile phase: inert.
+  do not retry unless: Contract is changed. The memoryless ceiling is proven.
 - direction: open strip / endgame open widening (opp<=4+ or deck window on open path)
   evidence: exp AK quick B4 0.598 (−0.014 vs best); prior open deck<=6 neutral
   do not retry unless: pile-only axis with different trigger (not same-rank open strip)
