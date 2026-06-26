@@ -1,7 +1,8 @@
 @echo off
 rem Configure + build the Durak engine with the Visual Studio toolchain.
 rem Usage: build.bat            (configure + build, Release)
-rem        build.bat fast       (incremental build only; skip configure if build/ exists)
+rem        build.bat fast       (incremental build of the simulate target only)
+rem        build.bat web        (incremental build of the web_server target only)
 rem        build.bat test       (configure + build + run ctest)
 rem        build.bat fast test  (incremental build + ctest)
 setlocal
@@ -16,6 +17,8 @@ set "MODE=%~1"
 set "SUB=%~2"
 if "%MODE%"=="fast" (
     if "%SUB%"=="test" set "RUN_TEST=1"
+) else if "%MODE%"=="web" (
+    rem build only the web_server target
 ) else if "%MODE%"=="test" (
     set "RUN_TEST=1"
 ) else (
@@ -30,6 +33,12 @@ if "%MODE%"=="fast" (
         "%CMAKE%" -S "%SRC%." -B "%SRC%build" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" -DCMAKE_BUILD_TYPE=Release || exit /b 1
     )
     "%CMAKE%" --build "%SRC%build" --target simulate || exit /b 1
+) else if "%MODE%"=="web" (
+    if not exist "%SRC%build\build.ninja" (
+        echo build.bat web: no build tree; running full configure...
+        "%CMAKE%" -S "%SRC%." -B "%SRC%build" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" -DCMAKE_BUILD_TYPE=Release || exit /b 1
+    )
+    "%CMAKE%" --build "%SRC%build" --target web_server || exit /b 1
 ) else (
     "%CMAKE%" -S "%SRC%." -B "%SRC%build" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" -DCMAKE_BUILD_TYPE=Release || exit /b 1
     "%CMAKE%" --build "%SRC%build" || exit /b 1
