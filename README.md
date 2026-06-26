@@ -156,7 +156,7 @@ discard pile and cards seen entering the opponent's hand).
 ## The current best heuristic
 
 > **Snapshot, not authoritative.** This is a prose summary of the currently accepted B2
-> stack (commit `ab2d08c`, jun25 keep ZN), checked against source on 2026-06-25.
+> stack (commit `310bc72`, jun25 keep ZW), checked against source on 2026-06-25.
 > `durak/src/strategy_heuristic.cpp` and `program.md` remain authoritative — re-summarize
 > this section after any future keep.
 
@@ -195,16 +195,18 @@ one trump-conservation rule:
    hand, so the pair stays available for a future open.
 2. *Reuse table ranks* — favor (`-4`) covering with a card whose rank already sits on the
    table, so defending does not introduce a brand-new rank the attacker could throw in on.
-3. *Conserve high trumps* — if the only beater for a lone attack (`n_table == 1`) is a high
-   trump (rank `>= 10`) and the deck is still deep (`deck >= 5`), **take instead** of burning
-   it (a memoryless mirror of B4's own belief-based take).
+3. *Conserve high trumps* — if the cheapest beater is a high trump (rank `>= 9`) and the deck
+   is still deep (`deck >= 5`), **take instead** of burning it, regardless of how many cards
+   are on the table (a memoryless mirror of B4's own belief-based take).
 
 **Load-bearing parts** (`search_score` drop when removed — see [The metric](#the-metric)).
 Attack (jun22 WR map): `hand >= opp` gate (-0.0018), trump-strip `opp <= 2` (-0.014),
 `deck <= 2` pair (-0.012), pile-trump `deck <= 3` (-0.020); `total <= 16` is optimal. Defense
-(jun25 ZN): pair-keep + rank-reuse stack ≈ +0.002 search; the high-trump-conservation take
-adds ≈ +0.0013 more and lifts B1/B0 strongly (`rank >= 10` is the search peak; conserving
-*any* trump collapses it).
+(jun25 ZW): pair-keep + rank-reuse stack ≈ +0.002 search; the high-trump-conservation take
+dominates the stack — widening it from "lone attack, rank ≥ 10" to "any pile, rank ≥ 9, deck
+≥ 5" adds **+0.022 search / +0.037 B4** and is the lever that pushes B2 to *winning the
+majority* of deals vs B4. The kept cell is a corner: rank ≥ 9 (rank ≥ 8 raises losses),
+deck ≥ 5 (deck ≥ 4 regresses), no pile cap (each widening step helped).
 
 ## The metric
 
@@ -478,28 +480,29 @@ Continue the Durak autoresearch meta-loop from the durable state in program.md a
 
 ## Results
 
-Current best is **ZN** (`ab2d08c`, jun25). Numbers verified against `program.md`
+Current best is **ZW** (`310bc72`, jun25). Numbers verified against `program.md`
 `## Current best`.
 
-| Metric | ZN (`ab2d08c`) | WR (`f5bb135`) | Notes |
-|--------|----------------|----------------|-------|
-| B2 vs B4 `point_rate` | **0.64805** | 0.64489 | full 5M seeds; lower CI **0.64779** |
-| `search_score` | **0.80025** | 0.79506 | composite ladder vs B0/B1/B4 |
-| B2 vs B1 | **0.97046** | 0.96080 | trump-conservation take lifts B1 |
-| B2 vs B0 | **0.97544** | 0.97144 | and B0 |
-| B3 vs B2 (memory ablation) | **0.49920** | 0.50000 | memory tie-break inert on the stack |
-| Complexity | 100 | 100 | 205 lines, 1 heuristic, 0 parameters |
+| Metric | ZW (`310bc72`) | ZN (`ab2d08c`) | WR (`f5bb135`) | Notes |
+|--------|----------------|----------------|----------------|-------|
+| B2 vs B4 `point_rate` | **0.68494** | 0.64805 | 0.64489 | full 5M seeds; lower CI **0.68468** |
+| `search_score` | **0.82176** | 0.80025 | 0.79506 | composite ladder vs B0/B1/B4 |
+| B2 vs B1 | **0.97260** | 0.97046 | 0.96080 | wider take lifts B1 (win 0.956) |
+| B2 vs B0 | **0.98757** | 0.97544 | 0.97144 | and B0 (win 0.978) |
+| B3 vs B2 (memory ablation) | **0.49915** | 0.49920 | 0.50000 | memory tie-break inert on the stack |
+| Complexity | 100 | 100 | 100 | ~205 lines, 1 heuristic, 0 parameters |
 
-The memoryless challenger **beats B1/B0 strongly and clearly beats B4**: `point_rate(B2 vs
-B4) = 0.648` with lower CI `0.648` ≫ the `0.52` real-edge bar, so by the metric's own
-definition B2 dominates the memory-counting baseline. Local hand/table structure carries the
-lift; the wired memory prior changes no move choices on the accepted policy.
+The memoryless challenger **beats B1/B0 overwhelmingly and clearly beats B4**: `point_rate(B2
+vs B4) = 0.685` with lower CI `0.685` ≫ the `0.52` real-edge bar. Against B4, B2 now **wins
+the majority of deals** (win 0.521, split 0.371, loss 0.108). Local hand/table structure
+carries the lift; the wired memory prior changes no move choices on the accepted policy.
 
 The **jun22 run** (113+ batches, keeps CZ → WR) saturated the *attack* path and was declared
 plateaued. The **jun25 run** reopened it with a new hypothesis — that defense *card selection*
-(keep pairs, reuse table ranks, conserve high trumps) was the under-explored half — and the
-first batch (ZN) cleared the +0.005-search keep gate, breaking the plateau. The search
-continues on the defense axis.
+(keep pairs, reuse table ranks, conserve high trumps) was the under-explored half. Batch 1
+(ZN) cleared the keep gate and broke the plateau; batch 2 (ZW) then **widened the high-trump
+conservation take** — conserving any 9+ trump at any pile size — for a second, larger break
+(+0.022 search) that is also *simpler* than ZN. The search continues on the defense axis.
 
 ## Legacy LLM experiment
 

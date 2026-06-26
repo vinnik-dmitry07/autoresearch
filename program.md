@@ -428,52 +428,65 @@ The sections below are editable by the agent during meta mode.
 
 ## Current best
 
-- Commit: `ab2d08c`
-- B4 point_rate: 0.64805
-- Search score: 0.80025
-- Lower CI: 0.64779
+- Commit: `310bc72`
+- B4 point_rate: 0.68494
+- Search score: 0.82176
+- Lower CI: 0.68468
 - Complexity: 100
-- Why it is best: **ZN** = WR attack stack (unchanged) + **shape-aware defense**. Among cheapest
-  beaters: keep non-trump pairs (`+4`), reuse a rank already on the table (`−4`), and **take rather
-  than burn a high trump (rank≥10, i.e. `rank_of>=4`) on a lone attack (`n_table==1`) while
-  `deck>=5`**. Full **+0.00519 search / +0.00316 B4** vs WR (`f5bb135`). The trump-conservation take
-  lifts **B1 0.961→0.970 and B0 0.972→0.975** (most of the search gain); B4 rises less because B4
-  punishes the take more. Occam: still **1 heuristic, 0 parameters, complexity 100** (+11 lines).
-  Breaks the 100+-batch attack-side plateau via the previously under-explored **defense half**.
-- **ZN component map (jun25 batch-1):** additive on WR — pair-keep `+0.0010` search, rank-reuse
-  `+0.0018` (stack ≈ `+0.0031` quick / `+0.0020` medium); high-trump take adds `+0.0013` more. Take
-  rank sweep: **rank>=4 is the search peak** (0.80092q); rank>=6/7 give higher B4 but search below
-  gate; rank>=0 collapses (−0.022 — low trumps must still cover). Deck>=4/5/6 within noise.
-  Inert/worse 3rd signals: void-suit `−2` (`+0.0002`), keep-lowest-opener `+3` (`−0.001`).
-- **Memory ablation:** B3 vs B2 **0.49920** (5M) — the new defense shape logic uses only
+- Why it is best: **ZW** = ZN defense stack with the **high-trump conservation take widened**. The
+  take now fires for **any 9+ trump (`rank_of>=3`) at any pile size while `deck>=5`** — i.e. drop the
+  ZN `n_table==1` restriction *and* lower the rank floor from 10 to 9. Full **+0.02151 search /
+  +0.03689 B4** vs ZN (`ab2d08c`) and **+0.0267 search / +0.0401 B4** vs WR (`f5bb135`). It is also
+  **simpler** than ZN (one fewer conditional — the `n_table` clause is gone).
+- **The narrow ZN take was leaving the gain on the table.** ZN restricted conservation to lone
+  attacks; the real waste is covering a *multi-card* attack with high trumps. Removing the cap and
+  the 10-floor lifts **B4 win 0.445→0.5215** (B2 now wins the majority of deals), split 0.445→0.371,
+  loss ~flat (0.108). Ladder: **B1 0.970→0.97260 (win 0.956!), B0 0.975→0.98757 (win 0.978)** — the
+  memoryless heuristic now crushes B0/B1 and clears B4 by +0.185 point-rate.
+- **ZW take sweep (jun25 batch-2):** `n_table` cap monotone — `==1` (ZN) < `<=2` < `<=3` < `<=4` <
+  **no-cap**, each step + search. Rank floor: rank>=3 is the peak (search 0.82360q, B4 0.68800);
+  rank>=2 flat search but +loss; rank>=4 −0.003. Deck: **deck>=5 optimal** (deck>=4 −0.006, deck>=6
+  −0.0006). So the kept cell is the *corner* rank>=3 / deck>=5 / no-cap.
+- **Defense stack (carried from ZN):** among cheapest beaters keep non-trump pairs (`+4`), reuse a
+  rank already on the table (`−4`); then the conservation take. Pair-keep/rank-reuse magnitudes were
+  tuned on the WR base and **not yet re-tuned on the ZW base** (open EXPLOIT).
+- **Memory ablation:** B3 vs B2 **0.49915** (5M) — defense shape + conservation take use only
   `LocalFeatures`; memory remains inert.
-- **Historical (jun22, WR `f5bb135`):** B4 0.64489 / search 0.79506. Attack stack = TQ (pair
-  `deck<=2` + `total<=16` at deck==2; strip `deck==0` `opp<=2`) + pile trump when `hand>=opp`
-  (`deck<=3`, `opp<=5`, `trumps>=1`). Attack-side load-bearing parts: `hand>=opp` (−0.0018), strip
-  `opp<=2` (−0.014), deck<=2 pair (−0.012), pile trump `deck<=3` (−0.020). Attack axis fully mapped
-  and saturated (batches 102–113).
+- **Historical (jun25 batch-1, ZN `ab2d08c`):** B4 0.64805 / search 0.80025. First defense keep;
+  broke the attack-side plateau. **jun22 WR `f5bb135`:** B4 0.64489 / search 0.79506; attack stack
+  (TQ pair + strip + pile-trump `hand>=opp`) fully mapped and saturated (batches 102–113).
 
 ## Search mode
 
-- Mode: **EXPLOIT (jun25 defense axis)**
-- Since: jun25 batch-1 keep (ZN) — defense hand-shape + high-trump conservation broke the plateau
-- Next batch type: **EXPLOIT** — refine the take window (`n_table<=2`, deck/rank cells) and re-tune
-  pair-keep / rank-reuse magnitudes on the ZN base (they were tuned on the WR base); max 3 attempts
-  then meta-review.
-- After next keep: EXPLOIT once more, then **EXPLORE** further defense mechanisms — the
-  defense/card-selection half is freshly productive after being ignored for ~110 batches.
+- Mode: **EXPLOIT (jun25 defense axis, batch-3)**
+- Since: jun25 batch-2 keep (ZW) — widening the high-trump conservation take (any pile, 9+) was a
+  second plateau break (+0.0215 search over ZN).
+- **Take window is now SATURATED** — `n_table` cap, rank floor, and deck threshold all swept to their
+  corner (no-cap / rank>=3 / deck>=5). Do not re-sweep the take.
+- Next batch type: **EXPLOIT** — the one piece not yet re-tuned on the ZW base is the **pair-keep
+  (`+4`) / rank-reuse (`−4`) magnitudes** (tuned on WR; the broad take may shift their optimum). Try
+  `+3/+6` and `−3/−5`, one change per attempt, max 3 attempts then meta-review.
+- After this: **EXPLORE** genuinely new defense/throw-in shape signals (new-rank penalty scaled by
+  throw-in capacity; endgame void bonus; pair-keep mirrored on the pile dump). The defense half is
+  still freshly productive after two keeps.
 
 ## Open questions
 
+- **(jun25 b2) The take was the dominant lever, and the cap was hiding it.** Widening ZN's
+  conservation take from `n_table==1`/rank≥10 to `any pile`/rank≥9 jumped B4 +0.037 and B1 to 0.973
+  (win 0.956). The biggest waste was covering *multi-card* attacks with high trumps. Is the
+  endgame-vs-conservation boundary (`deck>=5`) the next lever, or fully mapped at the deck>=5 corner?
+- **(jun25 b2) B2 now wins the majority vs B4 (win 0.5215, split 0.371, loss 0.108).** The remaining
+  37% splits and 11% losses — are they trump-starved defenses, or attack deals where conserving cost
+  tempo? Need a per-deal breakdown (where does B2 take and then fail to convert?).
+- **(jun25 b2) Are pair-keep/rank-reuse still load-bearing on the ZW base?** They were tuned on WR
+  and never ablated against the broad take. Re-confirm and re-tune magnitudes (next EXPLOIT).
 - **(jun25) Defense is the productive half now.** ~110 jun22 batches tuned only the attack path;
-  `choose_defense` was the minimal rational base. ZN shows defense card-selection lifts the ladder
+  `choose_defense` was the minimal rational base. ZN/ZW show defense card-selection lifts the ladder
   where attack micro-tweaks plateaued. How much more is there on this axis?
-- **(jun25) Why does high-trump conservation help so much vs B1/B0?** The take (don't burn a high
-  trump on a lone early attack, take instead) barely moves B4 (+0.003) but lifts B1 +0.009 / B0
-  +0.003. B1/B0 don't exploit the tempo loss from taking, so conserving trumps for later attacks is
-  almost free vs them; B4's memory-take partially neutralizes it. Is there a B4-specific take trigger?
-- **(jun25) What still loses?** At ZN, B4 win=0.445 loss=0.110 split=0.445. Half the deals are still
-  splits — the path remains converting the losing seat. Is it defense end-state or attack tempo?
+- **(jun25) Is there a B4-specific take trigger?** B4's own memory-take partially neutralizes the
+  conservation; B1/B0 don't punish the tempo loss at all. A memoryless proxy (deck_count, opp_hand)
+  for "B4 will punish this take" could squeeze more B4.
 - Which local situations does B4 exploit most? **Deck==2 pair-promotion** (batch-82 ablation) — entire SD search lift; deck==1 inert; strip stays `deck==0`.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
@@ -495,21 +508,25 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLOIT defense axis on ZN base `ab2d08c`**):
+Next 5 experiment ideas (**EXPLOIT defense axis on ZW base `310bc72`**):
 
-1. **Take `n_table<=2`** — conserve a high trump even when two cards attack (cost: take 2 cards).
-   Quick screen; keep only if search holds and B4 does not regress.
-2. **Re-tune shape magnitudes on ZN base** — pair-keep `+3/+6`, rank-reuse `−3/−5` (tuned on the WR
-   base; the new base + take may shift the optimum). One change per attempt.
-3. **Take rank/deck fine cells** — rank>=5 deck>=5 (higher B4; confirm search >= gate at medium);
-   deck>=4 vs >=6. The B4-vs-search tradeoff peaks differently; look for a cell with more margin.
-4. **New defense shape signal** — penalize introducing a *new* rank scaled by remaining throw-in
-   capacity (`deck+opp`), or a void-suit bonus gated to endgame (`deck<=2`).
-5. **Shape on the throw-in/pile dump** — when piling on, prefer dumping a card that does not break a
-   non-trump pair in hand (mirror the defense pair-keep on the attack side).
+1. **Re-tune shape magnitudes on ZW base** — pair-keep `+3` and `+6`; rank-reuse `−3` and `−5` (each
+   one change per attempt). They were tuned on WR before the broad take existed; the optimum may have
+   moved. Quick screen first.
+2. **Ablate pair-keep / rank-reuse on ZW base** — turn each off; confirm both still load-bearing now
+   that the take dominates. If one is inert, drop it (Occam: simpler is a keep at equal search).
+3. **New defense shape signal** — penalize introducing a *new* rank (one not on the table and not a
+   hand-pair) scaled by remaining throw-in capacity (`deck+opp`); or an endgame void-suit bonus
+   gated `deck<=2` (the un-gated void was inert in batch-1).
+4. **Shape on the throw-in/pile dump** — mirror defense pair-keep on attack: when piling on, prefer
+   dumping a card that does not break a non-trump pair in hand.
+5. **Memoryless B4-take proxy** — only conserve the high trump when a cheap proxy says B4 is unlikely
+   to punish (e.g. `opp_hand_count` small, or many trumps already seen on the table). Aim to recover
+   the B4 the unconditional take leaves behind.
 
 Rules: EXPLOIT one change per attempt, quick screen first; escalate medium/dual on >= +0.003 quick;
-full only on the locked gate. Do not re-sweep the saturated attack axis (jun22 batches 102–113).
+full only on the locked gate. **Do not re-sweep the take window** (n_table/rank/deck saturated, b2)
+or the attack axis (jun22 batches 102–113).
 
 Rules for selecting ideas:
 
@@ -1097,6 +1114,13 @@ Append failed idea classes here so they are not retried.
 - direction: (jun25) defense rank-reuse / pair-keep magnitude beyond the optimum
   evidence: exp ZD rank-reuse −6 worse than −4; ZE pair-keep +6 worse than +4 (both seed-0 quick)
   do not retry unless: re-tuned jointly on the ZN base at medium
+
+- direction: (jun25 b2) high-trump conservation take window — n_table / rank / deck cells
+  evidence: REOPENED the b1 take rejection via "n_table widen" → ZW keep. Sweep then closed it:
+  n_table cap is monotone (==1<<=2<<=3<<=4<no-cap, each + search) so no-cap wins; rank floor peak
+  at >=3 (rank>=2 flat search +loss, rank>=4 −0.003); deck>=5 optimal (deck>=4 −0.006, deck>=6
+  −0.0006). Kept corner = no-cap / rank>=3 / deck>=5.
+  do not retry unless: a 2nd conditioning feature (B4-take proxy), not n_table/rank/deck alone
 
 ## Loop notes
 
@@ -2101,4 +2125,23 @@ date/window: jun25 batch-1 (ZA–ZN) new run — EXPLORE→COMBO defense hand-sh
 - correction: jun22 docs ("remains below B4", batch-114 "edge not reached") are wrong — B2 lower_ci
   0.648 >> 0.52, so **B2 dominates B4** and has since ~the CZ keep. README results need updating.
 - next bias: EXPLOIT take window + re-tune shape magnitudes on ZN base; then EXPLORE more defense.
+```
+
+```text
+date/window: jun25 batch-2 (ZS–ZZ) EXPLOIT take window on ZN base — **1 keep**
+- attempts: 8 probes (n_table sweep ZS–ZV, rank/deck re-sweep ZW–ZZ); 1 keep (ZW full).
+- signal map: widening ZN's take is monotone in n_table — `==1`(ZN) < `<=2` < `<=3` < `<=4` < no-cap,
+  each step adds search. With the cap removed, re-sweeping the rank floor moved the peak from rank>=4
+  (ZN base) to **rank>=3**; deck>=5 still optimal. Kept corner = no-cap / rank>=3 / deck>=5.
+- key insight: the ZN `n_table==1` cap was hiding most of the gain — covering *multi-card* attacks
+  with high trumps is the bigger waste. Removing it jumped B4 +0.037 (ZN take alone moved B4 only
+  +0.003). B2 now wins the majority vs B4 (win 0.445→0.5215).
+- what changed: committed `310bc72` (exp ZW); manifest comment simplified (dropped n_table clause —
+  one fewer conditional, still 1 heuristic / 0 params); results.tsv rows; B3vsB2 0.49915 (memory
+  inert); charts refreshed.
+- result: `310bc72` B4 **0.68494** search **0.82176** lower_ci 0.68468 (+0.02151 search / +0.03689 B4
+  vs ZN; +0.0267 / +0.0401 vs WR). B1 0.97260 (win 0.956), B0 0.98757 (win 0.978). Second plateau
+  break in one run, and the result is *simpler* than the prior best.
+- next bias: take window saturated (do not re-sweep). EXPLOIT-3 re-tunes pair-keep/rank-reuse on the
+  ZW base (untuned there); then EXPLORE new defense/throw-in shape signals + a B4-take proxy.
 ```
