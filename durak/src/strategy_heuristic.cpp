@@ -14,7 +14,10 @@
 //   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame pair
 //                                       deck>=5 within min+2; endgame pair-open deck<=2 + total gate;
 //                                       trump-strip deck==0 opp<=2; finish deck<=3 pile trump opp<=5
-//                                       hand>=opp; >=1 trump
+//                                       hand>=opp; >=1 trump. Defense (shape-aware): cheapest
+//                                       beater, keep non-trump pairs, reuse a rank already on the
+//                                       table, and take rather than burn a high trump (>=10) on a
+//                                       lone attack while deck>=5.
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -161,13 +164,21 @@ Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const Leg
         const Card d = m.card;
         double cost = double(rank_of(d));
         if (is_trump(d, L.trump_suit)) cost += 50.0;  // prefer non-trump (rational base)
+        else if (popcount(L.hand & RANK_MASK[rank_of(d)] & ~SUIT_MASK[L.trump_suit]) >= 2)
+            cost += 4.0;  // keep non-trump pairs for future opening
+        if ((L.table_attack | L.table_defense) & RANK_MASK[rank_of(d)])
+            cost -= 4.0;  // reuse a rank already committed on the table
         if (mem) cost -= 0.001 * double(mem->unknown_rank_count[rank_of(d)]);
         if (cost < best_c) {
             best_c = cost;
             best = i;
         }
     }
-    return best >= 0 ? legal.moves[best] : Move{MoveType::DefendTake, NO_CARD, 0};
+    if (best < 0) return {MoveType::DefendTake, NO_CARD, 0};
+    const Card bd = legal.moves[best].card;
+    if (is_trump(bd, L.trump_suit) && rank_of(bd) >= 4 && L.deck_count >= 5 && L.n_table == 1)
+        return {MoveType::DefendTake, NO_CARD, 0};  // don't burn a high trump on a lone early attack
+    return legal.moves[best];
 }
 
 }  // namespace
