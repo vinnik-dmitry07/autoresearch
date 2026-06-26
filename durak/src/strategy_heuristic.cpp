@@ -127,7 +127,7 @@ Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const Lega
     // Optional throw-in / pile-on: dump lowest non-trump; finish pile may dump low trump.
     const Card pile_card = legal.moves[best].card;
     if (!is_trump(pile_card, L.trump_suit)) return legal.moves[best];
-    if (L.deck_count <= 3 && L.opponent_hand_count <= 6 &&
+    if (L.deck_count <= 3 && L.opponent_hand_count <= 5 &&
         popcount(L.hand) >= L.opponent_hand_count &&
         popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 1) {
         Move low_trump{MoveType::AttackDone, NO_CARD, 0};

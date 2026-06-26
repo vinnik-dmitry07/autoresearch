@@ -182,7 +182,8 @@ tiny `-0.001 * unknown_rank_count` prior nudges toward still-unseen ranks.
 2. *Endgame pair-open* (`deck <= 2`, lowest non-trump is a singleton): if `deck != 2` or
    `total <= 16` (where `total = deck + hand + opp + table`), open a higher non-trump pair
    instead of wasting the singleton.
-3. *Trump-strip* (`deck == 0`, `opp <= 2`, at least one trump): open the lowest trump.
+3. *Trump-strip* (only inside case 2 — `deck == 0`, lowest non-trump still a singleton with no
+   higher non-trump pair found — plus `opp <= 2` and at least one trump): open the lowest trump.
 4. Otherwise: the lowest non-trump at the chosen rank.
 
 **Throw-in / pile-on.** Dump the lowest non-trump. If only trumps remain, pile the lowest
