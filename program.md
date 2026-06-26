@@ -459,21 +459,22 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT (near ceiling, batch-5)** — EXPLORE (batch-4) found no productive new mechanism.
-- Since: jun25 batch-4 — SA/SD proved the take is a hard unconditional optimum (no gate helps);
-  SB/SC attack pile pair-keep inert. Defense/take and attack axes all closed.
-- **Closed this run:** conservation take window (n_table/rank/deck corner); defense shape tie-breaks
-  (harmful); take hand/opp gates (harmful); attack pile pair-keep (inert). Do not re-open these.
-- Next batch type: **PIVOT** — only qualitatively new mechanisms, one per attempt, quick screen:
-  1. **Throw-in pass discipline** — when piling on, sometimes stop early (`AttackDone`) to deny the
-     defender a cheap cover that grows their hand we then can't punish. (Engine lets the attacker
-     stop; jun22 tuned the trump-finish but not a non-trump early-stop.)
-  2. **Endgame-specific defense** (`deck<=2`) — the take is off here; test a low-trump-cover-order or
-     hold-a-cover-card rule for the closing exchanges where B4's counting bites most.
-  3. **Open-from-longest-suit tie-break** — lead the lowest non-trump in our *longest* non-trump
-     suit (deplete a long suit), only if it does not re-tread the jun22 shortest-suit result.
-- Expect diminishing returns: QA already wins the majority vs B4 with zero memory. Keep the loop
-  alive with periodic PIVOT probes; only escalate on a clear >= +0.003 quick signal.
+- Mode: **PIVOT — low frequency (ceiling reached, batch-6)**. Formal plateau: **3 consecutive 0-keep
+  batches (b4 EXPLORE, b5 PIVOT, b6 PIVOT)**. QA `8487eb7` (B4 0.68903) is the memoryless ceiling.
+- Since: jun25 batch-6 — TA throw-in-stop −0.033 (pile is load-bearing); TB open-suit and TE
+  table-trump take proxy both fade to medium-noise (the +0.001-quick mirage, like SE).
+- **Closed this run (do not re-open):** take window (n_table/rank/deck corner, b2); defense shape
+  tie-breaks (harmful, b3); take hand-count gates (harmful, b4); attack pile pair-keep (inert, b4);
+  trump-attack take floor (inert, b5); throw-in pass discipline (catastrophic, b6); open suit-choice
+  (inert, b6); table-read take conditioning (inert, b6). The heuristic vocabulary here is exhausted.
+- Next batch type: **PIVOT, low frequency** — build only for a *qualitatively new lever* outside the
+  closed vocabulary. Two untested low-EV candidates remain; expect failure, screen quick-only:
+  1. **Endgame-specific defense (`deck<=2`)** — the take is off here; test cover-order / hold-a-cover
+     for the closing exchanges where B4's counting bites hardest. (Only un-probed defense surface.)
+  2. **Defense suit-void awareness**, endgame-gated — value a cover that creates a trumpable void.
+- Reality check: the memoryless premise is answered (B3==B2, memory inert; B2 wins the majority vs
+  B4 with zero memory). Without relaxing the locked memoryless contract, large gains are unlikely.
+  Do not grind ±1 variants; only escalate on a clear >= +0.003 **medium** signal.
 
 ## Open questions
 
@@ -521,26 +522,23 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next experiment ideas (**PIVOT, qualitatively new only, on QA base `8487eb7`**):
+Next experiment ideas (**PIVOT low-frequency, ceiling reached, on QA base `8487eb7`**). Only two
+un-probed surfaces remain; both are low-EV. Build only one at a time, quick-screen, expect failure:
 
-1. **Throw-in pass discipline.** When piling on, test stopping early (`AttackDone`) instead of
-   dumping the lowest non-trump match — e.g. stop when the defender is card-light (`opp<=k`) so we
-   don't hand them a cheap cover that fattens a hand we can't punish. jun22 tuned the trump-finish
-   pile, not a non-trump early stop.
-2. **Endgame-specific defense (`deck<=2`).** The conservation take is off here (deck>=5 gate), so the
+1. **Endgame-specific defense (`deck<=2`).** The conservation take is off here (deck>=5 gate), so the
    closing exchanges use the plain cheapest-beater. Test a cover-order or hold-a-cover rule for the
-   endgame where B4's card counting bites hardest.
-3. **Open-from-longest-suit tie-break.** Among equal-lowest non-trump opens, lead from our *longest*
-   non-trump suit to deplete it. Only if it does not just re-tread the jun22 shortest-suit probe.
-4. **Take vs cover when the attack itself is a trump.** Covering a trump attack burns an even higher
-   trump; test a slightly more aggressive take (lower rank floor) gated to trump attacks only.
-5. **Defense suit-void awareness.** When a non-trump cover would leave us void in that suit, weigh
-   the future trumping value — endgame-gated to avoid the inert/ harmful generic shape result.
+   endgame where B4's card counting bites hardest. (The only un-probed *defense* surface.)
+2. **Defense suit-void awareness.** When a non-trump cover would leave us void in that suit, weigh the
+   future trumping value — endgame-gated to avoid the inert/harmful generic shape result.
 
-Rules: PIVOT one change per attempt, quick screen first; escalate medium/dual on >= +0.003 quick;
-full only on the locked gate. **Do not re-open** the take window (n_table/rank/deck saturated, b2),
-the defense shape tie-breaks (harmful, b3), take hand-count gates (harmful, b4), or the saturated
-attack micro-axis (jun22 batches 102–113). Expect diminishing returns near the memoryless ceiling.
+Everything else this run is **closed** (see `## Search mode` and `## Rejected directions`): take
+window (b2), defense shape (b3), take hand-count gates (b4), attack pile pair-keep (b4), trump-attack
+take floor (b5), throw-in pass discipline (b6), open suit-choice (b6), table-read take conditioning
+(b6), and the jun22 attack micro-axis (102–113). A genuinely new lever likely needs to step outside
+this vocabulary — which, given the memoryless contract, may mean QA is the terminal answer.
+
+Rules: PIVOT one change per attempt, quick screen first; escalate only on a clear >= +0.003 **medium**
+signal (the +0.001-quick mirage fades every time). Do not grind ±1 variants on closed axes.
 
 Rules for selecting ideas:
 
@@ -1161,6 +1159,21 @@ Append failed idea classes here so they are not retried.
 - direction: (jun25 b5) trump-attack-specific take floor (conserve 7+ when covering a trump attack)
   evidence: SE +0.0010 search quick, +0.0003 medium = noise. The take is at its optimum; new
   conditioning features fade like every other refinement. Adds 4 lines for nothing.
+  do not retry unless: a conditioning feature with a clear >= +0.003 *medium* signal
+
+- direction: (jun25 b6) throw-in / pile-on pass discipline (stop early to deny defender a cover)
+  evidence: TA endgame stop opp<=2 −0.0325 search catastrophic. Piling onto a card-light defender is
+  load-bearing (mirror of jun22 batch-111 YE n_table>=4 pass −0.016). Throwing in is near-unconditional.
+  do not retry unless: never (the dump-all-low pile is a hard optimum)
+
+- direction: (jun25 b6) open suit-choice (longest- or shortest-suit tie-break)
+  evidence: TB longest-suit +0.0013 quick / +0.0002 medium = noise (jun22 shortest-suit was −0.0003).
+  Both directions inert — the open rank already dominates suit choice.
+  do not retry unless: —
+
+- direction: (jun25 b6) memoryless table-read conditioning on the take (table-trump count)
+  evidence: TE rank>=1 when >=2 table trumps: +0.0012 quick / +0.0001 medium = noise. Same fade as
+  SE/TB — the take floor (rank>=2, deck>=5) is a hard optimum no local feature improves.
   do not retry unless: a conditioning feature with a clear >= +0.003 *medium* signal
 
 ## Loop notes
@@ -2236,4 +2249,20 @@ date/window: jun25 batch-5 (SE) PIVOT new conditioning on QA base — **0 keeps*
 - conclusion: jun25 is **at its memoryless ceiling**. Three keeps (ZN→ZW→QA) took B2 from 0.645 to
   0.689 vs B4 (wins the majority, zero memory). Every probe since fades to medium-noise. Remaining
   PIVOT ideas (throw-in pass discipline, endgame defense) are low-EV; run the loop at low frequency.
+```
+
+```text
+date/window: jun25 batch-6 (TA/TB/TE) PIVOT new mechanisms on QA base — **0 keeps**
+- attempts: 3 probes across 3 distinct surfaces (attack-stop, open-suit, take-conditioning). All fail.
+- TA throw-in early-stop (endgame, opp<=2): −0.0325 search **catastrophic** — piling onto a card-light
+  defender (force cover-or-take) is one of the largest levers; do NOT add pass discipline.
+- TB open-from-longest-suit tie-break: +0.0013 B4 quick → +0.0002 medium = noise. Untested opposite of
+  the jun22 shortest-suit probe (−0.0003); confirms the open suit-choice is inert.
+- TE table-trump take proxy (rank>=1 when >=2 trumps already on table): +0.0012 quick → +0.0001
+  medium = noise. A *memoryless table-read* conditioning — still nothing; the take is at its optimum.
+- **3rd consecutive 0-keep batch (b4,b5,b6) → formal PLATEAU.** Every take-conditioning probe (SE/TE)
+  shows the same +0.001 quick / +0.0001 medium fade; every gate/stop regresses. QA is the ceiling.
+- decision: stay **PIVOT** but at **low frequency** — only a qualitatively new lever outside the
+  exhausted vocabulary (attack-suit, take-window, defense-shape, hand-count gates all closed) is worth
+  a build. The memoryless premise itself is answered: B3==B2 (memory inert), B2 wins the majority vs B4.
 ```
