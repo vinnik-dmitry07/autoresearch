@@ -1158,6 +1158,11 @@ Append failed idea classes here so they are not retried.
   evidence: SB/SC +2/+4 tie-break: +0.0009 quick but +0.0001 medium = noise; adds a sub-rule. Inert.
   do not retry unless: —
 
+- direction: (jun25 b5) trump-attack-specific take floor (conserve 7+ when covering a trump attack)
+  evidence: SE +0.0010 search quick, +0.0003 medium = noise. The take is at its optimum; new
+  conditioning features fade like every other refinement. Adds 4 lines for nothing.
+  do not retry unless: a conditioning feature with a clear >= +0.003 *medium* signal
+
 ## Loop notes
 
 Append compressed meta-review notes here.
@@ -2217,4 +2222,18 @@ date/window: jun25 batch-4 (SA–SD) EXPLORE new mechanisms on QA base — **0 k
 - next bias: the three productive axes (attack jun22; defense take jun25 b1/b2; defense shape jun25
   b3-removed) are all closed. Switch to **PIVOT** — only qualitatively new mechanisms (endgame-
   specific play, throw-in pass discipline) are worth trying; expect diminishing returns near ceiling.
+```
+
+```text
+date/window: jun25 batch-5 (SE) PIVOT new conditioning on QA base — **0 keeps**
+- attempts: 1 probe (SE). Trump-attack-specific take floor (conserve 7+ trumps, rank>=1, when the
+  attack being covered is itself a trump, since covering it burns a higher trump). A NEW conditioning
+  feature (allowed by the take-rejection's escape clause), not a rank/deck re-sweep.
+- SE: +0.0010 search quick but **+0.0003 medium** = noise (same fade as SB/SC/the magnitude probes).
+  The take is genuinely at its optimum; even principled new conditioning adds complexity for nothing.
+- result: best unchanged — QA `8487eb7` B4 0.68903 search 0.82464. Two consecutive 0-keep batches
+  (b4, b5); a third trips the formal plateau trigger.
+- conclusion: jun25 is **at its memoryless ceiling**. Three keeps (ZN→ZW→QA) took B2 from 0.645 to
+  0.689 vs B4 (wins the majority, zero memory). Every probe since fades to medium-noise. Remaining
+  PIVOT ideas (throw-in pass discipline, endgame defense) are low-EV; run the loop at low frequency.
 ```

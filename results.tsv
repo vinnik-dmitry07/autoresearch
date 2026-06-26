@@ -548,3 +548,7 @@ probe	B4	0.675340	0.801630	0.673470	200000	100	discard	exp QF: take-only rank>=2
 8487eb7	B1	0.975190	0.824640	0.975100	10000000	100	keep	exp QA: B1 ladder rung (jun25 b3 full)
 8487eb7	B0	0.987820	0.824640	0.987750	10000000	100	keep	exp QA: B0 ladder rung (jun25 b3 full)
 8487eb7	B3vsB2	0.500000	0.824640	0.500000	10000000	100	keep	exp QA memory ablation: identical play, memory fully inert (jun25 b3)
+probe	B4	0.645190	0.786550	0.643420	200000	100	discard	exp SA: take gated hand<=opp -0.038 catastrophic (jun25 b4 quick)
+probe	B4	0.689160	0.824760	0.688340	1000000	100	discard	exp SC: attack pile pair-keep inert at medium (jun25 b4)
+probe	B4	0.680650	0.804280	0.678810	200000	100	discard	exp SD: take gated opp_hand>=4 -0.020 (jun25 b4 quick)
+probe	B4	0.689160	0.824950	0.688340	1000000	100	discard	exp SE: trump-attack take floor rank>=1 inert at medium (jun25 b5)
