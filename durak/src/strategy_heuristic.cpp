@@ -16,8 +16,8 @@
 //                                       trump-strip deck==0 opp<=2; finish deck<=3 pile trump opp<=5
 //                                       hand>=opp; >=1 trump. Defense (shape-aware): cheapest
 //                                       beater, keep non-trump pairs, reuse a rank already on the
-//                                       table, and take rather than burn a high trump (>=10) on a
-//                                       lone attack while deck>=5.
+//                                       table, and take rather than burn a 9+ trump on defense
+//                                       while deck>=5 (high-trump conservation, any pile size).
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -176,8 +176,8 @@ Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const Leg
     }
     if (best < 0) return {MoveType::DefendTake, NO_CARD, 0};
     const Card bd = legal.moves[best].card;
-    if (is_trump(bd, L.trump_suit) && rank_of(bd) >= 4 && L.deck_count >= 5 && L.n_table == 1)
-        return {MoveType::DefendTake, NO_CARD, 0};  // don't burn a high trump on a lone early attack
+    if (is_trump(bd, L.trump_suit) && rank_of(bd) >= 3 && L.deck_count >= 5)
+        return {MoveType::DefendTake, NO_CARD, 0};  // don't burn a high trump on an early attack
     return legal.moves[best];
 }
 
