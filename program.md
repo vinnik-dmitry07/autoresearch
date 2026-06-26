@@ -459,22 +459,23 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **PIVOT — low frequency (ceiling reached, batch-6)**. Formal plateau: **3 consecutive 0-keep
-  batches (b4 EXPLORE, b5 PIVOT, b6 PIVOT)**. QA `8487eb7` (B4 0.68903) is the memoryless ceiling.
-- Since: jun25 batch-6 — TA throw-in-stop −0.033 (pile is load-bearing); TB open-suit and TE
-  table-trump take proxy both fade to medium-noise (the +0.001-quick mirage, like SE).
-- **Closed this run (do not re-open):** take window (n_table/rank/deck corner, b2); defense shape
-  tie-breaks (harmful, b3); take hand-count gates (harmful, b4); attack pile pair-keep (inert, b4);
-  trump-attack take floor (inert, b5); throw-in pass discipline (catastrophic, b6); open suit-choice
-  (inert, b6); table-read take conditioning (inert, b6). The heuristic vocabulary here is exhausted.
-- Next batch type: **PIVOT, low frequency** — build only for a *qualitatively new lever* outside the
-  closed vocabulary. Two untested low-EV candidates remain; expect failure, screen quick-only:
-  1. **Endgame-specific defense (`deck<=2`)** — the take is off here; test cover-order / hold-a-cover
-     for the closing exchanges where B4's counting bites hardest. (Only un-probed defense surface.)
-  2. **Defense suit-void awareness**, endgame-gated — value a cover that creates a trumpable void.
-- Reality check: the memoryless premise is answered (B3==B2, memory inert; B2 wins the majority vs
-  B4 with zero memory). Without relaxing the locked memoryless contract, large gains are unlikely.
-  Do not grind ±1 variants; only escalate on a clear >= +0.003 **medium** signal.
+- Mode: **CONVERGED (jun25 complete, batch-7)**. **4 consecutive 0-keep batches (b4–b7)** and the
+  full PIVOT queue is exhausted. QA `8487eb7` (B4 0.68903, search 0.82464) is the **terminal
+  memoryless answer** for this locked engine.
+- Evidence of convergence: **9 distinct mechanisms** tested since QA, all closed — take window (b2),
+  defense shape (b3), take hand-count gates (b4), attack pile pair-keep (b4), trump-attack take floor
+  (b5), throw-in pass discipline (b6, −0.033), open suit-choice (b6), table-read take conditioning
+  (b6), defense suit-void (b7), endgame take (b7, −0.20). Every tie-break shows the same +0.001-quick
+  → +0.0001-medium mirage; every gate/stop/endgame-take regresses hard.
+- **Do not re-open** any of the above. The heuristic vocabulary reachable under the contract is mapped.
+- If the loop is resumed, the only remaining moves are **out of current scope** and need a human call:
+  1. **Relax the memoryless contract** — let B2 use `MemoryFeatures` as real signal (not just a tie
+     prior). B3==B2 today (memory inert); a memory-*using* policy is a different research question and
+     a **locked-contract change**. This is the only identified lever with real upside left.
+  2. **Per-deal diagnostic harness** — localize B4's residual 11% losses / 36% splits. Needs the
+     locked engine/harness to emit per-game features (forbidden as a strategy/script-only change).
+- Until a human authorizes (1) or (2), there is no in-scope experiment with positive expected value.
+  Keep QA as the answer; do not grind ±1 variants on closed axes.
 
 ## Open questions
 
@@ -522,23 +523,21 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next experiment ideas (**PIVOT low-frequency, ceiling reached, on QA base `8487eb7`**). Only two
-un-probed surfaces remain; both are low-EV. Build only one at a time, quick-screen, expect failure:
+**jun25 is CONVERGED.** QA `8487eb7` is the terminal memoryless answer; the full PIVOT queue and 9
+distinct mechanisms since QA are closed (see `## Search mode` and `## Rejected directions`). There is
+**no in-scope experiment with positive expected value** left under the locked memoryless contract.
 
-1. **Endgame-specific defense (`deck<=2`).** The conservation take is off here (deck>=5 gate), so the
-   closing exchanges use the plain cheapest-beater. Test a cover-order or hold-a-cover rule for the
-   endgame where B4's card counting bites hardest. (The only un-probed *defense* surface.)
-2. **Defense suit-void awareness.** When a non-trump cover would leave us void in that suit, weigh the
-   future trumping value — endgame-gated to avoid the inert/harmful generic shape result.
+If a human resumes the loop, the only two moves with real upside both need authorization:
 
-Everything else this run is **closed** (see `## Search mode` and `## Rejected directions`): take
-window (b2), defense shape (b3), take hand-count gates (b4), attack pile pair-keep (b4), trump-attack
-take floor (b5), throw-in pass discipline (b6), open suit-choice (b6), table-read take conditioning
-(b6), and the jun22 attack micro-axis (102–113). A genuinely new lever likely needs to step outside
-this vocabulary — which, given the memoryless contract, may mean QA is the terminal answer.
+1. **Relax the memoryless contract (B2 may *use* memory).** Today B3==B2 (the wired prior never changes
+   a move). Making `MemoryFeatures` a real input — counting unseen high trumps to time the take/pass —
+   is the one lever with clear headroom, but it changes the locked research premise ("how far can
+   *memoryless* go"). Needs a human call on whether to fork a memory-using track (B2m) alongside B2.
+2. **Per-deal diagnostic harness** to localize B4's residual 11% losses / 36% splits, then target a
+   mechanism at the actual failure mode. Needs the locked engine/harness to emit per-game features.
 
-Rules: PIVOT one change per attempt, quick screen first; escalate only on a clear >= +0.003 **medium**
-signal (the +0.001-quick mirage fades every time). Do not grind ±1 variants on closed axes.
+Do not re-probe any closed axis. Quick screens here are a known mirage (+0.001 quick → +0.0001 medium);
+only a >= +0.003 **medium** signal would reopen anything.
 
 Rules for selecting ideas:
 
@@ -1175,6 +1174,16 @@ Append failed idea classes here so they are not retried.
   evidence: TE rank>=1 when >=2 table trumps: +0.0012 quick / +0.0001 medium = noise. Same fade as
   SE/TB — the take floor (rank>=2, deck>=5) is a hard optimum no local feature improves.
   do not retry unless: a conditioning feature with a clear >= +0.003 *medium* signal
+
+- direction: (jun25 b7) defense suit-void cover bonus (prefer a cover that empties a non-trump suit)
+  evidence: UA −2 last-of-suit: +0.0012 quick / +0.0001 medium = noise. A new shape signal, same fade
+  as pair-keep/rank-reuse. The defense shape axis is fully closed — cheapest-beater is optimal.
+  do not retry unless: never (all defense shape tie-breaks are inert under the broad take)
+
+- direction: (jun25 b7) endgame take of high trumps (relax deck>=5 for trump K/A)
+  evidence: UB take if cheapest beater is trump K/A at any deck −0.117 search / −0.202 B4 catastrophic.
+  The deck>=5 take gate is a hard wall; endgame take is disastrous even for the Ace.
+  do not retry unless: never (endgame take is dead at every rank)
 
 ## Loop notes
 
@@ -2265,4 +2274,21 @@ date/window: jun25 batch-6 (TA/TB/TE) PIVOT new mechanisms on QA base — **0 ke
 - decision: stay **PIVOT** but at **low frequency** — only a qualitatively new lever outside the
   exhausted vocabulary (attack-suit, take-window, defense-shape, hand-count gates all closed) is worth
   a build. The memoryless premise itself is answered: B3==B2 (memory inert), B2 wins the majority vs B4.
+```
+
+```text
+date/window: jun25 batch-7 (UA/UB) PIVOT — last two queued surfaces — **0 keeps**. Queue exhausted.
+- UA defense suit-void cover bonus (−2 for emptying a non-trump suit): +0.0012 quick → +0.0001 medium
+  = noise. A *different* shape signal than the rejected pair-keep/rank-reuse, but the same fade. The
+  defense shape axis is fully closed — no tie-break of any kind beats plain cheapest-beater.
+- UB endgame never-burn-trump-K/A (take if cheapest beater is a trump K/A at any deck): −0.117 search
+  / −0.202 B4 **catastrophic**. The `deck>=5` take gate is a hard wall: taking near game-end to hoard
+  even the trump Ace is disastrous (you absorb the table and never spend the trump). Endgame take dead.
+- **4th consecutive 0-keep batch (b4–b7).** Diagnostic localization (per-deal loss profile) checked and
+  **out of scope** — simulate.exe emits only aggregate point_rate; per-deal logging needs the locked
+  engine/harness or forbidden global state in the strategy.
+- **CONVERGED.** Every queued idea and 9 distinct mechanisms since QA are closed (take window b2; shape
+  b3; hand-gates b4; pile pair-keep b4; trump-attack floor b5; pile pass-discipline b6; open-suit b6;
+  table-read take b6; suit-void b7; endgame take b7). QA `8487eb7` (B4 0.68903, search 0.82464) is the
+  **terminal memoryless answer** for this engine. Within the locked contract there is no further lever.
 ```

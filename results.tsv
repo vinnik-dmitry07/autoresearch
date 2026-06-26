@@ -555,3 +555,5 @@ probe	B4	0.689160	0.824950	0.688340	1000000	100	discard	exp SE: trump-attack tak
 probe	B4	0.656370	0.792140	0.654470	200000	100	discard	exp TA: throw-in early-stop opp<=2 endgame -0.033 catastrophic (jun25 b6 quick)
 probe	B4	0.689210	0.824650	0.688390	1000000	100	discard	exp TB: open-from-longest-suit tie-break inert at medium (jun25 b6)
 probe	B4	0.689160	0.824760	0.688340	1000000	100	discard	exp TE: table-trump take proxy (rank>=1 if >=2 table trumps) inert at medium (jun25 b6)
+probe	B4	0.689160	0.824760	0.688340	1000000	100	discard	exp UA: defense suit-void cover bonus (-2 last-of-suit) inert at medium (jun25 b7)
+probe	B4	0.486780	0.707350	0.484880	200000	100	discard	exp UB: endgame never-burn-trump-K/A take -0.202 catastrophic (jun25 b7 quick)
