@@ -568,3 +568,10 @@ probe	B4	0.684610	0.821130	0.682760	200000	100	discard	exp gemini b8: endgame op
 probe	B4	0.635940	0.781930	0.634060	200000	100	discard	exp gemini b9: PIVOT do not dump high trumps (Q, K, A) into the finish pile (quick -0.053)
 probe	B4	0.689580	0.825190	0.687740	200000	100	discard	exp gemini b10: PIVOT attack pile prioritize HIGHEST non-trumps (quick inert)
 probe	B4	0.690160	0.825490	0.688320	200000	100	discard	exp gemini b11: PIVOT penalize breaking non-trump pairs during pile phase (quick inert)
+probe	B4	0.689110	0.824610	0.687270	200000	100	discard	exp gemini b12: PIVOT attack pile throw trump first if deck==0 (quick inert)
+probe	B4	0.690240	0.825530	0.688400	200000	100	discard	exp gemini b13: PIVOT attack pile prefer matching defender's rank (re-test, quick inert)
+probe	B4	0.690120	0.825440	0.688270	200000	100	discard	exp gemini b14: PIVOT defense take if only hold trumps and deck>=5 (quick inert)
+probe	B4	0.687920	0.824350	0.686080	200000	100	discard	exp gemini b15: PIVOT midgame pair open cap at rank 4 (quick -0.001)
+probe	B4	0.689940	0.825310	0.688100	200000	100	discard	exp gemini b16: PIVOT endgame pair cap total<=16 applied to deck=1 too (quick inert)
+probe	B4	0.690170	0.825430	0.688330	200000	100	discard	exp gpt55 b1: defense hard-target tie-break (GPT-5.5 Extra High quick inert)
+probe	B4	0.690290	0.825380	0.688990	200000	100	discard	exp terminal high-trump tiny throw-in: 200k macro flat; 1M B4 0.68942, discard as noise

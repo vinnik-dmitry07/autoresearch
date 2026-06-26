@@ -33,6 +33,25 @@ def load_b4(path):
     return b4
 
 
+def _fit_labels_in_box(fig, ax, anns, margin=0.012):
+    '''Grow the y-axis upper limit until every vertical label fits inside the box.
+
+    Starts from a generous trial headroom (so the labels are measured taller than
+    they will end up) and iterates downward to a tight fit. Measuring under a
+    range >= the final range guarantees the labels stay inside after each step.
+    '''
+    if not anns:
+        return
+    ax.set_ylim(top=ax.get_ylim()[1] + 0.4)
+    for _ in range(6):
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        inv = ax.transData.inverted()
+        max_top = max(inv.transform((0, a.get_window_extent(renderer).y1))[1]
+                      for a in anns)
+        ax.set_ylim(top=max_top + margin)
+
+
 def main():
     if not RESULTS_PATH.exists():
         raise FileNotFoundError(
@@ -54,13 +73,17 @@ def main():
     if len(kept):
         ax.step(kept['exp_id'], kept['point_rate'].cummax(), where='post',
                 color='#27ae60', linewidth=2, alpha=0.7, label='Running best')
+        anns = []
         for _, row in kept.iterrows():
             desc = str(row['description']).strip()
             if len(desc) > 40:
                 desc = desc[:37] + '...'
-            ax.annotate(desc, (row['exp_id'], row['point_rate']),
-                        textcoords='offset points', xytext=(0, 8), fontsize=7,
-                        color='#1a7a3a', alpha=0.9, rotation=90, ha='center', va='bottom')
+            anns.append(ax.annotate(
+                desc, (row['exp_id'], row['point_rate']),
+                textcoords='offset points', xytext=(0, 8), fontsize=7,
+                color='#1a7a3a', alpha=0.9, rotation=90, ha='center', va='bottom'))
+    else:
+        anns = []
     ax.axhline(0.50, color='#888', linestyle='--', linewidth=1, alpha=0.5,
                label='Parity (0.50)')
     ax.axhline(0.52, color='#e74c3c', linestyle='--', linewidth=1, alpha=0.5,
@@ -84,6 +107,7 @@ def main():
     ax2.grid(True, alpha=0.2)
 
     plt.tight_layout()
+    _fit_labels_in_box(fig, ax, anns)
     plt.savefig(OUT_PATH, dpi=150, bbox_inches='tight')
     print(f'Saved {OUT_PATH} ({len(ladder)} experiments, {len(kept)} kept)')
 
