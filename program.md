@@ -459,19 +459,21 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **EXPLORE (new mechanisms, batch-4)** — pivot off the now-saturated defense/take axes.
-- Since: jun25 batch-3 keep (QA) — ablation found the ZN shape signals net-harmful under the broad
-  take; dropping them + re-tuning the take floor to 8+ was a third (Occam) keep.
-- **Closed this run:** the conservation take window (n_table/rank/deck swept to the corner) **and**
-  the defense shape tie-breaks (pair-keep, rank-reuse — proven harmful). Do not re-open either.
-- Next batch type: **EXPLORE**, one new mechanism per attempt, quick screen first:
-  1. **Memoryless B4-take proxy** — the unconditional take leaves B4 on the table (B4's own
-     memory-take neutralizes some). Gate the take on a cheap proxy (small `opp_hand_count`; many
-     trumps already on the table) to recover it. Highest-value: directly targets B4.
-  2. **Attack-side pair-keep on the pile dump** — when throwing in, avoid breaking a non-trump pair.
-  3. Whether the conservation principle has any attack-side analogue beyond the existing trump `+100`.
-- Lower priority: new defense shape signals (new-rank penalty, endgame void bonus) — shape biases
-  just proved harmful, so expect failure unless tightly gated.
+- Mode: **PIVOT (near ceiling, batch-5)** — EXPLORE (batch-4) found no productive new mechanism.
+- Since: jun25 batch-4 — SA/SD proved the take is a hard unconditional optimum (no gate helps);
+  SB/SC attack pile pair-keep inert. Defense/take and attack axes all closed.
+- **Closed this run:** conservation take window (n_table/rank/deck corner); defense shape tie-breaks
+  (harmful); take hand/opp gates (harmful); attack pile pair-keep (inert). Do not re-open these.
+- Next batch type: **PIVOT** — only qualitatively new mechanisms, one per attempt, quick screen:
+  1. **Throw-in pass discipline** — when piling on, sometimes stop early (`AttackDone`) to deny the
+     defender a cheap cover that grows their hand we then can't punish. (Engine lets the attacker
+     stop; jun22 tuned the trump-finish but not a non-trump early-stop.)
+  2. **Endgame-specific defense** (`deck<=2`) — the take is off here; test a low-trump-cover-order or
+     hold-a-cover-card rule for the closing exchanges where B4's counting bites most.
+  3. **Open-from-longest-suit tie-break** — lead the lowest non-trump in our *longest* non-trump
+     suit (deplete a long suit), only if it does not re-tread the jun22 shortest-suit result.
+- Expect diminishing returns: QA already wins the majority vs B4 with zero memory. Keep the loop
+  alive with periodic PIVOT probes; only escalate on a clear >= +0.003 quick signal.
 
 ## Open questions
 
@@ -519,25 +521,26 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**EXPLORE new mechanisms on QA base `8487eb7`**):
+Next experiment ideas (**PIVOT, qualitatively new only, on QA base `8487eb7`**):
 
-1. **Memoryless B4-take proxy (highest value).** The unconditional 8+ trump take leaves B4 on the
-   table — B4's belief-based take partly neutralizes it. Gate the take on a cheap local proxy for
-   "B4 won't punish this": e.g. only take when `opponent_hand_count <= k`, or when ≥N trumps already
-   sit on the table (table is trump-heavy → fewer high trumps left to punish with). Sweep k/N.
-2. **Attack-side pair-keep on the pile dump.** When throwing in (pile-on), prefer a dump that does
-   not break a non-trump pair in hand — the attack mirror of the (now-removed) defense pair-keep.
-   This is a *different* surface than defense, so the harmful-shape result may not transfer.
-3. **Conservation on the open.** Already partly present (trump `+100`); test a softer "don't open
-   into a likely throw-in chain when holding 2+ high trumps" gate.
-4. **Take depth by hand size.** Make the take's `deck>=5` boundary depend on `hand` vs `opp` (take
-   more freely when ahead on cards; cover when behind) — a cheap state-dependent refinement.
-5. **New defense shape signal (low priority).** New-rank penalty scaled by `deck+opp`, or endgame
-   void bonus gated `deck<=2`. Expect failure (shape biases proved harmful) unless tightly gated.
+1. **Throw-in pass discipline.** When piling on, test stopping early (`AttackDone`) instead of
+   dumping the lowest non-trump match — e.g. stop when the defender is card-light (`opp<=k`) so we
+   don't hand them a cheap cover that fattens a hand we can't punish. jun22 tuned the trump-finish
+   pile, not a non-trump early stop.
+2. **Endgame-specific defense (`deck<=2`).** The conservation take is off here (deck>=5 gate), so the
+   closing exchanges use the plain cheapest-beater. Test a cover-order or hold-a-cover rule for the
+   endgame where B4's card counting bites hardest.
+3. **Open-from-longest-suit tie-break.** Among equal-lowest non-trump opens, lead from our *longest*
+   non-trump suit to deplete it. Only if it does not just re-tread the jun22 shortest-suit probe.
+4. **Take vs cover when the attack itself is a trump.** Covering a trump attack burns an even higher
+   trump; test a slightly more aggressive take (lower rank floor) gated to trump attacks only.
+5. **Defense suit-void awareness.** When a non-trump cover would leave us void in that suit, weigh
+   the future trumping value — endgame-gated to avoid the inert/ harmful generic shape result.
 
-Rules: EXPLORE one change per attempt, quick screen first; escalate medium/dual on >= +0.003 quick;
+Rules: PIVOT one change per attempt, quick screen first; escalate medium/dual on >= +0.003 quick;
 full only on the locked gate. **Do not re-open** the take window (n_table/rank/deck saturated, b2),
-the defense shape tie-breaks (proven harmful, b3), or the attack axis (jun22 batches 102–113).
+the defense shape tie-breaks (harmful, b3), take hand-count gates (harmful, b4), or the saturated
+attack micro-axis (jun22 batches 102–113). Expect diminishing returns near the memoryless ceiling.
 
 Rules for selecting ideas:
 
@@ -1144,6 +1147,15 @@ Append failed idea classes here so they are not retried.
 - direction: (jun25 b3) defense rank-reuse / pair-keep magnitude re-tune on ZW base
   evidence: R5 (−5) +0.0006 search, R6 (−6) −0.0003 — flat noise; superseded by the ablation that
   removed both signals entirely (QA).
+  do not retry unless: —
+
+- direction: (jun25 b4) gating the conservation take on hand/opp counts
+  evidence: SA take only when hand<=opp −0.038 search (take helps most when card-heavy); SD take only
+  when opp_hand>=4 −0.020 search (hurts B1/B0). The take is a hard unconditional optimum.
+  do not retry unless: a fundamentally different conditioning signal, not a hand-count gate
+
+- direction: (jun25 b4) attack-side pile/throw-in pair-keep (mirror of defense pair-keep)
+  evidence: SB/SC +2/+4 tie-break: +0.0009 quick but +0.0001 medium = noise; adds a sub-rule. Inert.
   do not retry unless: —
 
 ## Loop notes
@@ -2189,4 +2201,20 @@ date/window: jun25 batch-3 (R5–R6, QB–QF, QA) EXPLOIT→ABLATE on ZW base �
   Third keep of the run; the defense is now minimal.
 - next bias: defense/take axes closed. EXPLORE genuinely new mechanisms — top pick is a **memoryless
   B4-take proxy** (recover the B4 the unconditional take leaves behind); then attack-side pair-keep.
+```
+
+```text
+date/window: jun25 batch-4 (SA–SD) EXPLORE new mechanisms on QA base — **0 keeps**
+- attempts: 4 probes; all fail or inert. The EXPLORE axis (B4-take proxy + attack pair-keep) is
+  unproductive — the QA policy is at its memoryless ceiling on the surfaces reachable here.
+- SA take gated `hand<=opp`: −0.038 search (catastrophic). The take is valuable *especially* when
+  card-heavy; any hand/opp gate disables it where it helps.
+- SD take gated `opp_hand>=4`: −0.020 search (hurts B1/B0 most). Confirms: **no gate on the take
+  helps** — it is a hard unconditional optimum (gates hurt, lower rank hurts, deck>=5 firm).
+- SB/SC attack-side pile pair-keep (+2/+4, pure tie-break): +0.0009q but **+0.0001 medium** = noise,
+  and it adds a sub-rule. Inert, like the defense shape signals. Discard.
+- result: best unchanged — QA `8487eb7` B4 0.68903 search 0.82464.
+- next bias: the three productive axes (attack jun22; defense take jun25 b1/b2; defense shape jun25
+  b3-removed) are all closed. Switch to **PIVOT** — only qualitatively new mechanisms (endgame-
+  specific play, throw-in pass discipline) are worth trying; expect diminishing returns near ceiling.
 ```
