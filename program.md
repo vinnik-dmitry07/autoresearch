@@ -428,26 +428,52 @@ The sections below are editable by the agent during meta mode.
 
 ## Current best
 
-- Commit: `f5bb135`
-- B4 point_rate: 0.64489
-- Search score: 0.79506
-- Lower CI: 0.64464
+- Commit: `ab2d08c`
+- B4 point_rate: 0.64805
+- Search score: 0.80025
+- Lower CI: 0.64779
 - Complexity: 100
-- Why it is best: **WR** = TQ stack (pair `deck<=2` + `total≤16` gate at deck==2; strip `deck==0` `opp<=2`) plus **pile trump only when `hand≥opp`** within finish window (`deck<=3`, `opp<=5`, `trumps≥1`). Full +0.00813 B4 / +0.00565 search vs CZ (`167b02d`). Occam: **194 lines** (+5 vs CZ 189).
-- **WR ablation map (batches 102–106):** load-bearing: `hand≥opp` (−0.0018), strip `opp≤2` (−0.014), deck≤2 pair (−0.012), pile trump `deck≤3` (−0.020). Optimal: `total≤16`, pile `opp≤5`, pile `deck≤3`. Inert/closed: rank-match, deck≥6, void mag, opp≤6, total 14–17, pair min+1/skip+2, suit tie-break, rank-aware void, pile-pass trump hoard.
-- **Plateau (batch-107):** WR full search **0.79506** stable (dual seed 0/1 agree); next keep needs **+0.005** search (bar **0.80006**). ~80 batches since CZ keep; 1 keep (WR) in batch-101.
-- **Defense rank-match SWEEP (batch-108):** quick peak **−2/−4** search ~0.7956 (+0.0005); **−3** medium flat (XT); **−6** regress; softer ultra-endgame inert.
-- **Top probe (unkept):** exp **YB/XW** WR+defense rank-match **−4** — dual quick **0.79560** (+0.00054 both seeds); medium **0.79595 (+0.00089)** reconfirmed; still **~0.0041** below keep bar. Occam **198 lines** (+4). **Do not full-eval** — below +0.003 medium gate.
+- Why it is best: **ZN** = WR attack stack (unchanged) + **shape-aware defense**. Among cheapest
+  beaters: keep non-trump pairs (`+4`), reuse a rank already on the table (`−4`), and **take rather
+  than burn a high trump (rank≥10, i.e. `rank_of>=4`) on a lone attack (`n_table==1`) while
+  `deck>=5`**. Full **+0.00519 search / +0.00316 B4** vs WR (`f5bb135`). The trump-conservation take
+  lifts **B1 0.961→0.970 and B0 0.972→0.975** (most of the search gain); B4 rises less because B4
+  punishes the take more. Occam: still **1 heuristic, 0 parameters, complexity 100** (+11 lines).
+  Breaks the 100+-batch attack-side plateau via the previously under-explored **defense half**.
+- **ZN component map (jun25 batch-1):** additive on WR — pair-keep `+0.0010` search, rank-reuse
+  `+0.0018` (stack ≈ `+0.0031` quick / `+0.0020` medium); high-trump take adds `+0.0013` more. Take
+  rank sweep: **rank>=4 is the search peak** (0.80092q); rank>=6/7 give higher B4 but search below
+  gate; rank>=0 collapses (−0.022 — low trumps must still cover). Deck>=4/5/6 within noise.
+  Inert/worse 3rd signals: void-suit `−2` (`+0.0002`), keep-lowest-opener `+3` (`−0.001`).
+- **Memory ablation:** B3 vs B2 **0.49920** (5M) — the new defense shape logic uses only
+  `LocalFeatures`; memory remains inert.
+- **Historical (jun22, WR `f5bb135`):** B4 0.64489 / search 0.79506. Attack stack = TQ (pair
+  `deck<=2` + `total<=16` at deck==2; strip `deck==0` `opp<=2`) + pile trump when `hand>=opp`
+  (`deck<=3`, `opp<=5`, `trumps>=1`). Attack-side load-bearing parts: `hand>=opp` (−0.0018), strip
+  `opp<=2` (−0.014), deck<=2 pair (−0.012), pile trump `deck<=3` (−0.020). Attack axis fully mapped
+  and saturated (batches 102–113).
 
 ## Search mode
 
-- Mode: **closed (jun22 run complete)**
-- Since: batch-114 — post-plateau memory ablation logged; WR accepted as final challenger
-- Next batch type: none — restart only with new hypothesis or rule change
-- After next keep: N/A (run complete)
+- Mode: **EXPLOIT (jun25 defense axis)**
+- Since: jun25 batch-1 keep (ZN) — defense hand-shape + high-trump conservation broke the plateau
+- Next batch type: **EXPLOIT** — refine the take window (`n_table<=2`, deck/rank cells) and re-tune
+  pair-keep / rank-reuse magnitudes on the ZN base (they were tuned on the WR base); max 3 attempts
+  then meta-review.
+- After next keep: EXPLOIT once more, then **EXPLORE** further defense mechanisms — the
+  defense/card-selection half is freshly productive after being ignored for ~110 batches.
 
 ## Open questions
 
+- **(jun25) Defense is the productive half now.** ~110 jun22 batches tuned only the attack path;
+  `choose_defense` was the minimal rational base. ZN shows defense card-selection lifts the ladder
+  where attack micro-tweaks plateaued. How much more is there on this axis?
+- **(jun25) Why does high-trump conservation help so much vs B1/B0?** The take (don't burn a high
+  trump on a lone early attack, take instead) barely moves B4 (+0.003) but lifts B1 +0.009 / B0
+  +0.003. B1/B0 don't exploit the tempo loss from taking, so conserving trumps for later attacks is
+  almost free vs them; B4's memory-take partially neutralizes it. Is there a B4-specific take trigger?
+- **(jun25) What still loses?** At ZN, B4 win=0.445 loss=0.110 split=0.445. Half the deals are still
+  splits — the path remains converting the losing seat. Is it defense end-state or attack tempo?
 - Which local situations does B4 exploit most? **Deck==2 pair-promotion** (batch-82 ablation) — entire SD search lift; deck==1 inert; strip stays `deck==0`.
 - Is the B2 weakness mostly attack choice, defense choice, take/pass threshold, or trump conservation? **Attack open/pile/strip** — defense EXPLORE batch-65–66 all neutral or catastrophic; HD strip `deck<=2` remains only strong signal.
 - Are B1/B0 gains misleading relative to B4? B1/B0 rose with CZ (~0.956/0.971) but B4 delta is the keep signal.
@@ -469,13 +495,21 @@ The sections below are editable by the agent during meta mode.
 
 ## Editable research directions
 
-Next 5 experiment ideas (**run closed**):
+Next 5 experiment ideas (**EXPLOIT defense axis on ZN base `ab2d08c`**):
 
-1. **Jun22 run complete** — locked best `f5bb135` (WR); 113+ experiment batches; 2 keeps (CZ, WR).
-2. **Headline result:** B2 vs B4 **0.64489** full (lower CI 0.64464); search **0.79506**; B4 still ahead but local heuristics close gap vs early ~0.49 parity.
-3. **Memory ablation:** B3 vs B2 **0.50000** on WR — wired memory tie-break never changes decisions.
-4. **Best unkept:** YB/XW defense rank-match −4 at **0.79595** medium (+0.00089) — below keep bar.
-5. **To restart:** edit `## Search mode` + add new hypothesis; do not re-sweep closed axes (batches 102–113).
+1. **Take `n_table<=2`** — conserve a high trump even when two cards attack (cost: take 2 cards).
+   Quick screen; keep only if search holds and B4 does not regress.
+2. **Re-tune shape magnitudes on ZN base** — pair-keep `+3/+6`, rank-reuse `−3/−5` (tuned on the WR
+   base; the new base + take may shift the optimum). One change per attempt.
+3. **Take rank/deck fine cells** — rank>=5 deck>=5 (higher B4; confirm search >= gate at medium);
+   deck>=4 vs >=6. The B4-vs-search tradeoff peaks differently; look for a cell with more margin.
+4. **New defense shape signal** — penalize introducing a *new* rank scaled by remaining throw-in
+   capacity (`deck+opp`), or a void-suit bonus gated to endgame (`deck<=2`).
+5. **Shape on the throw-in/pile dump** — when piling on, prefer dumping a card that does not break a
+   non-trump pair in hand (mirror the defense pair-keep on the attack side).
+
+Rules: EXPLOIT one change per attempt, quick screen first; escalate medium/dual on >= +0.003 quick;
+full only on the locked gate. Do not re-sweep the saturated attack axis (jun22 batches 102–113).
 
 Rules for selecting ideas:
 
@@ -1050,7 +1084,19 @@ Append failed idea classes here so they are not retried.
 - direction: PIVOT batch-113 new mechanism class (YL–YO)
   evidence: shortest-suit −0.0003; pile depth / tight-beat / open pass inert at quick
   do not retry unless: qualitatively different local feature hypothesis
-```
+
+- direction: (jun25) defense 3rd shape signal — void-suit bonus / keep-lowest-opener on ZC
+  evidence: exp ZG void-suit −2 inert (+0.0002 vs ZC); ZH keep-opener +3 −0.001 quick
+  do not retry unless: a different shape signal (not suit-void or opener-keep)
+
+- direction: (jun25) high-trump conservation take — rank/deck extremes
+  evidence: exp ZO take any-trump deck>=5 −0.022 search (low trumps must cover lone attacks); ZP
+  rank>=3 −0.0001 search / −0.0019 B4 vs rank>=4; ZQ deck>=4 ties deck>=5 with lower B4
+  do not retry unless: paired with n_table widen or a B4-specific trigger
+
+- direction: (jun25) defense rank-reuse / pair-keep magnitude beyond the optimum
+  evidence: exp ZD rank-reuse −6 worse than −4; ZE pair-keep +6 worse than +4 (both seed-0 quick)
+  do not retry unless: re-tuned jointly on the ZN base at medium
 
 ## Loop notes
 
@@ -2037,4 +2083,22 @@ date/window: jun22 batch-114 closure — post-plateau ablation + run complete
 - what changed: B3vsB2 row logged; search mode → closed; README results summary
 - result: f5bb135 final; jun22 autoresearch run complete
 - next bias: none — restart with new hypothesis only
+```
+
+```text
+date/window: jun25 batch-1 (ZA–ZN) new run — EXPLORE→COMBO defense hand-shape — **1 keep**
+- attempts: ~16 probes; 1 keep (ZN full). New hypothesis: the defense/card-selection half is the
+  under-explored axis (jun22 tuned only attack); the only positive unkept jun22 signal (defense
+  rank-match) already lived here.
+- signal map: pair-keep +4 (+0.0010 search) and rank-reuse −4 (+0.0018) stack additively (ZC ≈
+  +0.0031q / +0.0020 medium); high-trump conservation take (don't burn rank>=10 trump on a lone
+  attack, deck>=5, n_table==1) adds +0.0013 more and lifts B1/B0 strongly. Take rank>=4 is the
+  search peak; rank>=0 collapses; void-suit/keep-opener 3rd signals inert.
+- what changed: committed `ab2d08c` (exp ZN); manifest comment updated (still 1 heuristic / 0 params);
+  results.tsv rows; B3vsB2 0.49920 (memory still inert); charts refreshed.
+- result: `ab2d08c` B4 **0.64805** search **0.80025** lower_ci 0.64779 (+0.00519 search / +0.00316 B4
+  vs WR). Plateau broken on a fresh axis.
+- correction: jun22 docs ("remains below B4", batch-114 "edge not reached") are wrong — B2 lower_ci
+  0.648 >> 0.52, so **B2 dominates B4** and has since ~the CZ keep. README results need updating.
+- next bias: EXPLOIT take window + re-tune shape magnitudes on ZN base; then EXPLORE more defense.
 ```

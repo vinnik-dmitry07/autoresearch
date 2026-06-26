@@ -25,7 +25,7 @@ loop, the analysis charts, and a front-end for playing the agent yourself.
 - [Repository layout](#repository-layout)
 - [Building and running](#building-and-running)
 - [The autoresearch loop](#the-autoresearch-loop)
-- [Results (jun22 run)](#results-jun22-run)
+- [Results](#results)
 - [Legacy LLM experiment](#legacy-llm-experiment)
 - [License](#license)
 
@@ -156,12 +156,12 @@ discard pile and cards seen entering the opponent's hand).
 ## The current best heuristic
 
 > **Snapshot, not authoritative.** This is a prose summary of the currently accepted B2
-> stack (commit `f5bb135`), checked against source on 2026-06-25.
+> stack (commit `ab2d08c`, jun25 keep ZN), checked against source on 2026-06-25.
 > `durak/src/strategy_heuristic.cpp` and `program.md` remain authoritative — re-summarize
 > this section after any future keep.
 
 B2 is a single declared heuristic (`H1 min_non_trump_play`) with **zero parameters**,
-`complexity_score` 100, in ~194 lines. The core (`choose_move_core`) works as follows.
+`complexity_score` 100, in ~205 lines. The core (`choose_move_core`) works as follows.
 
 **Dispatch.** If any `DefendPlay`/`DefendTake` move is legal it is defending, otherwise
 attacking; whether `AttackDone` is legal distinguishes the initial open from a
@@ -187,13 +187,24 @@ tiny `-0.001 * unknown_rank_count` prior nudges toward still-unseen ranks.
 trump as a finishing move when `deck <= 3`, `opp <= 5`, `hand >= opp`, and you hold a trump;
 otherwise stop (`AttackDone`).
 
-**Defense.** Take immediately if any uncovered attack cannot be beaten; otherwise play the
-cheapest beater (non-trump preferred).
+**Defense (shape-aware).** Take immediately if any uncovered attack cannot be beaten;
+otherwise play the cheapest beater (non-trump preferred), with two structure tie-breaks and
+one trump-conservation rule:
 
-**Load-bearing parts** (from the `program.md` WR ablation map; `search_score` drop when the
-part is removed — see [The metric](#the-metric)): `hand >= opp` gate (-0.0018), trump-strip
-`opp <= 2` (-0.014), `deck <= 2` pair (-0.012), pile-trump `deck <= 3` (-0.020); the
-`total <= 16` gate is optimal.
+1. *Keep pairs* — penalize (`+4`) covering with a non-trump card that is part of a pair in
+   hand, so the pair stays available for a future open.
+2. *Reuse table ranks* — favor (`-4`) covering with a card whose rank already sits on the
+   table, so defending does not introduce a brand-new rank the attacker could throw in on.
+3. *Conserve high trumps* — if the only beater for a lone attack (`n_table == 1`) is a high
+   trump (rank `>= 10`) and the deck is still deep (`deck >= 5`), **take instead** of burning
+   it (a memoryless mirror of B4's own belief-based take).
+
+**Load-bearing parts** (`search_score` drop when removed — see [The metric](#the-metric)).
+Attack (jun22 WR map): `hand >= opp` gate (-0.0018), trump-strip `opp <= 2` (-0.014),
+`deck <= 2` pair (-0.012), pile-trump `deck <= 3` (-0.020); `total <= 16` is optimal. Defense
+(jun25 ZN): pair-keep + rank-reuse stack ≈ +0.002 search; the high-trump-conservation take
+adds ≈ +0.0013 more and lifts B1/B0 strongly (`rank >= 10` is the search peak; conserving
+*any* trump collapses it).
 
 ## The metric
 
@@ -465,22 +476,30 @@ The recurrent day-to-day prompt:
 Continue the Durak autoresearch meta-loop from the durable state in program.md and results.tsv.
 ```
 
-## Results (jun22 run)
+## Results
 
-After **113+ experiment batches** and **2 keeps** (CZ → WR), the search plateaued. Numbers
-verified against `program.md` `## Current best` at commit `f5bb135`.
+Current best is **ZN** (`ab2d08c`, jun25). Numbers verified against `program.md`
+`## Current best`.
 
-| Metric | WR (`f5bb135`) | Notes |
-|--------|----------------|-------|
-| B2 vs B4 `point_rate` | **0.64489** | full 5M seeds; lower CI **0.64464** |
-| `search_score` | **0.79506** | composite ladder vs B0/B1/B4 |
-| B3 vs B2 (memory ablation) | **0.50000** | memory tie-break inert on the final stack |
-| Complexity | 100 | 194 lines, 1 heuristic, 0 parameters |
+| Metric | ZN (`ab2d08c`) | WR (`f5bb135`) | Notes |
+|--------|----------------|----------------|-------|
+| B2 vs B4 `point_rate` | **0.64805** | 0.64489 | full 5M seeds; lower CI **0.64779** |
+| `search_score` | **0.80025** | 0.79506 | composite ladder vs B0/B1/B4 |
+| B2 vs B1 | **0.97046** | 0.96080 | trump-conservation take lifts B1 |
+| B2 vs B0 | **0.97544** | 0.97144 | and B0 |
+| B3 vs B2 (memory ablation) | **0.49920** | 0.50000 | memory tie-break inert on the stack |
+| Complexity | 100 | 100 | 205 lines, 1 heuristic, 0 parameters |
 
-The memoryless challenger **beats B1/B0 strongly** but remains **below** the independent
-memory-counting baseline B4. Local hand/table structure carries most of the lift; the wired
-memory prior does not change move choices on the accepted policy. The jun22 run is closed —
-restart only with a new hypothesis.
+The memoryless challenger **beats B1/B0 strongly and clearly beats B4**: `point_rate(B2 vs
+B4) = 0.648` with lower CI `0.648` ≫ the `0.52` real-edge bar, so by the metric's own
+definition B2 dominates the memory-counting baseline. Local hand/table structure carries the
+lift; the wired memory prior changes no move choices on the accepted policy.
+
+The **jun22 run** (113+ batches, keeps CZ → WR) saturated the *attack* path and was declared
+plateaued. The **jun25 run** reopened it with a new hypothesis — that defense *card selection*
+(keep pairs, reuse table ranks, conserve high trumps) was the under-explored half — and the
+first batch (ZN) cleared the +0.005-search keep gate, breaking the plateau. The search
+continues on the defense axis.
 
 ## Legacy LLM experiment
 
