@@ -474,6 +474,7 @@ The sections below are editable by the agent during meta mode.
   8. Refusing to dump high trumps to finish the pile (resulted in a massive -0.053 regression, confirming that forcing a take via trump dump is incredibly load-bearing).
   9. Taking when 0 trumps remain.
   10. Reversing non-trump order to throw highest non-trumps into pile.
+  11. Throwing trumps first when deck==0.
   
   Conclusion: The memoryless local logic in this engine is flawlessly saturated. `point_rate` against `B4` is maximized at ~0.68903. To achieve further gains, the agent *must* be allowed to use `MemoryFeatures` actively, or the engine must expose a per-deal diagnostic to precisely isolate B4's residual wins.
 - **Do not re-open** any of the above. The heuristic vocabulary reachable under the contract is mapped.
@@ -485,6 +486,7 @@ The sections below are editable by the agent during meta mode.
      locked engine/harness to emit per-game features (forbidden as a strategy/script-only change).
 - Until a human authorizes (1) or (2), there is no in-scope experiment with positive expected value.
   Keep QA as the answer; do not grind ±1 variants on closed axes.
+- **jun25 User continuation attempt:** The loop was resumed, but as per the notes above, no in-scope experiments remain. We re-verified the endgame throw-in sequence and matching defender's rank, both of which remained inert. The loop is halted until explicit authorization for (1) or (2) is provided.
 
 ## Open questions
 
