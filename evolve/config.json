@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "max_rounds": 20,
+  "K": 2,
+  "cost_cap_usd": 5.0,
+  "run_dir": null,
+  "skip_build": false,
+  "allowlist": [
+    "durak/src/strategy_heuristic.cpp"
+  ],
+  "gates": {
+    "search": "quick",
+    "holdout": "dual",
+    "full": "full"
+  },
+  "keep_rule": {
+    "search_delta": 0.005
+  },
+  "promotion": {
+    "holdout_trigger_delta": 0.0
+  },
+  "engine": "default",
+  "selector": "score_child_prop",
+  "selector_scale": 10.0,
+  "selector_topk": 3,
+  "nonconfirm_penalty": 0.98,
+  "min_rounds": 0,
+  "use_worktrees": false,
+  "hygiene_enabled": true,
+  "stale_min_idle_rounds": 8,
+  "backup_keep": 10,
+  "convergence": {
+    "enabled": false,
+    "min_rounds": 0,
+    "patience": 6
+  },
+  "meta": {
+    "every": 0,
+    "target": "evolve/mechanism/evolve_skill.md"
+  },
+  "baseline": {
+    "best_search": 0.79506,
+    "best_b4": 0.64489,
+    "best_lower_ci": 0.0
+  },
+  "session": {
+    "max_turns": 12,
+    "token_cap": 60000,
+    "wall_timeout_s": 900.0,
+    "thinking_level": "medium",
+    "model": "auto",
+    "cost_per_session_usd": 0.0
+  }
+}

@@ -1,0 +1,21 @@
+# Evolvable-layer manifest. This declaration is MECHANICALLY enforced: protect.py
+# feeds `evolvable_layers.inner` into the per-candidate allowlist reset, so any edit
+# outside the allowlist is discarded before evaluation. Locked paths (the evaluator,
+# tests, metric, thresholds, build) are everything not listed here.
+schema_version: 1
+
+evolvable_layers:
+  # Phase 0/1: the ONLY file the inner agent may change and have survive a reset.
+  inner:
+    - durak/src/strategy_heuristic.cpp
+  # Phase 2 only: the meta-agent may edit mechanism files (gated + attributed).
+  meta:
+    - evolve/mechanism
+
+# Candidates are evaluated from a restored snapshot; never carry in-memory state.
+reload_strategy: cold
+
+# Everything not under evolvable_layers is locked (harness-owned / human-only):
+#   durak/src/simulate.cpp, durak/src/engine.cpp, durak/tests/**,
+#   durak/cmake/check_forbidden.cmake, scripts/triage*.{bat,ps1}, program.md (locked column).
+locked: all_other_paths

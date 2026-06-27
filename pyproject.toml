@@ -10,10 +10,18 @@ dependencies = [
     "numpy>=2.2.6",
     "pandas>=2.3.3",
     "pyarrow>=21.0.0",
+    "pyyaml>=6.0",
     "requests>=2.32.0",
     "rustbpe>=0.1.0",
     "tiktoken>=0.11.0",
     "torch==2.9.1",
+]
+
+[project.optional-dependencies]
+# The evolution harness's real inner agent. Phase 0 (the authority proof) needs none
+# of this; install with `uv pip install -e .[agent]` only to run live Cursor sessions.
+agent = [
+    "cursor-sdk",
 ]
 
 [tool.uv.sources]
