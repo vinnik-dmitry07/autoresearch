@@ -6,7 +6,10 @@ restored sandbox and returns. It has zero loop/stop/score authority. A `done` fl
 '''
 from __future__ import annotations
 
+import json
 import os
+import shutil
+import subprocess
 import threading
 import time
 from dataclasses import dataclass
@@ -258,6 +261,164 @@ class CursorAgent:
         return tokens, cost
 
 
+class CursorCliAgent:
+    '''Bounded inner session via the LOCAL Cursor Agent CLI (`cursor-agent`).
+
+    The no-SDK runner: it shells out to the locally-installed `cursor-agent` in
+    headless print mode (`-p --force --trust`), model `auto` by default, feeding the
+    bounded prompt on stdin and editing the allowlist file in cwd=repo_root. Any
+    out-of-scope edit is mechanically discarded by the harness reset afterwards, so
+    tool access is defense-in-depth, not the primary guard. A wall-timeout watchdog
+    kills a hung run. The agent has ZERO stop/score authority: a DONE/PLATEAU only
+    ends its own session; the harness owns termination.
+    '''
+
+    def __init__(self, config: 'Config') -> None:
+        self.config = config
+        self.session = config.session
+        self.model = (self.session.model or 'auto').strip() or 'auto'
+        self.exe = self._resolve_exe()
+
+    @staticmethod
+    def _resolve_exe() -> str:
+        '''Find cursor-agent on PATH, else the default Windows install location.'''
+        found = shutil.which('cursor-agent')
+        if found:
+            return found
+        local = os.environ.get('LOCALAPPDATA')
+        if local:
+            candidate = Path(local) / 'cursor-agent' / 'cursor-agent.cmd'
+            if candidate.exists():
+                return str(candidate)
+        return 'cursor-agent'
+
+    def _command(self, ctx: AgentContext) -> list[str]:
+        base = [
+            self.exe, '-p', '--force', '--trust',
+            '--output-format', 'stream-json',
+            '--model', self.model,
+            '--workspace', str(ctx.repo_root),
+        ]
+        # A .cmd/.bat launcher must be run through cmd.exe on Windows.
+        if os.name == 'nt':
+            return ['cmd', '/c', *base]
+        return base
+
+    def run(self, ctx: AgentContext) -> AgentResult:
+        try:
+            proc = subprocess.Popen(
+                self._command(ctx),
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=str(ctx.repo_root),
+                text=True,
+                encoding='utf-8',
+                errors='replace',
+                bufsize=1,
+            )
+        except OSError as exc:
+            return AgentResult(status=ERROR, error=f'cursor-agent launch failed: {exc!r}')
+
+        done = threading.Event()
+        timed_out = threading.Event()
+
+        def _watchdog() -> None:
+            if not done.wait(self.session.wall_timeout_s):
+                timed_out.set()
+                try:
+                    proc.kill()
+                except Exception:  # noqa: BLE001
+                    pass
+
+        watch = threading.Thread(target=_watchdog, daemon=True)
+        watch.start()
+
+        tokens = 0
+        is_error = False
+        summary = ''
+        try:
+            if proc.stdin is not None:
+                try:
+                    proc.stdin.write(ctx.prompt)
+                    proc.stdin.close()
+                except (BrokenPipeError, OSError):
+                    pass
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                event = self._parse(line)
+                if event is None:
+                    continue
+                self._print_progress(event)
+                if event.get('type') == 'result':
+                    is_error = bool(event.get('is_error'))
+                    summary = str(event.get('result', ''))[:500]
+                    tokens = self._tokens(event.get('usage'))
+        finally:
+            done.set()
+            try:
+                proc.wait(timeout=10)
+            except Exception:  # noqa: BLE001
+                try:
+                    proc.kill()
+                except Exception:  # noqa: BLE001
+                    pass
+
+        if timed_out.is_set():
+            return AgentResult(status=TIMEOUT, error='wall timeout', tokens=tokens)
+        if is_error or proc.returncode not in (0, None):
+            return AgentResult(
+                status=ERROR, error=summary or f'exit={proc.returncode}', tokens=tokens,
+            )
+        return AgentResult(status=COMPLETED, summary=summary, tokens=tokens)
+
+    @staticmethod
+    def _parse(line: str) -> dict[str, Any] | None:
+        line = line.strip()
+        if not line or line[0] != '{':
+            return None
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            return None
+        return obj if isinstance(obj, dict) else None
+
+    @staticmethod
+    def _tokens(usage: Any) -> int:
+        if not isinstance(usage, dict):
+            return 0
+        return int(usage.get('inputTokens', 0) or 0) + int(usage.get('outputTokens', 0) or 0)
+
+    @staticmethod
+    def _print_progress(event: dict[str, Any]) -> None:
+        '''Echo assistant text and tool calls so the long session shows progress.'''
+        try:
+            etype = event.get('type')
+            if etype == 'assistant':
+                for block in event.get('message', {}).get('content', []):
+                    text = block.get('text') if isinstance(block, dict) else None
+                    if block.get('type') == 'text' and text and text.strip():
+                        print(f'[cursor-agent] {text.strip()}', flush=True)
+            elif etype == 'tool_call' and event.get('subtype') == 'started':
+                tc = event.get('tool_call', {})
+                name = next((k for k in tc if k.endswith('ToolCall')), 'tool') if isinstance(tc, dict) else 'tool'
+                print(f'[cursor-agent] tool: {name}', flush=True)
+        except Exception:  # noqa: BLE001 - progress printing must never break a run
+            pass
+
+
 def make_cursor_agent(config: 'Config') -> Agent:
-    '''Factory used by the CLI to construct the real agent (Phase 1 wiring).'''
+    '''Factory for the SDK-based agent (legacy / opt-in via agent="sdk").'''
     return CursorAgent(config)
+
+
+def make_agent(config: 'Config') -> Agent:
+    '''Select the inner agent runner from config.agent_kind (default: cursor_cli).
+
+    `cursor_cli` uses the LOCAL cursor-agent CLI (no cursor-sdk dependency); `sdk`
+    uses the cursor_sdk Agent. The CLI is the default so a run never imports the SDK.
+    '''
+    kind = getattr(config, 'agent_kind', 'cursor_cli')
+    if kind == 'sdk':
+        return CursorAgent(config)
+    return CursorCliAgent(config)

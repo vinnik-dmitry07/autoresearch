@@ -9,7 +9,9 @@ The agent never writes these numbers; success is a process exit code, not self-r
 '''
 from __future__ import annotations
 
+import os
 import re
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -150,6 +152,23 @@ class RealEvaluator:
     def __init__(self, config: Config) -> None:
         self.config = config
         self.repo_root = config.repo_root
+        self.cmake = self._resolve_cmake(config)
+
+    @staticmethod
+    def _resolve_cmake(config: Config) -> str:
+        '''Locate cmake the way build.bat does: explicit override, then PATH, then
+        the VS-bundled CMake (this toolchain keeps cmake off PATH).'''
+        if config.cmake_exe:
+            return config.cmake_exe
+        found = shutil.which('cmake')
+        if found:
+            return found
+        vs_root = os.environ.get('VS', r'D:\Programs\Microsoft_Visual_Studio')
+        bundled = (
+            Path(vs_root) / 'Common7' / 'IDE' / 'CommonExtensions'
+            / 'Microsoft' / 'CMake' / 'CMake' / 'bin' / 'cmake.exe'
+        )
+        return str(bundled) if bundled.exists() else 'cmake'
 
     def _triage_env(self) -> dict[str, str]:
         return {
@@ -170,7 +189,7 @@ class RealEvaluator:
     def precheck(self) -> tuple[bool, str]:
         allow = self.config.allowlist[0]
         forbidden = run_command(
-            ['cmake', f'-DSRC={allow}', '-P', 'durak/cmake/check_forbidden.cmake'],
+            [self.cmake, f'-DSRC={allow}', '-P', 'durak/cmake/check_forbidden.cmake'],
             cwd=self.repo_root,
             timeout_s=120,
         )

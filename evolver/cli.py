@@ -31,7 +31,7 @@ def _apply_results_baseline(config: Config) -> None:
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
-    from .agents import make_cursor_agent
+    from .agents import make_agent
     from .loop import Loop
 
     repo_root = find_repo_root()
@@ -44,11 +44,11 @@ def _cmd_run(args: argparse.Namespace) -> int:
         overrides['run_dir'] = args.run_dir
     config = load_config(repo_root=repo_root, run_id=args.run_id, overrides=overrides)
     _apply_results_baseline(config)
-    return Loop(config, agent_factory=make_cursor_agent).run()
+    return Loop(config, agent_factory=make_agent).run()
 
 
 def _cmd_continue(args: argparse.Namespace) -> int:
-    from .agents import make_cursor_agent
+    from .agents import make_agent
     from .loop import Loop
 
     repo_root = find_repo_root()
@@ -57,7 +57,7 @@ def _cmd_continue(args: argparse.Namespace) -> int:
         log('no run to continue; start one with `run`')
         return 1
     config = load_config(repo_root=repo_root, overrides={'run_dir': str(run_dir)})
-    return Loop(config, agent_factory=make_cursor_agent).run(resume=True)
+    return Loop(config, agent_factory=make_agent).run(resume=True)
 
 
 def _cmd_status(args: argparse.Namespace) -> int:

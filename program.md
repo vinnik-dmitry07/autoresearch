@@ -428,11 +428,17 @@ The sections below are editable by the agent during meta mode.
 
 ## Current best
 
-- Commit: `8487eb7`
-- B4 point_rate: 0.68903
-- Search score: 0.82464
-- Lower CI: 0.68877
+- **From-scratch reset (2026-06-27).** Search restarts from a minimal seed; no prior
+  heuristic is carried forward. Baselines B0/B1/B3/B4 are unchanged.
+- Commit: _(none — seed only)_
+- B4 point_rate: 0.00000
+- Search score: 0.00000
+- Lower CI: 0.00000
 - Complexity: 100
+
+### Superseded history (pre-reset; human reference only — NOT active guidance)
+
+- Prior terminal QA metrics (`8487eb7`): B4 0.68903 / search 0.82464 / lower_ci 0.68877.
 - Why it is best: **QA** = ZW with the **defense reduced to its core**. The defense is now just:
   *cheapest beater (non-trump first), then take rather than burn an 8+ trump (`rank_of>=2`) while
   `deck>=5`, any pile size.* The two ZN shape tie-breaks (pair-keep `+4`, rank-reuse `−4`) are
@@ -459,7 +465,9 @@ The sections below are editable by the agent during meta mode.
 
 ## Search mode
 
-- Mode: **CLOSURE / PLATEAU (jun26)**. The `QA` state (`8487eb7`) remains the terminal optimum for the pure memoryless contract; do not resume heuristic trial-and-error. The authorized per-game diagnostic harness has completed its B2-vs-B4 localization pass and found no clean memoryless repair target. The current user-selected path is documentation/cleanup/validation only: preserve the optional `--mode features` harness, preserve the accepted B2 policy, and do not edit `durak/src/strategy_heuristic.cpp` unless the user explicitly authorizes a new stateful/memory branch or a new diagnostic feature vocabulary.
+- Mode: **EXPLORE (from scratch, 2026-06-27).** One change per attempt; quick B4 screen
+  first. The prior CLOSURE/PLATEAU verdict is superseded by the reset — the memoryless
+  policy space is open again from the seed. Do not treat the old QA optimum as a ceiling.
 
 ## Loop notes
 
@@ -632,6 +640,11 @@ Rules for selecting ideas:
 - During **DIAGNOSTIC HARNESS** mode, do not edit `strategy_heuristic.cpp`. Generate a feature TSV at a useful seed count, then compare macro means/rates by `pair_bucket` (`win`, `split`, `loss`) and by individual `challenger_points`. Start with `chal_forced_takes`, `chal_voluntary_takes`, `chal_vol_take_high_trump_deck_ge5`, `chal_cards_taken`, `opp_cards_taken`, `deck_empty_after_battle`, `max_cards_taken`, and initial trump-shape columns.
 
 ## Rejected directions
+
+_From-scratch reset (2026-06-27): the search starts clean. Entries below are pre-reset
+dead-ends, kept for human reference only, and are intentionally NOT surfaced to the agent._
+
+## Archived search log (superseded — not active guidance)
 
 Append failed idea classes here so they are not retried.
 

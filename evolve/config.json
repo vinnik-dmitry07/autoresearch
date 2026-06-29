@@ -5,6 +5,7 @@
   "cost_cap_usd": 5.0,
   "run_dir": null,
   "skip_build": false,
+  "agent": "cursor_cli",
   "allowlist": [
     "durak/src/strategy_heuristic.cpp"
   ],
@@ -39,8 +40,8 @@
     "target": "evolve/mechanism/evolve_skill.md"
   },
   "baseline": {
-    "best_search": 0.79506,
-    "best_b4": 0.64489,
+    "best_search": 0.0,
+    "best_b4": 0.0,
     "best_lower_ci": 0.0
   },
   "session": {

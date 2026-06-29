@@ -4,21 +4,23 @@
 // ============================================================================
 // B2 -- no-memory heuristic policy core. THIS IS THE ONLY FILE THE AGENT EDITS.
 //
+// FROM-SCRATCH SEED. This is the minimal heuristic that clears the locked
+// "B2 beats B1" sanity gate and nothing more; the search starts here. It is the
+// basic baseline (lowest card, take only when forced, no pile-on) plus a single
+// idea: spend non-trumps before trumps. Everything else is open for the agent.
+//
 // The core consumes LocalFeatures (always) and optional MemoryFeatures. When
 // `memory == nullptr` it is the no-memory policy (B2). When `memory != nullptr`
-// the SAME logic runs with memory available, used ONLY for tie-breaks / priors
-// (B3 ablation). Do not add new heuristic classes that fire only in the memory
-// branch, and do not add persistent/global state, I/O, clocks, or randomness.
+// the SAME logic runs (B3 ablation); this seed ignores memory entirely, so B3
+// plays identically to B2 until the agent wires a real tie-break prior. Keep it a
+// pure function of the features: no persistent or global mutable state, no I/O, no
+// clocks, no concurrency, no randomness (see the forbidden-symbol check).
 //
 // MANIFEST (keep in sync with the constants below):
-//   H1  min_non_trump_play          -- lowest non-trump attack/throw-in/defend; midgame pair
-//                                       deck>=5 within min+2; endgame pair-open deck<=2 + total gate;
-//                                       trump-strip deck==0 opp<=2; finish deck<=3 pile trump opp<=5
-//                                       hand>=opp; >=1 trump. Defense: cheapest beater (non-trump
-//                                       first), then take rather than burn an 8+ trump (rank_of>=2)
-//                                       while deck>=5 (high-trump conservation, any pile size). The
-//                                       shape tie-breaks (pair-keep, rank-reuse) were dropped — the
-//                                       conservation take made them net-harmful (jun25 b3 ablation).
+//   H1  trump_avoidance -- attack and defend with the lowest NON-trump card
+//                          first; fall back to the lowest trump only when no
+//                          non-trump option exists. Open only (no pile-on);
+//                          take only when an uncovered card cannot be beaten.
 // Parameters: (none)
 // ============================================================================
 namespace durak {
@@ -36,39 +38,20 @@ namespace {
 
 bool is_trump(Card c, int trump) { return suit_of(c) == trump; }
 
-bool opp_likely_void_suit(const LocalFeatures& L, int suit) {
-    if (!L.is_attacker || suit == L.trump_suit) return false;
-    for (int i = 0; i < L.n_table; ++i) {
-        const Card a = L.atk[i];
-        const Card d = L.def[i];
-        if (a == NO_CARD || d == NO_CARD) continue;
-        if (suit_of(a) == suit && suit_of(a) != L.trump_suit && suit_of(d) == L.trump_suit)
-            return true;
-    }
-    return false;
-}
-
-// Lower is better. Trumps are heavily penalized so non-trump dumps win; the
-// memory term is a small prior favoring ranks that are still mostly unseen.
-double attack_value(Card c, int trump, const MemoryFeatures* mem, const LocalFeatures& L,
-                    bool pile_phase) {
+// Lower is better. Rank orders the choice; the +100 trump penalty (H1) makes
+// every non-trump strictly cheaper than every trump, so trumps are spent last.
+double card_cost(Card c, int trump) {
     double v = double(rank_of(c));
     if (is_trump(c, trump)) v += 100.0;
-    else if (opp_likely_void_suit(L, suit_of(c))) v -= pile_phase ? 8.0 : 5.0;
-    if (mem) v -= 0.001 * double(mem->unknown_rank_count[rank_of(c)]);
     return v;
 }
 
-int pick_lowest_attack(const LocalFeatures& L, const MemoryFeatures* mem, const LegalMoves& legal,
-                       int rank_filter, bool non_trump_only, bool pile_phase) {
+int pick_cheapest(const LegalMoves& legal, MoveType type, int trump) {
     int best = -1;
     double best_v = 1e18;
     for (int i = 0; i < legal.count; ++i) {
-        if (legal.moves[i].type != MoveType::AttackPlay) continue;
-        const Card c = legal.moves[i].card;
-        if (non_trump_only && is_trump(c, L.trump_suit)) continue;
-        if (rank_filter >= 0 && rank_of(c) != rank_filter) continue;
-        const double v = attack_value(c, L.trump_suit, mem, L, pile_phase);
+        if (legal.moves[i].type != type) continue;
+        const double v = card_cost(legal.moves[i].card, trump);
         if (v < best_v) {
             best_v = v;
             best = i;
@@ -77,73 +60,15 @@ int pick_lowest_attack(const LocalFeatures& L, const MemoryFeatures* mem, const 
     return best;
 }
 
-Move choose_attack(const LocalFeatures& L, const MemoryFeatures* mem, const LegalMoves& legal,
-                   bool has_done) {
-    const int best = pick_lowest_attack(L, mem, legal, -1, false, has_done);
+Move choose_attack(const LocalFeatures& L, const LegalMoves& legal, bool has_done) {
+    // No pile-on: only the initial open plays a card (mirrors the basic baseline).
+    if (has_done) return {MoveType::AttackDone, NO_CARD, 0};
+    const int best = pick_cheapest(legal, MoveType::AttackPlay, L.trump_suit);
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
-
-    // H1: initial attack — lowest non-trump; midgame prefer low pair within cap; endgame
-    // skip lone singleton if a low pair exists; else trump-strip when trump-rich.
-    if (!has_done) {
-        const CardMask nt = L.hand & ~SUIT_MASK[L.trump_suit];
-        const int mnt = nt ? rank_of(lowest(nt)) : NUM_RANKS;
-        int open_rank = mnt;
-        if (L.deck_count >= 5) {
-            for (int r = mnt; r <= mnt + 2 && r < NUM_RANKS; ++r) {
-                if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
-                    open_rank = r;
-                    break;
-                }
-            }
-        } else if (mnt < NUM_RANKS && L.deck_count <= 2 &&
-                   popcount(L.hand & RANK_MASK[mnt] & ~SUIT_MASK[L.trump_suit]) == 1) {
-            const int total = L.deck_count + popcount(L.hand) + L.opponent_hand_count + L.n_table;
-            if (L.deck_count != 2 || total <= 16) {
-                for (int r = mnt + 1; r < NUM_RANKS; ++r) {
-                    if (popcount(L.hand & RANK_MASK[r] & ~SUIT_MASK[L.trump_suit]) >= 2) {
-                        open_rank = r;
-                        break;
-                    }
-                }
-            }
-            if (open_rank == mnt && L.deck_count == 0 && L.opponent_hand_count <= 2 &&
-                popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 1) {
-                Move low_trump{MoveType::AttackDone, NO_CARD, 0};
-                for (int i = 0; i < legal.count; ++i) {
-                    const Move& m = legal.moves[i];
-                    if (m.type != MoveType::AttackPlay || !is_trump(m.card, L.trump_suit)) continue;
-                    if (low_trump.type != MoveType::AttackPlay ||
-                        rank_of(m.card) < rank_of(low_trump.card))
-                        low_trump = m;
-                }
-                if (low_trump.type == MoveType::AttackPlay) return low_trump;
-            }
-        }
-        const int open = pick_lowest_attack(L, mem, legal, open_rank, true, false);
-        if (open >= 0) return legal.moves[open];
-        return legal.moves[best];
-    }
-
-    // Optional throw-in / pile-on: dump lowest non-trump; finish pile may dump low trump.
-    const Card pile_card = legal.moves[best].card;
-    if (!is_trump(pile_card, L.trump_suit)) return legal.moves[best];
-    if (L.deck_count <= 3 && L.opponent_hand_count <= 5 &&
-        popcount(L.hand) >= L.opponent_hand_count &&
-        popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 1) {
-        Move low_trump{MoveType::AttackDone, NO_CARD, 0};
-        for (int i = 0; i < legal.count; ++i) {
-            const Move& m = legal.moves[i];
-            if (m.type != MoveType::AttackPlay || !is_trump(m.card, L.trump_suit)) continue;
-            if (low_trump.type != MoveType::AttackPlay ||
-                rank_of(m.card) < rank_of(low_trump.card))
-                low_trump = m;
-        }
-        if (low_trump.type == MoveType::AttackPlay) return low_trump;
-    }
-    return {MoveType::AttackDone, NO_CARD, 0};
+    return legal.moves[best];
 }
 
-Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const LegalMoves& legal) {
+Move choose_defense(const LocalFeatures& L, const LegalMoves& legal) {
     bool coverable[6] = {false, false, false, false, false, false};
     bool any_defend = false;
     for (int i = 0; i < legal.count; ++i) {
@@ -152,35 +77,19 @@ Move choose_defense(const LocalFeatures& L, const MemoryFeatures* mem, const Leg
             any_defend = true;
         }
     }
-    // Rational base (shared with B1): if any uncovered card cannot be beaten, take now.
+    // Rational base (shared with B1): if any uncovered card cannot be beaten, take.
     for (int i = 0; i < L.n_table; ++i)
         if (L.def[i] == NO_CARD && !coverable[i]) return {MoveType::DefendTake, NO_CARD, 0};
     if (!any_defend) return {MoveType::DefendTake, NO_CARD, 0};
 
-    int best = -1;
-    double best_c = 1e18;
-    for (int i = 0; i < legal.count; ++i) {
-        const Move& m = legal.moves[i];
-        if (m.type != MoveType::DefendPlay) continue;
-        const Card d = m.card;
-        double cost = double(rank_of(d));
-        if (is_trump(d, L.trump_suit)) cost += 50.0;  // prefer non-trump (rational base)
-        if (mem) cost -= 0.001 * double(mem->unknown_rank_count[rank_of(d)]);
-        if (cost < best_c) {
-            best_c = cost;
-            best = i;
-        }
-    }
+    const int best = pick_cheapest(legal, MoveType::DefendPlay, L.trump_suit);
     if (best < 0) return {MoveType::DefendTake, NO_CARD, 0};
-    const Card bd = legal.moves[best].card;
-    if (is_trump(bd, L.trump_suit) && rank_of(bd) >= 2 && L.deck_count >= 5)
-        return {MoveType::DefendTake, NO_CARD, 0};  // don't burn a high trump on an early attack
     return legal.moves[best];
 }
 
 }  // namespace
 
-Move choose_move_core(const LocalFeatures& local, const MemoryFeatures* memory,
+Move choose_move_core(const LocalFeatures& local, const MemoryFeatures* /*memory*/,
                       const LegalMoves& legal) {
     bool is_defense = false;
     bool has_done = false;
@@ -189,8 +98,8 @@ Move choose_move_core(const LocalFeatures& local, const MemoryFeatures* memory,
         if (t == MoveType::DefendPlay || t == MoveType::DefendTake) is_defense = true;
         if (t == MoveType::AttackDone) has_done = true;
     }
-    if (is_defense) return choose_defense(local, memory, legal);
-    return choose_attack(local, memory, legal, has_done);
+    if (is_defense) return choose_defense(local, legal);
+    return choose_attack(local, legal, has_done);
 }
 
 // No-memory wrapper (B2): never passes memory features to the core.

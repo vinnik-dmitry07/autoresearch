@@ -139,6 +139,8 @@ class Config:
     backup_keep: int = 10
     session: SessionConfig = field(default_factory=SessionConfig)
     skip_build: bool = False
+    agent_kind: str = 'cursor_cli'
+    cmake_exe: str = ''
 
     @property
     def allowlist_paths(self) -> tuple[Path, ...]:
@@ -237,4 +239,6 @@ def load_config(
         backup_keep=int(raw.get('backup_keep', 10)),
         session=session,
         skip_build=bool(raw.get('skip_build', False)),
+        agent_kind=str(raw.get('agent', 'cursor_cli')),
+        cmake_exe=str(raw.get('cmake', '')),
     )
