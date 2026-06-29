@@ -21,15 +21,19 @@ dead-ends from here and from `program.md`); the meta-agent curates this file fro
   (`candidate_0000`). Do not re-tune — see dead-ends.
 
 ## Confirmed dead-ends (do NOT re-propose)
-- **H2/H4/H5 scalar gate tweaks** (trump-economy + endgame-tempo): 15 plateau rounds;
-  parents `candidate_0000`, `candidate_0002`, `candidate_0004`, `candidate_0013`–`0030` all
-  produced stepping stones only (search ~0.74–0.77, keep rule failed). Changing
+- **H2/H4/H5 scalar gate tweaks** (trump-economy + endgame-tempo): 20 plateau rounds;
+  parents `candidate_0000`, `candidate_0002`, `candidate_0004`, `candidate_0013`–`0040` all
+  produced stepping stones only (search ~0.71–0.77, keep rule failed). Changing
   `deck_count` / `opponent_hand_count` thresholds on existing heuristics is structurally
   saturated at current complexity — add H6 from a different family instead.
 - **H3 pile-rank-matching without pair surplus** (extends incumbent pile logic only):
   candidates `candidate_0025`–`0030` (parents `0015`/`0017`/`0025`/`0028`) reached
   search ~0.745–0.766 but failed keep — table-rank throw-in without duplicate-rank
   pressure is not a new family; pair-baiting must gate on `popcount(L.hand & RANK_MASK[r]) >= 2`.
+- **Pile-branch re-parent churn without H6** (rounds 37–40): `candidate_0037`–`0040` all
+  scored search_alpha=0.70939 from pile/scalar parents (`0015`, `0035`, `0009`, `0016`).
+  Switching parent while editing only H3/H5 pile paths is not a family change — the inner
+  agent must add `pick_pair_surplus` + manifest H6, not re-diff an existing stepping stone.
 
 ## Notes
 - A family is "confirmed dead" only after multiple distinct attempts failed the holdout
