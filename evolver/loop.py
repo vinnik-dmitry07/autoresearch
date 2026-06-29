@@ -17,7 +17,7 @@ import re
 import time
 from typing import Any, Callable
 
-from .agents import COMPLETED, Agent, AgentContext
+from .agents import COMPLETED, Agent, AgentContext, AgentResult
 from .config import Config
 from .engine import EvolutionEngine, make_engine
 from .evaluate import Evaluator, RealEvaluator, Scores, Verdict, keep_rule
@@ -178,6 +178,8 @@ class Loop:
     def _terminate_reason(self) -> str | None:
         if (self.paths.run_dir / 'stop.flag').exists():
             return 'operator stop flag'
+        if self.engine.exhausted():
+            return 'sweep complete'
         if self.state['round'] >= self.config.max_rounds:
             return 'max_rounds reached'
         if self.state['cost_usd'] >= self.config.cost_cap_usd:
@@ -225,6 +227,8 @@ class Loop:
             if self.state['cost_usd'] >= self.config.cost_cap_usd:
                 log('cost cap hit mid-round; stopping remaining K')
                 break
+            if self.engine.exhausted():
+                break  # LLM-free sweep ran out of variants mid-round
             self.store.mark_selected(parent.id, round_idx)
             cand, accepted = self._run_candidate(parent, round_idx, agent, phi)
             improved = improved or accepted
@@ -266,6 +270,7 @@ class Loop:
     ) -> tuple[Candidate, bool]:
         cid = self.store.next_id()
         base = self.best_commit
+        created_by = 'harness'
         patch = ''
         snapshot_text = ''
         status = INVALID
@@ -281,7 +286,17 @@ class Loop:
         b_descriptor: list[float] | None = None
         parent_snap = self.store.snapshot_text(parent.id)
         try:
-            if self.config.use_worktrees:
+            proposal = self.engine.propose_snapshot(self.store, self.state, self.rng)
+            if proposal is not None:
+                # LLM-free sweep variant: write the templated snapshot directly and
+                # score it through the SAME precheck/keep gate (no agent session).
+                created_by = 'sweep'
+                self.vc.write_repo_file(self.allow_rel, proposal)
+                self.vc.reset_all_but_allowlist(base)
+                patch = self.vc.diff_allowlist(base)
+                snapshot_text = self.vc.read_repo_file(self.allow_rel)
+                result = AgentResult(status=COMPLETED, summary='sweep variant')
+            elif self.config.use_worktrees:
                 result, patch, snapshot_text = self._propose_in_worktree(
                     parent_snap, base, phi, round_idx, parent, agent,
                 )
@@ -353,7 +368,7 @@ class Loop:
 
         cand = self._build_candidate(
             cid, parent, base, round_idx, status, reason,
-            search, holdout, full, snapshot_text, tokens, eval_seconds,
+            search, holdout, full, snapshot_text, tokens, eval_seconds, created_by,
         )
         if b_descriptor is not None:
             cand.b_descriptor = b_descriptor
@@ -416,6 +431,7 @@ class Loop:
         snapshot_text: str,
         tokens: int,
         eval_seconds: float,
+        created_by: str = 'harness',
     ) -> Candidate:
         search_alpha = search.search_score if search else None
         holdout_alpha = holdout.search_score if holdout else None
@@ -436,7 +452,7 @@ class Loop:
             base_commit=base,
             round=round_idx,
             status=status,
-            created_by='harness',
+            created_by=created_by,
             search_alpha=search_alpha,
             holdout_alpha=holdout_alpha,
             selection_alpha=selection_alpha,

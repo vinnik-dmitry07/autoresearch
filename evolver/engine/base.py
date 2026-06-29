@@ -43,6 +43,21 @@ class EvolutionEngine(ABC):
     ) -> list[Candidate]:
         '''Return up to k parents to mutate this round (valid candidates only).'''
 
+    def propose_snapshot(
+        self, store: Store, state: dict[str, Any], rng: random.Random,
+    ) -> str | None:
+        '''Optional LLM-free candidate source (e.g. a parameter-sweep variant).
+
+        Default None -> the harness runs the bounded agent session as usual. An engine
+        that returns a strategy-file snapshot makes the harness skip the agent and score
+        that snapshot directly (still through the locked precheck/keep gate).
+        '''
+        return None
+
+    def exhausted(self) -> bool:
+        '''True when an LLM-free engine has no proposals left (harness terminates).'''
+        return False
+
     def on_cycle_end(self, accepted: bool, score: float | None) -> None:  # noqa: D401
         '''Advisory hook after a candidate is scored. Default: no-op.'''
         return None
@@ -88,10 +103,18 @@ def make_engine(name: str, selector: Selector, config: 'Config | None' = None) -
         return GreedyEngine()
     if name == 'sweep':
         # LLM-free parameter sweep. Registered but default OFF; behaviour-neutral
-        # (delegates to selector) until a sweep spec is supplied.
-        from .sweep import SweepEngine
+        # (delegates to selector) until a template + axes are supplied via config.
+        from .sweep import SweepEngine, SweepSpec
 
-        return SweepEngine(selector)
+        engine = SweepEngine(selector)
+        if config is not None and config.sweep_template and config.sweep_axes:
+            template_path = config.repo_root / config.sweep_template
+            spec = SweepSpec(
+                base_snapshot=template_path.read_text(encoding='utf-8'),
+                axes={token: list(values) for token, values in config.sweep_axes.items()},
+            )
+            engine.load_spec(spec)
+        return engine
     # QD engines are registered lazily to avoid importing heavy modules early.
     from . import qd
 

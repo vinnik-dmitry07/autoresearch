@@ -154,6 +154,11 @@ class Config:
     # where the selector is byte-identical to plain score_child_prop. Reads stored b(x).
     novelty_lambda: float = 0.0
     novelty_k: int = 3
+    # A3 LLM-free parameter sweep. Dormant unless engine='sweep' AND a template+axes
+    # are given: the harness templates `sweep_template` by the cartesian product of
+    # `sweep_axes` (token -> value list) and scores each variant through the keep gate.
+    sweep_template: str = ''
+    sweep_axes: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
     @property
     def allowlist_paths(self) -> tuple[Path, ...]:
@@ -211,6 +216,11 @@ def load_config(
     meta = raw.get('meta', {})
     descriptor = raw.get('descriptor', {})
     novelty = raw.get('novelty', {})
+    sweep = raw.get('sweep', {})
+    sweep_axes = {
+        str(token): tuple(str(v) for v in values)
+        for token, values in (sweep.get('axes') or {}).items()
+    }
     session_raw = raw.get('session', {})
     session = SessionConfig(
         max_turns=int(session_raw.get('max_turns', 12)),
@@ -263,4 +273,6 @@ def load_config(
         select_policy_path=str(raw.get('select_policy', '')),
         novelty_lambda=float(novelty.get('lambda', 0.0)),
         novelty_k=int(novelty.get('k', 3)),
+        sweep_template=str(sweep.get('template', '')),
+        sweep_axes=sweep_axes,
     )

@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from ..util import log
 from .base import EvolutionEngine
 
 if TYPE_CHECKING:
@@ -58,13 +59,48 @@ class SweepEngine(EvolutionEngine):
 
     def __init__(self, selector: 'Selector | None' = None) -> None:
         self.selector = selector
+        self._variants: list[SweepVariant] = []
+        self._idx = 0
+
+    def load_spec(self, spec: SweepSpec) -> int:
+        '''Expand a SweepSpec into the queue of variants to serve. Returns the count.'''
+        self._variants = self.expand(spec)
+        self._idx = 0
+        return len(self._variants)
+
+    @property
+    def active(self) -> bool:
+        '''True once a spec is loaded (LLM-free sweep mode, not the neutral baseline).'''
+        return bool(self._variants)
 
     def select_parents(
         self, store: 'Store', k: int, rng: 'random.Random', state: dict,
     ) -> list['Candidate']:
+        # In sweep mode the "parent" is the accepted family being swept (for lineage);
+        # the actual snapshot comes from propose_snapshot, not from mutating the parent.
+        if self.active:
+            best_id = state.get('best_id')
+            best = store.get(best_id) if best_id else None
+            pool = store.parents_pool()
+            anchor = best if (best is not None and best.is_valid) else (pool[0] if pool else None)
+            return [anchor for _ in range(k)] if anchor is not None else []
         if self.selector is None:
             return []
         return self.selector.select(store.parents_pool(), k, rng)
+
+    def propose_snapshot(
+        self, store: 'Store', state: dict, rng: 'random.Random',
+    ) -> str | None:
+        '''Serve the next templated variant snapshot (None when the sweep is done).'''
+        if not self.active or self._idx >= len(self._variants):
+            return None
+        variant = self._variants[self._idx]
+        self._idx += 1
+        log(f'  sweep variant {self._idx}/{len(self._variants)}: {variant.label}')
+        return variant.snapshot
+
+    def exhausted(self) -> bool:
+        return self.active and self._idx >= len(self._variants)
 
     def expand(self, spec: SweepSpec) -> list[SweepVariant]:
         if not spec.axes:
