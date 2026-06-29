@@ -45,6 +45,10 @@
     "seeds": 1500,
     "columns": []
   },
+  "novelty": {
+    "lambda": 0.0,
+    "k": 3
+  },
   "select_policy": "evolve/select_policy.json",
   "baseline": {
     "best_search": 0.0,

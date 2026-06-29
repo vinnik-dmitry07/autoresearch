@@ -149,6 +149,11 @@ class Config:
     descriptor_seeds: int = 1500
     descriptor_columns: tuple[str, ...] = ()
     select_policy_path: str = ''
+    # A2 gridless novelty multiplier for score_child_prop: p(parent) proportional to
+    # base_weight * (1 + novelty_lambda * normalized_novelty(b(x))). Dormant at 0.0,
+    # where the selector is byte-identical to plain score_child_prop. Reads stored b(x).
+    novelty_lambda: float = 0.0
+    novelty_k: int = 3
 
     @property
     def allowlist_paths(self) -> tuple[Path, ...]:
@@ -205,6 +210,7 @@ def load_config(
     convergence = raw.get('convergence', {})
     meta = raw.get('meta', {})
     descriptor = raw.get('descriptor', {})
+    novelty = raw.get('novelty', {})
     session_raw = raw.get('session', {})
     session = SessionConfig(
         max_turns=int(session_raw.get('max_turns', 12)),
@@ -255,4 +261,6 @@ def load_config(
         descriptor_seeds=int(descriptor.get('seeds', 1500)),
         descriptor_columns=tuple(str(c) for c in (descriptor.get('columns') or ())),
         select_policy_path=str(raw.get('select_policy', '')),
+        novelty_lambda=float(novelty.get('lambda', 0.0)),
+        novelty_k=int(novelty.get('k', 3)),
     )

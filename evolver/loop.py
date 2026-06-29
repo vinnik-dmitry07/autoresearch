@@ -72,6 +72,7 @@ class Loop:
         self.observer = observer or Observer(config)
         self.selector = selector or make_selector(
             config.selector, config.selector_scale, config.selector_topk,
+            novelty_lambda=config.novelty_lambda, novelty_k=config.novelty_k,
         )
         self.engine = engine or make_engine(config.engine, self.selector, config)
         self.hygiene = Hygiene(self.paths, keep=config.backup_keep)
