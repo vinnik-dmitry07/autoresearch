@@ -159,6 +159,12 @@ class Config:
     # `sweep_axes` (token -> value list) and scores each variant through the keep gate.
     sweep_template: str = ''
     sweep_axes: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    # A4 MAP-Elites coarse grid. Defaults reproduce the bare engine (bins=8, no
+    # projection, raw-perf elites); the A4 treatment sets a low-D projection of b(x)
+    # plus robust (holdout/lower_ci) elite replacement.
+    map_elites_bins: int = 8
+    map_elites_dims: tuple[int, ...] = ()
+    map_elites_robust: bool = False
 
     @property
     def allowlist_paths(self) -> tuple[Path, ...]:
@@ -221,6 +227,7 @@ def load_config(
         str(token): tuple(str(v) for v in values)
         for token, values in (sweep.get('axes') or {}).items()
     }
+    map_elites = raw.get('map_elites', {})
     session_raw = raw.get('session', {})
     session = SessionConfig(
         max_turns=int(session_raw.get('max_turns', 12)),
@@ -275,4 +282,7 @@ def load_config(
         novelty_k=int(novelty.get('k', 3)),
         sweep_template=str(sweep.get('template', '')),
         sweep_axes=sweep_axes,
+        map_elites_bins=int(map_elites.get('bins', 8)),
+        map_elites_dims=tuple(int(d) for d in (map_elites.get('dims') or ())),
+        map_elites_robust=bool(map_elites.get('robust', False)),
     )

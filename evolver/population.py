@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 import random
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Protocol, Sequence
 
 from .store import Candidate
 from .util import atomic_write_json, read_json
@@ -114,6 +114,26 @@ class StoredDescriptor:
         return self._fallback.describe(cand)
 
 
+class ProjectedDescriptor:
+    '''Project another descriptor onto a fixed subset of axes for a coarse grid.
+
+    MAP-Elites wants a low-dimensional (2-3D) behavior space, but the stored b(x) is
+    6-D. This keeps only the most informative axes (e.g. voluntary takes, cards taken,
+    battles) so a coarse grid stays populated instead of exploding into empty cells.
+    Candidates whose base vector is too short to project fall through unchanged.
+    '''
+
+    def __init__(self, base: Descriptor, indices: Sequence[int]) -> None:
+        self.base = base
+        self.indices = tuple(int(i) for i in indices)
+        self.dims = len(self.indices) or getattr(base, 'dims', 2)
+
+    def describe(self, cand: Candidate) -> Vector:
+        vec = self.base.describe(cand)
+        proj = tuple(vec[i] for i in self.indices if i < len(vec))
+        return proj if len(proj) == len(self.indices) else vec
+
+
 def make_descriptor(config: 'Config') -> Descriptor:
     '''Config-selectable descriptor. 'feature' reads stored b(x); else StaticDescriptor.'''
     if getattr(config, 'descriptor_kind', 'static') == 'feature':
@@ -204,11 +224,18 @@ def novelty_scores(vectors: list[Vector], k: int = 3) -> list[float]:
 class MapElitesGrid:
     '''Coarse MAP-Elites: keep the best-performing elite per descriptor cell.'''
 
-    def __init__(self, descriptor: Descriptor, bounds: list[tuple[float, float]], bins: int = 8) -> None:
+    def __init__(
+        self, descriptor: Descriptor, bounds: list[tuple[float, float]], bins: int = 8,
+        key: 'Callable[[Candidate], Any] | None' = None,
+    ) -> None:
         self.descriptor = descriptor
         self.bounds = bounds
         self.bins = bins
         self.cells: dict[tuple[int, ...], Candidate] = {}
+        # Elite-replacement ordering. Default = raw perf; MAP-Elites passes a robust key
+        # (holdout-confirmed > penalized search, tie-broken by lower_ci) so a noisy
+        # search bump cannot evict a confirmed elite.
+        self.key = key or self._perf
 
     def _cell(self, vec: Vector) -> tuple[int, ...]:
         idx = []
@@ -228,7 +255,7 @@ class MapElitesGrid:
         for cand in candidates:
             cell = self._cell(self.descriptor.describe(cand))
             current = self.cells.get(cell)
-            if current is None or self._perf(cand) > self._perf(current):
+            if current is None or self.key(cand) > self.key(current):
                 self.cells[cell] = cand
 
     def elites(self) -> list[Candidate]:

@@ -14,6 +14,7 @@ from ..population import (
     MapElitesGrid,
     ModifiableSelector,
     NoveltySelector,
+    ProjectedDescriptor,
     StaticDescriptor,
     assign_islands,
     load_select_policy,
@@ -39,13 +40,38 @@ class NoveltyEngine(EvolutionEngine):
 
 
 class MapElitesEngine(EvolutionEngine):
-    '''MAP-Elites: sample parents from per-cell elites over an adaptive grid.'''
+    '''MAP-Elites: sample parents from per-cell elites over a coarse behavior grid.
+
+    Quality-diversity *parent selection only* - it never scores, promotes, or touches
+    official_best (the locked keep rule is unchanged). Two A4 refinements over the bare
+    grid: a coarse low-D projection of b(x) (so cells stay populated) and a ROBUST elite
+    rule that prefers holdout-confirmed scores and breaks noisy ties by lower_ci, so a
+    rare-cell candidate with a lucky search bump cannot enthrone itself as an elite.
+    '''
 
     name = 'map_elites'
 
-    def __init__(self, descriptor: Descriptor | None = None, bins: int = 8) -> None:
-        self.descriptor = descriptor or StaticDescriptor()
+    def __init__(
+        self, descriptor: Descriptor | None = None, bins: int = 8,
+        dims: 'tuple[int, ...] | None' = None, robust: bool = False,
+    ) -> None:
+        base = descriptor or StaticDescriptor()
+        self.descriptor = ProjectedDescriptor(base, dims) if dims else base
         self.bins = bins
+        self.robust = robust
+
+    @staticmethod
+    def _robust_key(cand: Candidate) -> tuple[float, int, float]:
+        '''Robust elite ordering: confirmed score > penalized search, tie-break lower_ci.'''
+        confirmed = cand.holdout_alpha is not None
+        base = cand.holdout_alpha if confirmed else (cand.selection_alpha or cand.search_alpha or 0.0)
+        lci = cand.lower_ci if cand.lower_ci is not None else 0.0
+        return (round(float(base), 6), 1 if confirmed else 0, float(lci))
+
+    def _grid_pool(self, pool: list[Candidate]) -> list[Candidate]:
+        '''Grid only candidates carrying a real b(x); fall back to the pool if too few.'''
+        real = [c for c in pool if getattr(c, 'b_descriptor', None)]
+        return real if len(real) >= 2 else pool
 
     def _bounds(self, pool: list[Candidate]) -> list[tuple[float, float]]:
         vecs = [self.descriptor.describe(c) for c in pool]
@@ -61,8 +87,10 @@ class MapElitesEngine(EvolutionEngine):
         pool = store.parents_pool()
         if not pool:
             return []
-        grid = MapElitesGrid(self.descriptor, self._bounds(pool), self.bins)
-        grid.build(pool)
+        gpool = self._grid_pool(pool)
+        key = self._robust_key if self.robust else None
+        grid = MapElitesGrid(self.descriptor, self._bounds(gpool), self.bins, key=key)
+        grid.build(gpool)
         elites = grid.elites() or pool
         state['map_elites_coverage'] = grid.coverage
         return [rng.choice(elites) for _ in range(k)]
@@ -128,7 +156,10 @@ def make_qd_engine(name: str, selector: Selector, config: 'Config | None' = None
     if name == 'curiosity':
         return NoveltyEngine(descriptor, perf_weight=1.0)
     if name == 'map_elites':
-        return MapElitesEngine(descriptor)
+        bins = getattr(config, 'map_elites_bins', 8) if config is not None else 8
+        dims = tuple(getattr(config, 'map_elites_dims', ()) or ()) if config is not None else ()
+        robust = bool(getattr(config, 'map_elites_robust', False)) if config is not None else False
+        return MapElitesEngine(descriptor, bins=bins, dims=(dims or None), robust=robust)
     if name == 'islands':
         return IslandEngine(selector)
     if name == 'modifiable':
