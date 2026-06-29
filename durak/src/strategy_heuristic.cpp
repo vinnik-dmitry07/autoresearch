@@ -25,11 +25,13 @@
 //                          a high trump (rank 8+) on defense.
 //   H3  deck_empty_pileon -- when deck==0, keep rank-matched throw-ins going
 //                          (cheapest non-trump) instead of passing at once.
+//   H4  endgame_trump_strip -- deck==0 and opponent<=2 cards: open with the
+//                          lowest trump to force tempo before they convert.
 // Parameters: (none)
 // ============================================================================
 namespace durak {
 
-constexpr int kHeuristicCount = 3;
+constexpr int kHeuristicCount = 4;
 constexpr int kParameterCount = 0;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
@@ -81,6 +83,23 @@ int pick_cheapest_nontrump(const LegalMoves& legal, MoveType type, int trump) {
     return best;
 }
 
+// H4: lowest trump open when endgame strip conditions hold.
+int pick_lowest_trump(const LegalMoves& legal, MoveType type, int trump) {
+    int best = -1;
+    double best_v = 1e18;
+    for (int i = 0; i < legal.count; ++i) {
+        if (legal.moves[i].type != type) continue;
+        const Card c = legal.moves[i].card;
+        if (!is_trump(c, trump)) continue;
+        const double v = double(rank_of(c));
+        if (v < best_v) {
+            best_v = v;
+            best = i;
+        }
+    }
+    return best;
+}
+
 Move choose_attack(const LocalFeatures& L, const LegalMoves& legal, bool has_done) {
     if (has_done) {
         if (L.deck_count == 0) {
@@ -88,6 +107,11 @@ Move choose_attack(const LocalFeatures& L, const LegalMoves& legal, bool has_don
             if (best >= 0) return legal.moves[best];
         }
         return {MoveType::AttackDone, NO_CARD, 0};
+    }
+    if (L.deck_count == 0 && L.opponent_hand_count <= 2 &&
+        popcount(L.hand & SUIT_MASK[L.trump_suit]) >= 1) {
+        const int strip = pick_lowest_trump(legal, MoveType::AttackPlay, L.trump_suit);
+        if (strip >= 0) return legal.moves[strip];
     }
     const int best = pick_cheapest(legal, MoveType::AttackPlay, L.trump_suit);
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
