@@ -34,26 +34,48 @@ helping, that is a signal to **change family**, not to stop:
 
 ## DE-ANCHOR playbook (when Φ shows `plateau_rounds>=3` or DE-ANCHOR)
 The incumbent (`candidate_0000`, search ~0.776) already bundles trump-economy + endgame-tempo
-(H1–H5). **H2/H4/H5 gate tweaks are a confirmed dead-end** (10+ plateau rounds; see
-`family_map.md`). Your next edit **must** add behavioral logic from a *different* family —
-not another `deck_count` / `opponent_hand_count` threshold change.
+(H1–H5). **H2/H4/H5 gate tweaks are a confirmed dead-end** (15 plateau rounds; parents
+through `candidate_0030` — see `family_map.md`). Your next edit **must** add behavioral logic
+from a *different* family — not another `deck_count` / `opponent_hand_count` threshold change.
 
-**Mandatory pivot (pick one per turn):**
-1. **`pair-baiting` (preferred)** — before the open `pick_cheapest` fallback, scan ranks
-   `r` where `popcount(L.hand & RANK_MASK[r]) >= 2` and play the lowest legal attack card
-   of that rank. In pile phase (`has_done`), before H3's `pick_cheapest_nontrump`, prefer a
-   legal throw-in whose rank still has surplus in hand.
-2. **`card-counting`** — when `L.deck_count == 0`, build `visible = L.hand | L.table_attack
-   | L.table_defense | card_bit(L.trump_card)` and prefer opening/throw-in on rank `r` where
-   `popcount(visible & RANK_MASK[r]) == 4` (rank fully exhausted from unseen deck).
+**Wasted-turn detector (do NOT submit):**
+- Any diff that only edits numeric literals inside existing H2/H4/H5 `if` conditions.
+- Any pile tweak that matches table ranks without the pair-surplus gate (`popcount(L.hand &
+  RANK_MASK[r]) >= 2`) — `candidate_0025`–`0030` already tried that shape.
 
-Implementation rules:
-- Add at most **one** new heuristic (H6) with **zero** new parameters; bump
-  `kHeuristicCount` to 6 and document H6 in the manifest comment.
-- **Do not** modify H1–H5 conditions or thresholds in the same edit — leave the incumbent
-  gates byte-identical; only insert new tie-break branches *before* existing fallbacks.
-- If your edit only changes a numeric gate on H2/H4/H5, it will be discarded as a dead-end
-  re-proposal even if search_alpha rises slightly.
+**Mandatory pivot this round: `pair-baiting` H6** (card-counting is the fallback *next* turn).
+Structural reason to cite: scalar trump-economy gates are saturated; pair surplus is unused.
+
+Add one helper and two call sites — leave every existing H1–H5 `if` body byte-identical:
+
+```cpp
+// H6 pair_baiting: lowest legal attack whose rank still has duplicate in hand.
+int pick_pair_surplus(const LocalFeatures& L, const LegalMoves& legal, int trump, bool nontrump_only) {
+    int best = -1, best_rank = NUM_RANKS;
+    for (int i = 0; i < legal.count; ++i) {
+        if (legal.moves[i].type != MoveType::AttackPlay) continue;
+        const Card c = legal.moves[i].card;
+        if (nontrump_only && is_trump(c, trump)) continue;
+        const int r = rank_of(c);
+        if (popcount(L.hand & RANK_MASK[r]) < 2) continue;
+        if (r < best_rank) { best_rank = r; best = i; }
+    }
+    return best;
+}
+```
+
+Insertion points in `choose_attack` (restored parent uses `pick_cheapest_nontrump` in pile):
+1. **Open** (`!has_done`): after the H4 trump-strip block, *before* `pick_cheapest` — call
+   `pick_pair_surplus(L, legal, L.trump_suit, false)`.
+2. **Pile** (`has_done`): *before* `pick_cheapest_nontrump` — call
+   `pick_pair_surplus(L, legal, L.trump_suit, true)`.
+
+Manifest: add `H6 pair_baiting`, set `kHeuristicCount = 6`. Zero new parameters.
+
+**Fallback family (`card-counting`, only if pair-baiting already present):** when
+`L.deck_count == 0`, `visible = L.hand | L.table_attack | L.table_defense |
+card_bit(L.trump_card)`; prefer attack on rank `r` with `popcount(visible & RANK_MASK[r]) == 4`
+before H4 / `pick_cheapest`. Still H6, still zero parameters.
 
 ## Statelessness
 Each turn starts from a **restored parent snapshot**; you carry no memory across turns
