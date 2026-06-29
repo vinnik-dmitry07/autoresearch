@@ -23,11 +23,13 @@
 //                          take only when an uncovered card cannot be beaten.
 //   H2  conservation_take -- while deck>=5, voluntarily take rather than burn
 //                          a high trump (rank 8+) on defense.
+//   H3  deck_empty_pileon -- when deck==0, keep rank-matched throw-ins going
+//                          (cheapest non-trump) instead of passing at once.
 // Parameters: (none)
 // ============================================================================
 namespace durak {
 
-constexpr int kHeuristicCount = 2;
+constexpr int kHeuristicCount = 3;
 constexpr int kParameterCount = 0;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
@@ -62,9 +64,31 @@ int pick_cheapest(const LegalMoves& legal, MoveType type, int trump) {
     return best;
 }
 
+// H3: pile phase only dumps non-trumps; trumps stay for direct attacks.
+int pick_cheapest_nontrump(const LegalMoves& legal, MoveType type, int trump) {
+    int best = -1;
+    double best_v = 1e18;
+    for (int i = 0; i < legal.count; ++i) {
+        if (legal.moves[i].type != type) continue;
+        const Card c = legal.moves[i].card;
+        if (is_trump(c, trump)) continue;
+        const double v = double(rank_of(c));
+        if (v < best_v) {
+            best_v = v;
+            best = i;
+        }
+    }
+    return best;
+}
+
 Move choose_attack(const LocalFeatures& L, const LegalMoves& legal, bool has_done) {
-    // No pile-on: only the initial open plays a card (mirrors the basic baseline).
-    if (has_done) return {MoveType::AttackDone, NO_CARD, 0};
+    if (has_done) {
+        if (L.deck_count == 0) {
+            const int best = pick_cheapest_nontrump(legal, MoveType::AttackPlay, L.trump_suit);
+            if (best >= 0) return legal.moves[best];
+        }
+        return {MoveType::AttackDone, NO_CARD, 0};
+    }
     const int best = pick_cheapest(legal, MoveType::AttackPlay, L.trump_suit);
     if (best < 0) return {MoveType::AttackDone, NO_CARD, 0};
     return legal.moves[best];
