@@ -34,19 +34,26 @@ helping, that is a signal to **change family**, not to stop:
 
 ## DE-ANCHOR playbook (when Φ shows `plateau_rounds>=3` or DE-ANCHOR)
 The incumbent (`candidate_0000`, search ~0.776) already bundles trump-economy + endgame-tempo
-(H1–H5). Recent siblings from `candidate_0004` failed the keep rule with the same scalar
-pattern (tweaking `deck_count` / `opponent_hand_count` gates). **Do not** propose another
-threshold nudge on H2/H4/H5 — that axis is locally saturated.
+(H1–H5). **H2/H4/H5 gate tweaks are a confirmed dead-end** (10+ plateau rounds; see
+`family_map.md`). Your next edit **must** add behavioral logic from a *different* family —
+not another `deck_count` / `opponent_hand_count` threshold change.
 
-Pivot to a **behaviorally different** family from `family_map.md`:
-- **`pair-baiting`**: on open, if hand holds 2+ of some rank, attack with the *lowest* card
-  of that rank (not global cheapest); in pile phase, prefer matching a table rank you still
-  hold in surplus before defaulting to cheapest non-trump.
-- **`card-counting` (memoryless)**: when `deck_count==0`, rank-popcount from visible cards;
-  prefer throwing-in or opening on ranks fully exhausted from the remaining unseen deck.
+**Mandatory pivot (pick one per turn):**
+1. **`pair-baiting` (preferred)** — before the open `pick_cheapest` fallback, scan ranks
+   `r` where `popcount(L.hand & RANK_MASK[r]) >= 2` and play the lowest legal attack card
+   of that rank. In pile phase (`has_done`), before H3's `pick_cheapest_nontrump`, prefer a
+   legal throw-in whose rank still has surplus in hand.
+2. **`card-counting`** — when `L.deck_count == 0`, build `visible = L.hand | L.table_attack
+   | L.table_defense | card_bit(L.trump_card)` and prefer opening/throw-in on rank `r` where
+   `popcount(visible & RANK_MASK[r]) == 4` (rank fully exhausted from unseen deck).
 
-Add at most **one** new heuristic (H6) with zero parameters; keep Occam complexity minimal.
-Do not touch H1–H5 gates in the same edit — replace behavior, do not re-tune scalars.
+Implementation rules:
+- Add at most **one** new heuristic (H6) with **zero** new parameters; bump
+  `kHeuristicCount` to 6 and document H6 in the manifest comment.
+- **Do not** modify H1–H5 conditions or thresholds in the same edit — leave the incumbent
+  gates byte-identical; only insert new tie-break branches *before* existing fallbacks.
+- If your edit only changes a numeric gate on H2/H4/H5, it will be discarded as a dead-end
+  re-proposal even if search_alpha rises slightly.
 
 ## Statelessness
 Each turn starts from a **restored parent snapshot**; you carry no memory across turns
