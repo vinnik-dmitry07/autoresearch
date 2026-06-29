@@ -32,6 +32,22 @@ helping, that is a signal to **change family**, not to stop:
 2. Submit a candidate from a **different** heuristic family than the recent attempts.
 3. Respect the KNOWN DEAD-ENDS listed in Φ — do not re-propose a closed direction.
 
+## DE-ANCHOR playbook (when Φ shows `plateau_rounds>=3` or DE-ANCHOR)
+The incumbent (`candidate_0000`, search ~0.776) already bundles trump-economy + endgame-tempo
+(H1–H5). Recent siblings from `candidate_0004` failed the keep rule with the same scalar
+pattern (tweaking `deck_count` / `opponent_hand_count` gates). **Do not** propose another
+threshold nudge on H2/H4/H5 — that axis is locally saturated.
+
+Pivot to a **behaviorally different** family from `family_map.md`:
+- **`pair-baiting`**: on open, if hand holds 2+ of some rank, attack with the *lowest* card
+  of that rank (not global cheapest); in pile phase, prefer matching a table rank you still
+  hold in surplus before defaulting to cheapest non-trump.
+- **`card-counting` (memoryless)**: when `deck_count==0`, rank-popcount from visible cards;
+  prefer throwing-in or opening on ranks fully exhausted from the remaining unseen deck.
+
+Add at most **one** new heuristic (H6) with zero parameters; keep Occam complexity minimal.
+Do not touch H1–H5 gates in the same edit — replace behavior, do not re-tune scalars.
+
 ## Statelessness
 Each turn starts from a **restored parent snapshot**; you carry no memory across turns
 except the bounded Φ the harness gives you (best curve, recent outcomes, plateau length,
