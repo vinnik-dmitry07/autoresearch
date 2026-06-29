@@ -15,6 +15,7 @@ from typing import Any
 
 from .agents import COMPLETED, Agent, AgentContext
 from .config import Config
+from .observe import load_family_map
 from .protect import VersionControl
 from .util import append_jsonl, log
 
@@ -114,4 +115,11 @@ class MetaController:
             'You may edit ONLY the mechanism layer to improve how the inner agent searches. '
             'You cannot change the evaluator, metric, or thresholds.'
         )
-        return f'{contract}\n\n---\n# Current state (Phi)\n\n{phi}\n'
+        # family_map.md is read on the meta path only (this controller exists solely
+        # when meta_every > 0), keeping it dormant for the Phase-1 baseline.
+        family_map = load_family_map(self.config)
+        family_block = (
+            f'\n\n---\n# Known heuristic families (family_map.md)\n\n{family_map}\n'
+            if family_map else ''
+        )
+        return f'{contract}{family_block}\n\n---\n# Current state (Phi)\n\n{phi}\n'

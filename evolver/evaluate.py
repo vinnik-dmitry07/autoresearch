@@ -251,3 +251,27 @@ class RealEvaluator:
         search_score = search if search is not None else parsed[0]
         b4 = parsed[1] if parsed is not None else 0.0
         return Scores('full', 'full_seed_0', search_score, b4, parse_lower_ci(result.stdout), result.seconds)
+
+    def run_features(self, out_path: Path, seeds: int) -> bool:
+        '''Shadow-only behavioral descriptor pass: write a per-game `--mode features`
+        TSV for the already-built candidate (challenger B2 = the evolving strategy).
+
+        No rebuild and no official score is produced; this only feeds b(x). Returns
+        True when the TSV exists. Cheap by design (a few thousand games).
+        '''
+        sim = self.repo_root / 'durak' / 'build' / 'simulate.exe'
+        if not sim.exists():
+            return False
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        seeds = max(1, int(seeds))
+        result = run_command(
+            [
+                str(sim), '--mode', 'features',
+                '--challenger', 'B2', '--opponent', 'B4',
+                '--features-out', str(out_path),
+                '--seeds', str(seeds), '--batch', str(seeds),
+            ],
+            cwd=self.repo_root,
+            timeout_s=self.config.session.wall_timeout_s,
+        )
+        return result.ok and out_path.exists()

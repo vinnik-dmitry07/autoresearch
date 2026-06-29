@@ -24,6 +24,7 @@ from .evaluate import Evaluator, RealEvaluator, Scores, Verdict, keep_rule
 from .hygiene import Hygiene
 from .meta import Attribution, ConvergencePolicy, MetaController
 from .observe import Observer
+from .population import DEFAULT_DESCRIPTOR_COLUMNS, parse_feature_descriptor
 from .protect import VersionControl
 from .select import Selector, make_selector
 from .store import INVALID, OFFICIAL_BEST, STEPPING_STONE, Candidate, Store
@@ -72,7 +73,7 @@ class Loop:
         self.selector = selector or make_selector(
             config.selector, config.selector_scale, config.selector_topk,
         )
-        self.engine = engine or make_engine(config.engine, self.selector)
+        self.engine = engine or make_engine(config.engine, self.selector, config)
         self.hygiene = Hygiene(self.paths, keep=config.backup_keep)
         self.convergence = ConvergencePolicy(
             config.convergence_enabled, config.min_rounds, config.convergence_patience,
@@ -233,6 +234,8 @@ class Loop:
         self.state['plateau'] = 0 if improved else self.state['plateau'] + 1
         self._save_state()
         self.store.regenerate_results()
+        if self.config.shadow_descriptors:
+            self.observer.record_descriptor_coverage(self.store, self.state)
         self.observer.flush_memory(self.state, 'improved' if improved else 'no improvement')
         if self.config.hygiene_enabled:
             moved = self.store.archive_stale(self.state['round'], self.config.stale_min_idle_rounds)
@@ -274,6 +277,7 @@ class Loop:
         full: Scores | None = None
         verdict: Verdict | None = None
         accepted = False
+        b_descriptor: list[float] | None = None
         parent_snap = self.store.snapshot_text(parent.id)
         try:
             if self.config.use_worktrees:
@@ -333,6 +337,10 @@ class Loop:
                                         accepted = self._promote(full)
                                     else:
                                         reason = verdict.reason
+                            # Shadow descriptor: record b(x) for every valid candidate.
+                            # Never read by selection or the keep rule (telemetry only).
+                            if self.config.shadow_descriptors:
+                                b_descriptor = self._shadow_descriptor(cid)
         except Exception as exc:  # noqa: BLE001 - a candidate crash must never be fatal
             status = INVALID
             reason = f'crash: {exc!r}'
@@ -346,6 +354,8 @@ class Loop:
             cid, parent, base, round_idx, status, reason,
             search, holdout, full, snapshot_text, tokens, eval_seconds,
         )
+        if b_descriptor is not None:
+            cand.b_descriptor = b_descriptor
         self.store.add(cand, patch=patch, snapshot=snapshot_text)
         if status == OFFICIAL_BEST:
             self.store.pin_lineage(cand.id, round_idx)
@@ -355,6 +365,26 @@ class Loop:
             'cost_usd': cost, 'eval_seconds': eval_seconds, 'status': status,
         })
         return cand, accepted
+
+    def _shadow_descriptor(self, cid: str) -> list[float] | None:
+        '''Shadow b(x): a cheap `--mode features` pass parsed into a mean vector.
+
+        Pure telemetry - the result is stored in meta.json but never consulted by
+        parent selection or the keep rule. Any failure is swallowed (non-fatal).
+        '''
+        run_features = getattr(self.evaluator, 'run_features', None)
+        if run_features is None:
+            return None
+        out = self.paths.run_dir / 'descriptors' / f'{cid}.tsv'
+        columns = list(self.config.descriptor_columns) or list(DEFAULT_DESCRIPTOR_COLUMNS)
+        try:
+            if not run_features(out, self.config.descriptor_seeds):
+                return None
+            vec = parse_feature_descriptor(out, columns)
+        except Exception as exc:  # noqa: BLE001 - shadow telemetry must never be fatal
+            log(f'WARN shadow descriptor failed for {cid}: {exc!r}')
+            return None
+        return list(vec) if vec else None
 
     def _promote(self, full: Scores) -> bool:
         '''Commit the accepted candidate as the new official best and advance pointers.'''

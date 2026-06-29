@@ -9,7 +9,15 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING
+
+from .base import EvolutionEngine
+
+if TYPE_CHECKING:
+    import random
+
+    from ..select import Selector
+    from ..store import Candidate, Store
 
 
 @dataclass
@@ -37,11 +45,26 @@ class SweepVariant:
     assignment: dict[str, str]
 
 
-class SweepEngine:
-    '''Expands a SweepSpec into concrete candidate snapshots without any agent calls.'''
+class SweepEngine(EvolutionEngine):
+    '''Expands a SweepSpec into concrete candidate snapshots without any agent calls.
+
+    Registered in make_engine but default OFF. Until a sweep spec is supplied it is
+    behaviour-neutral: select_parents delegates to the configured selector, so
+    engine='sweep' matches the Phase-1 baseline exactly.
+    '''
 
     name = 'sweep'
     manages_own_evaluation = False  # the harness still scores every variant
+
+    def __init__(self, selector: 'Selector | None' = None) -> None:
+        self.selector = selector
+
+    def select_parents(
+        self, store: 'Store', k: int, rng: 'random.Random', state: dict,
+    ) -> list['Candidate']:
+        if self.selector is None:
+            return []
+        return self.selector.select(store.parents_pool(), k, rng)
 
     def expand(self, spec: SweepSpec) -> list[SweepVariant]:
         if not spec.axes:

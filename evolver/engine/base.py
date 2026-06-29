@@ -13,10 +13,13 @@ from __future__ import annotations
 import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..select import Selector
 from ..store import Candidate, Store
+
+if TYPE_CHECKING:
+    from ..config import Config
 
 
 @dataclass
@@ -78,12 +81,18 @@ class GreedyEngine(EvolutionEngine):
         return [best for _ in range(k)]
 
 
-def make_engine(name: str, selector: Selector) -> EvolutionEngine:
+def make_engine(name: str, selector: Selector, config: 'Config | None' = None) -> EvolutionEngine:
     if name in ('default', '', None):
         return DefaultEngine(selector)
     if name == 'greedy':
         return GreedyEngine()
-    # QD engines are registered lazily to avoid importing numpy-free heavy modules early.
+    if name == 'sweep':
+        # LLM-free parameter sweep. Registered but default OFF; behaviour-neutral
+        # (delegates to selector) until a sweep spec is supplied.
+        from .sweep import SweepEngine
+
+        return SweepEngine(selector)
+    # QD engines are registered lazily to avoid importing heavy modules early.
     from . import qd
 
-    return qd.make_qd_engine(name, selector)
+    return qd.make_qd_engine(name, selector, config)

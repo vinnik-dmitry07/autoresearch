@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import Config
+from .population import coverage_stats
 from .store import OFFICIAL_BEST, Store
 from .util import append_jsonl, atomic_write_text
 
@@ -42,6 +43,18 @@ def load_rejected_directions(repo_root: Path, limit: int = REJECTED_MAX) -> list
             if len(out) >= limit:
                 break
     return [item for item in out if item]
+
+
+def load_family_map(config: Config, limit_chars: int = 2000) -> str:
+    '''Read family_map.md (mechanism dir, then repo root); '' when absent.
+
+    Meta-only knowledge: callers MUST gate this behind meta being enabled so the
+    Phase-1 baseline prompt never depends on it (plan: dormant until meta is on).
+    '''
+    for path in (config.paths.mechanism_dir / 'family_map.md', config.repo_root / 'family_map.md'):
+        if path.exists():
+            return path.read_text(encoding='utf-8').strip()[:limit_chars]
+    return ''
 
 
 class Observer:
@@ -100,6 +113,13 @@ class Observer:
                 'DE-ANCHOR (plateau): drop the stale scalar; steer by behavioral difference;',
                 'submit from a DIFFERENT heuristic family than the last attempts.',
             ]
+        if self.config.meta_every > 0:
+            # family_map.md is surfaced ONLY when the meta layer is active, so the
+            # Phase-1 baseline Phi stays byte-identical regardless of the file.
+            family_map = load_family_map(self.config)
+            if family_map:
+                head = family_map.splitlines()[:6]
+                lines += ['', 'HEURISTIC FAMILIES (family_map.md; meta active):', *[f'  {ln}' for ln in head]]
         phi = '\n'.join(lines)
         if len(phi) > PHI_MAX_CHARS:
             phi = phi[:PHI_MAX_CHARS] + '\n... [truncated]'
@@ -122,6 +142,29 @@ class Observer:
         )
         with path.open('a', encoding='utf-8', newline='\n') as handle:
             handle.write(line)
+
+    def record_descriptor_coverage(self, store: Store, state: dict[str, Any]) -> None:
+        '''Shadow telemetry: descriptor-space coverage/entropy over valid candidates.
+
+        Appends one line to descriptor_coverage.jsonl and writes a small markdown
+        snapshot beside the round observation. Deliberately does NOT touch the
+        agent-facing Phi, so selection and the prompt stay identical to the baseline.
+        '''
+        vectors = [tuple(c.b_descriptor) for c in store.all() if c.is_valid and c.b_descriptor]
+        if len(vectors) < 2:
+            return
+        round_idx = state.get('round', 0)
+        stats = coverage_stats(vectors)
+        append_jsonl(self.paths.run_dir / 'descriptor_coverage.jsonl', {'round': round_idx, **stats})
+        per_dim = ', '.join(f'{s:.3f}' for s in stats['per_dim_std'])
+        snapshot = (
+            f'# Descriptor coverage round {round_idx}\n\n'
+            f'valid_with_b={stats["n"]}  dims={stats["dims"]}  '
+            f'cells_occupied={stats["cells_occupied"]}/{stats["grid_cells"]}\n'
+            f'entropy={stats["entropy_bits"]:.3f} bits (norm={stats["entropy_norm"]:.3f})\n'
+            f'per_dim_std=[{per_dim}]\n'
+        )
+        atomic_write_text(self.paths.observations_dir / f'round_{round_idx:03d}_descriptor.md', snapshot)
 
     def append_cost(self, record: dict[str, Any]) -> None:
         append_jsonl(self.paths.cost_jsonl, record)

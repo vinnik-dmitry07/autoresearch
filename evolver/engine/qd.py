@@ -6,7 +6,8 @@ They are kept only if they beat the Phase-1 baseline on holdout-confirmed gain p
 from __future__ import annotations
 
 import random
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from ..population import (
     Descriptor,
@@ -15,10 +16,15 @@ from ..population import (
     NoveltySelector,
     StaticDescriptor,
     assign_islands,
+    load_select_policy,
+    make_descriptor,
 )
 from ..select import Selector
 from ..store import Candidate, Store
 from .base import EvolutionEngine
+
+if TYPE_CHECKING:
+    from ..config import Config
 
 
 class NoveltyEngine(EvolutionEngine):
@@ -103,15 +109,28 @@ class ModifiableEngine(EvolutionEngine):
         return self.selector.select(store.parents_pool(), k, rng)
 
 
-def make_qd_engine(name: str, selector: Selector) -> EvolutionEngine:
+def _select_policy(config: 'Config | None') -> dict[str, float]:
+    '''Load the ModifiableSelector policy from config.select_policy_path ({} if unset).'''
+    if config is None or not getattr(config, 'select_policy_path', ''):
+        return {}
+    path = Path(config.select_policy_path)
+    if not path.is_absolute():
+        path = config.repo_root / path
+    return load_select_policy(path)
+
+
+def make_qd_engine(name: str, selector: Selector, config: 'Config | None' = None) -> EvolutionEngine:
+    # Config-selectable descriptor: 'feature' reads the shadow-collected b(x), else
+    # StaticDescriptor. Defaults preserve the previous StaticDescriptor behaviour.
+    descriptor = make_descriptor(config) if config is not None else StaticDescriptor()
     if name == 'novelty':
-        return NoveltyEngine()
+        return NoveltyEngine(descriptor)
     if name == 'curiosity':
-        return NoveltyEngine(perf_weight=1.0)
+        return NoveltyEngine(descriptor, perf_weight=1.0)
     if name == 'map_elites':
-        return MapElitesEngine()
+        return MapElitesEngine(descriptor)
     if name == 'islands':
         return IslandEngine(selector)
     if name == 'modifiable':
-        return ModifiableEngine()
+        return ModifiableEngine(descriptor, _select_policy(config))
     raise ValueError(f'unknown engine: {name!r}')

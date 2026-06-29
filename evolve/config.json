@@ -39,6 +39,13 @@
     "every": 0,
     "target": "evolve/mechanism/evolve_skill.md"
   },
+  "descriptor": {
+    "kind": "static",
+    "shadow": false,
+    "seeds": 1500,
+    "columns": []
+  },
+  "select_policy": "evolve/select_policy.json",
   "baseline": {
     "best_search": 0.0,
     "best_b4": 0.0,

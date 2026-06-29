@@ -141,6 +141,14 @@ class Config:
     skip_build: bool = False
     agent_kind: str = 'cursor_cli'
     cmake_exe: str = ''
+    # Behavioral descriptor b(x). Dormant by default: 'static' uses StaticDescriptor;
+    # 'feature' reads the stored shadow descriptor. shadow_descriptors gates the extra
+    # `--mode features` pass that records b_descriptor without touching selection/keep.
+    descriptor_kind: str = 'static'
+    shadow_descriptors: bool = False
+    descriptor_seeds: int = 1500
+    descriptor_columns: tuple[str, ...] = ()
+    select_policy_path: str = ''
 
     @property
     def allowlist_paths(self) -> tuple[Path, ...]:
@@ -196,6 +204,7 @@ def load_config(
     promotion = raw.get('promotion', {})
     convergence = raw.get('convergence', {})
     meta = raw.get('meta', {})
+    descriptor = raw.get('descriptor', {})
     session_raw = raw.get('session', {})
     session = SessionConfig(
         max_turns=int(session_raw.get('max_turns', 12)),
@@ -241,4 +250,9 @@ def load_config(
         skip_build=bool(raw.get('skip_build', False)),
         agent_kind=str(raw.get('agent', 'cursor_cli')),
         cmake_exe=str(raw.get('cmake', '')),
+        descriptor_kind=str(descriptor.get('kind', 'static')),
+        shadow_descriptors=bool(descriptor.get('shadow', False)),
+        descriptor_seeds=int(descriptor.get('seeds', 1500)),
+        descriptor_columns=tuple(str(c) for c in (descriptor.get('columns') or ())),
+        select_policy_path=str(raw.get('select_policy', '')),
     )

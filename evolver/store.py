@@ -41,6 +41,7 @@ class Candidate:
     point_rate_b4: float | None = None
     lower_ci: float | None = None
     complexity: int | None = None
+    b_descriptor: list[float] | None = None
     n_children: int = 0
     children_invalid_count: int = 0
     eval_bank: str | None = None

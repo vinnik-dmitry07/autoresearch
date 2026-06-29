@@ -9,11 +9,27 @@ from __future__ import annotations
 import math
 import random
 from pathlib import Path
-from typing import Callable, Protocol, Sequence
+from typing import TYPE_CHECKING, Callable, Protocol, Sequence
 
 from .store import Candidate
+from .util import atomic_write_json, read_json
+
+if TYPE_CHECKING:
+    from .config import Config
 
 Vector = tuple[float, ...]
+
+# Curated, cheap, behavioral macro-features for b(x). Means over a small `--mode
+# features` run characterize a strategy's family (trump aggression, take pressure,
+# endgame trump retention, game length) without leaking the official score.
+DEFAULT_DESCRIPTOR_COLUMNS: tuple[str, ...] = (
+    'chal_trump_attack_cards',
+    'chal_forced_takes',
+    'chal_voluntary_takes',
+    'chal_cards_taken',
+    'chal_final_trumps',
+    'battles',
+)
 
 
 class Descriptor(Protocol):
@@ -79,6 +95,95 @@ class FeatureDescriptor:
     def describe(self, cand: Candidate) -> Vector:
         vec = parse_feature_descriptor(self.tsv_for(cand), self.columns)
         return vec if vec else self._fallback.describe(cand)
+
+
+class StoredDescriptor:
+    '''Reads the shadow-collected `b_descriptor` from meta; falls back to StaticDescriptor.
+
+    This is the handoff between shadow descriptors and QD: the loop records b(x) once
+    via a `--mode features` pass, and any later QD engine reads it back for free.
+    '''
+
+    def __init__(self) -> None:
+        self._fallback = StaticDescriptor()
+        self.dims = self._fallback.dims
+
+    def describe(self, cand: Candidate) -> Vector:
+        if cand.b_descriptor:
+            return tuple(float(x) for x in cand.b_descriptor)
+        return self._fallback.describe(cand)
+
+
+def make_descriptor(config: 'Config') -> Descriptor:
+    '''Config-selectable descriptor. 'feature' reads stored b(x); else StaticDescriptor.'''
+    if getattr(config, 'descriptor_kind', 'static') == 'feature':
+        return StoredDescriptor()
+    return StaticDescriptor()
+
+
+def coverage_stats(vectors: Sequence[Vector], bins: int = 5) -> dict:
+    '''Descriptor-space coverage/entropy over a coarse grid (shadow diagnostics only).
+
+    Returns occupied-cell count, Shannon entropy of cell occupancy (bits and a
+    0..1 normalized form), and per-dimension spread. Pure read-only telemetry.
+    '''
+    clean = [tuple(float(x) for x in v) for v in vectors if v]
+    n = len(clean)
+    if n == 0:
+        return {
+            'n': 0, 'dims': 0, 'cells_occupied': 0, 'grid_cells': 0,
+            'entropy_bits': 0.0, 'entropy_norm': 0.0, 'per_dim_std': [],
+        }
+    dims = max(len(v) for v in clean)
+    cols = [[v[i] for v in clean if i < len(v)] for i in range(dims)]
+    bounds = [(min(col), max(col)) for col in cols]
+
+    def cell(vec: Vector) -> tuple[int, ...]:
+        idx = []
+        for i, (lo, hi) in enumerate(bounds):
+            x = vec[i] if i < len(vec) else lo
+            span = (hi - lo) or 1.0
+            b = int((x - lo) / span * bins)
+            idx.append(max(0, min(bins - 1, b)))
+        return tuple(idx)
+
+    counts: dict[tuple[int, ...], int] = {}
+    for vec in clean:
+        key = cell(vec)
+        counts[key] = counts.get(key, 0) + 1
+    occupied = len(counts)
+    probs = [c / n for c in counts.values()]
+    entropy = -sum(p * math.log2(p) for p in probs) if probs else 0.0
+    max_entropy = math.log2(occupied) if occupied > 1 else 0.0
+    per_dim_std = []
+    for col in cols:
+        mean = sum(col) / len(col)
+        var = sum((x - mean) ** 2 for x in col) / len(col)
+        per_dim_std.append(math.sqrt(var))
+    return {
+        'n': n, 'dims': dims, 'cells_occupied': occupied,
+        'grid_cells': bins ** dims if dims else 0,
+        'entropy_bits': entropy,
+        'entropy_norm': (entropy / max_entropy) if max_entropy else 0.0,
+        'per_dim_std': per_dim_std,
+    }
+
+
+def load_select_policy(path: Path) -> dict[str, float]:
+    '''Read a ModifiableSelector policy from select_policy.json ({} when absent).'''
+    data = read_json(path, default={}) or {}
+    out: dict[str, float] = {}
+    for key, value in data.items():
+        try:
+            out[str(key)] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def save_select_policy(path: Path, policy: dict[str, float]) -> None:
+    '''Persist a ModifiableSelector policy atomically (meta self-modification target).'''
+    atomic_write_json(path, {str(k): float(v) for k, v in policy.items()})
 
 
 def distance(a: Vector, b: Vector) -> float:
