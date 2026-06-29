@@ -21,11 +21,13 @@
 //                          first; fall back to the lowest trump only when no
 //                          non-trump option exists. Open only (no pile-on);
 //                          take only when an uncovered card cannot be beaten.
+//   H2  conservation_take -- while deck>=5, voluntarily take rather than burn
+//                          a high trump (rank 8+) on defense.
 // Parameters: (none)
 // ============================================================================
 namespace durak {
 
-constexpr int kHeuristicCount = 1;
+constexpr int kHeuristicCount = 2;
 constexpr int kParameterCount = 0;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
@@ -84,6 +86,10 @@ Move choose_defense(const LocalFeatures& L, const LegalMoves& legal) {
 
     const int best = pick_cheapest(legal, MoveType::DefendPlay, L.trump_suit);
     if (best < 0) return {MoveType::DefendTake, NO_CARD, 0};
+    const Card c = legal.moves[best].card;
+    // H2: keep high trumps while the deck is still deep.
+    if (L.deck_count >= 5 && is_trump(c, L.trump_suit) && rank_of(c) >= 2)
+        return {MoveType::DefendTake, NO_CARD, 0};
     return legal.moves[best];
 }
 
