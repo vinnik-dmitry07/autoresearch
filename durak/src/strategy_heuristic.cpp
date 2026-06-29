@@ -23,15 +23,17 @@
 //                          take only when an uncovered card cannot be beaten.
 //   H2  conservation_take -- while deck>=5, voluntarily take rather than burn
 //                          a high trump (rank 8+) on defense.
-//   H3  deck_empty_pileon -- when deck==0, keep rank-matched throw-ins going
+//   H3  midgame_pileon -- pile phase: keep rank-matched throw-ins going
 //                          (cheapest non-trump) instead of passing at once.
 //   H4  endgame_trump_strip -- deck==0 and opponent<=2 cards: open with the
 //                          lowest trump to force tempo before they convert.
+//   H5  shallow_pile_trump -- pile phase with deck<=3: dump lowest trump
+//                          before passing when no non-trump throw-in exists.
 // Parameters: (none)
 // ============================================================================
 namespace durak {
 
-constexpr int kHeuristicCount = 4;
+constexpr int kHeuristicCount = 5;
 constexpr int kParameterCount = 0;
 constexpr int kComplexity = 100 * kHeuristicCount + 10 * kParameterCount;
 
@@ -102,9 +104,12 @@ int pick_lowest_trump(const LegalMoves& legal, MoveType type, int trump) {
 
 Move choose_attack(const LocalFeatures& L, const LegalMoves& legal, bool has_done) {
     if (has_done) {
-        if (L.deck_count == 0) {
-            const int best = pick_cheapest_nontrump(legal, MoveType::AttackPlay, L.trump_suit);
-            if (best >= 0) return legal.moves[best];
+        const int best = pick_cheapest_nontrump(legal, MoveType::AttackPlay, L.trump_suit);
+        if (best >= 0) return legal.moves[best];
+        // H5: shed trumps while the deck is shallow and ranks are exhausted.
+        if (L.deck_count <= 3 && L.opponent_hand_count <= 5) {
+            const int dump = pick_lowest_trump(legal, MoveType::AttackPlay, L.trump_suit);
+            if (dump >= 0) return legal.moves[dump];
         }
         return {MoveType::AttackDone, NO_CARD, 0};
     }
