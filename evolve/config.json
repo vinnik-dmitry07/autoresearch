@@ -41,19 +41,19 @@
   },
   "descriptor": {
     "kind": "static",
-    "shadow": false,
+    "shadow": true,
     "seeds": 1500,
     "columns": []
   },
   "novelty": {
-    "lambda": 0.0,
+    "lambda": 0.25,
     "k": 3
   },
   "select_policy": "evolve/select_policy.json",
   "baseline": {
-    "best_search": 0.0,
-    "best_b4": 0.0,
-    "best_lower_ci": 0.0
+    "best_search": 0.7756,
+    "best_b4": 0.67219,
+    "best_lower_ci": 0.65959
   },
   "session": {
     "max_turns": 12,
