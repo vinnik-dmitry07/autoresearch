@@ -9,7 +9,11 @@ written form of that whole system: engine, strategies, metric, simulator, the au
 loop, the analysis charts, and a front-end for playing the agent yourself.
 
 ![Challenger B2 against the baseline ladder over the course of the search](progress_ladder.png)
+
+
 ![](progress.png)
+
+
 ![](screenshot.png)
 
 *`progress_ladder.png` is a curated ladder chart kept as the hero image; the live charts

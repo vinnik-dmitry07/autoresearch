@@ -7,6 +7,7 @@ Fairness rules (plan v2):
   - scatter: jun22 discard (grey); arms valid_stepping_stone (arm-tinted)
   - manual: jun22 keep/discard mapped to round axis in cols 2–3 (≤200)
   - dispersion (col 3): dashed below-frontier deviation, vertically joined at promotions
+  - jun22 col: model authorship bands (Cursor / Opus / Gemini / GPT-5.5)
 
 Layout: 2×3 — jun22 | arms (frontier+scatter) | arms (neg deviation only);
 jun22 and arm panels in each row share y-axis scale.
@@ -51,6 +52,93 @@ _ARM_ORDER = ('A0', 'A1', 'A2', 'A4', 'A5', 'A6', 'A7', 'A8', 'A8s', 'A9')
 COLORS = {arm: _TAB10[i] for i, arm in enumerate(_ARM_ORDER)}
 COLORS['manual'] = '#000000'
 COLORS['jun22'] = '#000000'
+
+# Model-authorship staging (jun22 manual loop; mirrors analysis.ipynb).
+STAGE_COLORS = {
+    'cursor': '#3498db',
+    'opus': '#8e44ad',
+    'gemini': '#1b9e77',
+    'gpt55': '#d95f02',
+}
+STAGE_DIVIDERS = (
+    ('opus', 'jun25', STAGE_COLORS['opus'], 'Cursor auto  →  Opus 4.8 max'),
+    ('gemini', 'gemini', STAGE_COLORS['gemini'], 'Opus 4.8 max  →  Gemini 3.1 Pro'),
+    ('gpt55', 'GPT-5.5 Extra High', STAGE_COLORS['gpt55'],
+     'Gemini 3.1 Pro  →  GPT-5.5 Extra High'),
+)
+OPUS_META_ARMS = frozenset({'A8', 'A8s', 'A9'})
+
+
+def discover_authorship_boundaries(ref_b4: pd.DataFrame) -> dict[str, float | None]:
+    '''First exp_id per model stage from jun22 description tags.'''
+    desc = ref_b4['description'].fillna('').astype(str)
+    out: dict[str, float | None] = {'opus': None, 'gemini': None, 'gpt55': None}
+    for key, needle, _color, _label in STAGE_DIVIDERS:
+        hits = ref_b4[desc.str.contains(needle, case=False, regex=False)]
+        if len(hits):
+            out[key] = float(hits['exp_id'].min())
+    return out
+
+
+def _apply_authorship_staging(
+    ax: plt.Axes,
+    ref_b4: pd.DataFrame,
+    *,
+    x_max: float | None = None,
+) -> None:
+    '''Shaded regions + vertical dividers for Cursor / Opus / Gemini / GPT-5.5.'''
+    bounds = discover_authorship_boundaries(ref_b4)
+    x_end = float(x_max if x_max is not None else ref_b4['exp_id'].max())
+    if not len(ref_b4):
+        return
+
+    starts: list[tuple[str, float]] = [('cursor', 0.0)]
+    for key, _needle, _color, _label in STAGE_DIVIDERS:
+        start = bounds.get(key)
+        if start is not None and start <= x_end:
+            starts.append((key, start))
+    starts.append(('end', x_end + 1.0))
+
+    for (stage, x0), (_next_stage, x1) in zip(starts, starts[1:]):
+        if stage == 'end':
+            continue
+        span_lo = x0 if stage == 'cursor' else x0 - 0.5
+        span_hi = min(x1 - 0.5, x_end + 0.5)
+        if span_hi > span_lo:
+            ax.axvspan(
+                span_lo, span_hi,
+                color=STAGE_COLORS.get(stage, '#cccccc'),
+                alpha=0.07, zorder=0,
+            )
+
+    y0, y1 = ax.get_ylim()
+    y_text = y0 + (y1 - y0) * 0.02
+    for key, _needle, color, label in STAGE_DIVIDERS:
+        boundary = bounds.get(key)
+        if boundary is None or boundary > x_end:
+            continue
+        x_line = boundary - 0.5
+        ax.axvline(x_line, color=color, linestyle='-.', linewidth=1.6, alpha=0.85, zorder=2)
+        ax.text(
+            x_line, y_text, f' {label} ', rotation=90,
+            color=color, fontsize=8, ha='center', va='bottom', fontweight='bold',
+            zorder=10,
+            bbox=dict(boxstyle='round,pad=0.25', fc='white', ec=color, alpha=0.92),
+        )
+
+
+def _apply_opus_meta_markers(
+    ax: plt.Axes,
+    arm_data: dict[str, tuple[pd.DataFrame, pd.DataFrame, float, pd.DataFrame]],
+    *,
+    every: int = 5,
+) -> None:
+    '''Faint vertical ticks on arm panels where A8/A8s/A9 run Opus meta every N rounds.'''
+    has_opus = any(label.split('_')[0] in OPUS_META_ARMS for label in arm_data)
+    if not has_opus:
+        return
+    for rnd in range(every, int(ARM_X_MAX) + 1, every):
+        ax.axvline(rnd, color=STAGE_COLORS['opus'], linestyle=':', linewidth=0.5, alpha=0.25, zorder=1)
 
 
 def load_reference(path_spec: str) -> pd.DataFrame:
@@ -283,7 +371,7 @@ def _plot_jun22_point_rate(ax: plt.Axes, ref_b4: pd.DataFrame, ref_keep: pd.Data
     ax.axhline(0.50, color='#888', linestyle='--', linewidth=0.8, alpha=0.5)
     ax.set_ylabel('B4 point_rate')
     ax.set_title('jun22 manual loop')
-    ax.legend(loc='lower right', fontsize=7)
+    ax.legend(loc='upper left', fontsize=7)
     ax.grid(True, alpha=0.2)
 
 
@@ -300,7 +388,7 @@ def _plot_jun22_search(ax: plt.Axes, ref_b4: pd.DataFrame, ref_keep: pd.DataFram
     ax.axhline(0.52, color='#888', linestyle='--', linewidth=0.8, alpha=0.5)
     ax.set_xlabel('experiment # (jun22)')
     ax.set_ylabel('search_score (composite − complexity)')
-    ax.legend(loc='lower right', fontsize=7)
+    ax.legend(loc='upper left', fontsize=7)
     ax.grid(True, alpha=0.2)
 
 
@@ -573,10 +661,18 @@ def main() -> int:
     if args.dry_run:
         return 0
 
+    bounds = discover_authorship_boundaries(ref_b4)
+    if bounds['opus'] is not None:
+        print(
+            f'authorship: Cursor->Opus @ exp {bounds["opus"]:.0f}; '
+            f'Gemini @ {bounds["gemini"]}; GPT-5.5 @ {bounds["gpt55"]}',
+            flush=True,
+        )
+
     fig, axes = plt.subplots(2, 3, figsize=(26, 10))
     fig.suptitle(
-        'Parallel ladder: jun22 | arms frontier | below-frontier deviation',
-        fontsize=12,
+        'Parallel ladder: jun22 (Cursor/Opus/Gemini/GPT) | arms frontier | below-frontier deviation',
+        fontsize=11,
     )
 
     _plot_jun22_point_rate(axes[0, 0], ref_b4, ref_keep)
@@ -600,6 +696,11 @@ def main() -> int:
         print(f'point_rate ylim={pr_ylim[0]:.4f}..{pr_ylim[1]:.4f}', flush=True)
     if ss_ylim:
         print(f'search_score ylim={ss_ylim[0]:.4f}..{ss_ylim[1]:.4f}', flush=True)
+
+    _apply_authorship_staging(axes[0, 0], ref_b4)
+    _apply_authorship_staging(axes[1, 0], ref_b4)
+    for ax in (axes[0, 1], axes[1, 1], axes[0, 2], axes[1, 2]):
+        _apply_opus_meta_markers(ax, arm_data)
 
     fig.tight_layout()
     args.out.parent.mkdir(parents=True, exist_ok=True)
