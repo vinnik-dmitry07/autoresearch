@@ -255,6 +255,15 @@ class FamilyMapGatingTestCase(unittest.TestCase):
         self.assertIn('HEURISTIC FAMILIES', phi)
         self.assertIn('family-A', phi)
 
+    def test_phi_excludes_family_map_when_strict_self_contained(self) -> None:
+        config = self.run_config({
+            'meta': {'every': 5, 'agent': 'claude_cli', 'strict_self_contained': True},
+        })
+        store = self._store()
+        phi = Observer(config).summarize(store, {'round': 50, 'best_search': 0.8, 'best_b4': 0.6, 'plateau': 10})
+        self.assertNotIn('HEURISTIC FAMILIES', phi)
+        self.assertNotIn('family-A', phi)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

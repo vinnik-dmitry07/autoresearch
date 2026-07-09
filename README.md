@@ -27,6 +27,7 @@ loop, the analysis charts, and a front-end for playing the agent yourself.
 - [Repository layout](#repository-layout)
 - [Building and running](#building-and-running)
 - [The autoresearch loop](#the-autoresearch-loop)
+- [Parallel harness ladder (A0–A8)](#parallel-harness-ladder-a0a8)
 - [Results](#results)
 - [Legacy LLM experiment](#legacy-llm-experiment)
 - [License](#license)
@@ -454,6 +455,33 @@ commit  opponent  point_rate  search_score  lower_ci  games  complexity  status 
 
 `games = 2 * seeds` (10M for full, 200k for a quick probe); `status` is one of
 `keep`/`discard`/`crash`/`timeout`.
+
+### Parallel harness ladder (A0–A8)
+
+Independent evolver arms run in parallel (via `scripts/launch_ladder_parallel.py`) to
+measure optional search mechanisms against the Phase-1 baseline. Each arm is a JSON config
+under `scripts/ladder_configs/`; configs live in isolated worktrees with a shared jun22 seed
+and holdout-gated promotion. Optional layers are kept only if they beat the baseline on
+holdout-confirmed gain.
+
+- **A0. Current Phase-1 baseline:** `DefaultEngine` + flat archive +
+  `score_child_prop`.
+- **A1. Shadow descriptors:** same as baseline, but collect real `FeatureDescriptor`.
+- **A2. Gridless novelty:** `score_child_prop` × small novelty multiplier.
+- **A3. SweepEngine:** only around a known promising family.
+- **A4. MAP-Elites:** coarse 2D/3D grid, robust elite replacement.
+- **A5. Islands:** only if lineage/diversity collapse is observed.
+- **A6. Meta-agent:** only after selector/QD effects are measurable.
+- **A7. Evidence convergence:** last, behind `min_rounds` floor.
+- **A8. Claude meta-agent:** same as A6, but meta-sessions run via Claude CLI
+  (`claude-opus-4-8`, effort max) instead of Cursor CLI.
+- **A8s. Strict Claude meta:** A8 with self-contained `evolve_skill.md` seed (no
+  `family_map.md` in Phi); meta may only read/edit `evolve_skill.md`.
+- **A9 (experimental, opt-in):** islands + strict Claude meta + A8s self-contained
+  mechanism seed; convergence **off** for v1. Launch explicitly:
+  `python scripts/launch_ladder_parallel.py --arms A9`. Not in default `PHASE1_ARMS`.
+  Compare against A5 / A8s for attribution; frame multi-replicate results as directional
+  signal, not proof.
 
 ### Meta-review cadence and search modes
 

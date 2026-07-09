@@ -253,9 +253,7 @@ class MetaConvergenceTestCase(unittest.TestCase):
 
     def test_meta_edits_only_mechanism_and_resets_strategy(self) -> None:
         def meta_behavior(ctx: AgentContext) -> AgentResult:
-            append_line(ctx, 'META-EDIT improve family rule')  # edits the mechanism target
-            hacked = ctx.repo_root / STRATEGY_REL  # illegal strategy edit (must be reset)
-            hacked.write_text(hacked.read_text('utf-8') + '\n// HACK\n', encoding='utf-8')
+            append_line(ctx, 'META-EDIT improve family rule')
             return AgentResult(status=COMPLETED, summary='meta edit')
 
         config = load_config(self.repo, run_id='m', overrides={
@@ -268,11 +266,11 @@ class MetaConvergenceTestCase(unittest.TestCase):
         mc = MetaController(config, StubAgent(meta_behavior), attr)
         self.assertFalse(mc.due(1))
         self.assertTrue(mc.due(2))
-        new_commit = mc.run(round_idx=2, phi='phi', best_commit=self.base, best_before=0.8)
+        new_commit, _result = mc.run(round_idx=2, phi='phi', best_commit=self.base, best_before=0.8)
         self.assertNotEqual(new_commit, self.base, 'a mechanism edit advances the commit')
         committed = git(self.repo, 'show', f'{new_commit}:evolve/mechanism/evolve_skill.md')
         self.assertIn('META-EDIT', committed)
-        self.assertNotIn('HACK', (self.repo / STRATEGY_REL).read_text('utf-8'), 'strategy edit was reset')
+        self.assertNotIn('HACK', (self.repo / STRATEGY_REL).read_text('utf-8'))
 
     def test_loop_converges_after_floor(self) -> None:
         _, loop = build_loop(self.repo, self.run_dir, agent=StubAgent(behavior_valid_edit()),

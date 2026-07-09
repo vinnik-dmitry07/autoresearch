@@ -30,7 +30,7 @@ def find_repo_root(start: Path | None = None) -> Path:
 
 @dataclass
 class SessionConfig:
-    '''Bounds for a single inner agent session.'''
+    '''Bounds for a single agent session (inner or meta).'''
 
     max_turns: int = 12
     token_cap: int = 60_000
@@ -38,6 +38,20 @@ class SessionConfig:
     thinking_level: str = 'medium'
     model: str = 'auto'
     cost_per_session_usd: float = 0.0
+    effort: str = ''
+    max_budget_usd: float = 0.0
+    allowed_tools: tuple[str, ...] = ()
+    disallowed_tools: tuple[str, ...] = ()
+    settings_file: str = ''
+    append_system_prompt_file: str = ''
+
+
+@dataclass
+class LeakPolicy:
+    '''Tier-A leak backstop (honest-but-contaminated agent threat model).'''
+
+    enabled: bool = True
+    stop_after_hits: int = 0  # 0 = never auto-stop the outer run
 
 
 @dataclass
@@ -120,6 +134,7 @@ class Config:
     gate_full: str = 'full'
     search_delta: float = 0.005
     holdout_trigger_delta: float = 0.0
+    holdout_trigger_b4_delta: float = 0.005
     best_search: float = 0.0
     best_b4: float = 0.0
     best_lower_ci: float = 0.0
@@ -133,6 +148,11 @@ class Config:
     convergence_patience: int = 6
     meta_every: int = 0
     meta_target: str = 'evolve/mechanism/evolve_skill.md'
+    meta_agent_kind: str = ''
+    meta_strict_self_contained: bool = False
+    meta_ladder_template: str = ''
+    ladder_arm: str = ''
+    meta_session: SessionConfig = field(default_factory=SessionConfig)
     use_worktrees: bool = False
     hygiene_enabled: bool = True
     stale_min_idle_rounds: int = 8
@@ -165,6 +185,8 @@ class Config:
     map_elites_bins: int = 8
     map_elites_dims: tuple[int, ...] = ()
     map_elites_robust: bool = False
+    leak_policy: LeakPolicy = field(default_factory=LeakPolicy)
+    rng_seed: int = 20260627
 
     @property
     def allowlist_paths(self) -> tuple[Path, ...]:
@@ -182,6 +204,27 @@ def _load_manifest_allowlist(repo_root: Path) -> tuple[str, ...] | None:
     return paths or None
 
 
+def _parse_session(raw: dict[str, Any], fallback: SessionConfig | None = None) -> SessionConfig:
+    '''Parse a session block; missing keys inherit from fallback when given.'''
+    fb = fallback or SessionConfig()
+    return SessionConfig(
+        max_turns=int(raw.get('max_turns', fb.max_turns)),
+        token_cap=int(raw.get('token_cap', fb.token_cap)),
+        wall_timeout_s=float(raw.get('wall_timeout_s', fb.wall_timeout_s)),
+        thinking_level=str(raw.get('thinking_level', fb.thinking_level)),
+        model=str(raw.get('model', fb.model)),
+        cost_per_session_usd=float(raw.get('cost_per_session_usd', fb.cost_per_session_usd)),
+        effort=str(raw.get('effort', fb.effort)),
+        max_budget_usd=float(raw.get('max_budget_usd', fb.max_budget_usd)),
+        allowed_tools=tuple(str(t) for t in (raw.get('allowed_tools') or fb.allowed_tools)),
+        disallowed_tools=tuple(str(t) for t in (raw.get('disallowed_tools') or fb.disallowed_tools)),
+        settings_file=str(raw.get('settings_file', fb.settings_file)),
+        append_system_prompt_file=str(
+            raw.get('append_system_prompt_file', fb.append_system_prompt_file),
+        ),
+    )
+
+
 def _resolve_run_dir(repo_root: Path, raw: Any, run_id: str) -> Path:
     '''Resolve run_dir; default to a sibling of the repo so git cannot reach it.'''
     if raw:
@@ -190,6 +233,45 @@ def _resolve_run_dir(repo_root: Path, raw: Any, run_id: str) -> Path:
             candidate = (repo_root / candidate).resolve()
         return candidate
     return (repo_root.parent / '.evolver_runs' / run_id).resolve()
+
+
+def _claude_meta_template_arm(config: Config) -> str:
+    if config.meta_agent_kind != 'claude_cli':
+        return ''
+    if config.meta_ladder_template:
+        return config.meta_ladder_template
+    if config.ladder_arm:
+        return config.ladder_arm
+    return 'A8s' if config.meta_strict_self_contained else 'A8'
+
+
+def overlay_claude_meta_session(config: Config, harness_root: Path | None = None) -> str | None:
+    '''Force meta block from ladder template for claude_cli arms (A8 or A8s).
+
+    Worktree evolve/config.json is git-reset each round and may carry a stale
+    permissive meta block; the harness template is the source of truth at process start.
+    Returns template arm name when applied, else None.
+    '''
+    arm = _claude_meta_template_arm(config)
+    if not arm:
+        return None
+    hr = (harness_root or Path(__file__).resolve().parent.parent).resolve()
+    tpl = hr / 'scripts' / 'ladder_configs' / f'{arm}.json'
+    if not tpl.is_file():
+        return None
+    raw = json.loads(tpl.read_text(encoding='utf-8'))
+    meta = raw.get('meta') or {}
+    meta_raw = meta.get('session') or {}
+    if not meta_raw:
+        return None
+    config.meta_strict_self_contained = bool(meta.get('strict_self_contained', False))
+    config.meta_session = _parse_session(meta_raw, fallback=config.meta_session)
+    return arm
+
+
+def overlay_a8_meta_session(config: Config, harness_root: Path | None = None) -> bool:
+    '''Backward-compatible wrapper; True when any claude_cli overlay applied.'''
+    return overlay_claude_meta_session(config, harness_root=harness_root) is not None
 
 
 def load_config(
@@ -228,15 +310,11 @@ def load_config(
         for token, values in (sweep.get('axes') or {}).items()
     }
     map_elites = raw.get('map_elites', {})
-    session_raw = raw.get('session', {})
-    session = SessionConfig(
-        max_turns=int(session_raw.get('max_turns', 12)),
-        token_cap=int(session_raw.get('token_cap', 60_000)),
-        wall_timeout_s=float(session_raw.get('wall_timeout_s', 900.0)),
-        thinking_level=str(session_raw.get('thinking_level', 'medium')),
-        model=str(session_raw.get('model', 'auto')),
-        cost_per_session_usd=float(session_raw.get('cost_per_session_usd', 0.0)),
-    )
+    leak_raw = raw.get('leak_policy', {})
+    session = _parse_session(raw.get('session', {}))
+    meta_session_raw = meta.get('session') or {}
+    meta_session = _parse_session(meta_session_raw, fallback=session) if meta_session_raw else session
+    meta_agent_kind = str(meta.get('agent', '') or '')
 
     return Config(
         repo_root=repo_root,
@@ -252,6 +330,7 @@ def load_config(
         gate_full=str(gates.get('full', 'full')),
         search_delta=float(keep_rule.get('search_delta', 0.005)),
         holdout_trigger_delta=float(promotion.get('holdout_trigger_delta', 0.0)),
+        holdout_trigger_b4_delta=float(promotion.get('holdout_trigger_b4_delta', 0.005)),
         best_search=float(baseline.get('best_search', 0.0)),
         best_b4=float(baseline.get('best_b4', 0.0)),
         best_lower_ci=float(baseline.get('best_lower_ci', 0.0)),
@@ -265,6 +344,11 @@ def load_config(
         convergence_patience=int(convergence.get('patience', 6)),
         meta_every=int(meta.get('every', 0)),
         meta_target=str(meta.get('target', 'evolve/mechanism/evolve_skill.md')),
+        meta_agent_kind=meta_agent_kind,
+        meta_strict_self_contained=bool(meta.get('strict_self_contained', False)),
+        meta_ladder_template=str(meta.get('ladder_template', '')),
+        ladder_arm=str(raw.get('arm', '')),
+        meta_session=meta_session,
         use_worktrees=bool(raw.get('use_worktrees', False)),
         hygiene_enabled=bool(raw.get('hygiene_enabled', True)),
         stale_min_idle_rounds=int(raw.get('stale_min_idle_rounds', 8)),
@@ -285,4 +369,9 @@ def load_config(
         map_elites_bins=int(map_elites.get('bins', 8)),
         map_elites_dims=tuple(int(d) for d in (map_elites.get('dims') or ())),
         map_elites_robust=bool(map_elites.get('robust', False)),
+        leak_policy=LeakPolicy(
+            enabled=bool(leak_raw.get('enabled', True)),
+            stop_after_hits=int(leak_raw.get('stop_after_hits', 0)),
+        ),
+        rng_seed=int(raw.get('rng_seed', 20260627)),
     )

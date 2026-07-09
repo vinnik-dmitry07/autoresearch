@@ -2,11 +2,11 @@
 #include "strategies.hpp"
 
 // ============================================================================
-// A3 SWEEP TEMPLATE -- candidate_0019 (the 0.77648 near-winner family) with three
-// numeric thresholds tokenized for the LLM-free SweepEngine. NOT compiled directly;
-// the harness substitutes __H2_DECK__ / __H2_RANK__ / __H4_OPP__ from sweep.axes and
-// scores each variant through the locked precheck/keep gate. The center variant
-// (5 / 2 / 2) is byte-equivalent to candidate_0019, a built-in sanity check.
+// A3 SWEEP TEMPLATE -- five-heuristic family with tokenized thresholds for the
+// LLM-free SweepEngine. NOT compiled directly; the harness substitutes
+// __H2_DECK__ / __H2_RANK__ / __H4_OPP__ from sweep.axes and scores each variant
+// through the locked precheck/keep gate. Center variant (5 / 2 / 2) is the sweep
+// baseline sanity check.
 //
 // MANIFEST (keep in sync with the constants below):
 //   H1  trump_avoidance -- attack and defend with the lowest NON-trump card first.

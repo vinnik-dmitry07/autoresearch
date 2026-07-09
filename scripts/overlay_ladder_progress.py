@@ -4,8 +4,8 @@
 Fairness rules (plan v2):
   - jun22 frontier: status == keep, cummax on B4 rows
   - arm frontier: status == official_best AND score_kind in (baseline, full)
-  - A3 sweep: × at x=20, label A*-sweep (best score in per-arm sweep run)
   - scatter: jun22 discard (grey); arms valid_stepping_stone (arm-tinted)
+  - manual: jun22 keep/discard mapped to round axis in cols 2–3 (≤200)
   - dispersion (col 3): dashed below-frontier deviation, vertically joined at promotions
 
 Layout: 2×3 — jun22 | arms (frontier+scatter) | arms (neg deviation only);
@@ -13,7 +13,6 @@ jun22 and arm panels in each row share y-axis scale.
 
 Usage:
   python scripts/overlay_ladder_progress.py
-  python scripts/overlay_ladder_progress.py --no-a3
 '''
 from __future__ import annotations
 
@@ -28,18 +27,28 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ladder_lib import REPO_ROOT, RUN_ROOT, SEARCH_BAND  # noqa: E402
+from ladder_lib import (  # noqa: E402
+    REPO_ROOT,
+    RUN_ROOT,
+    SEARCH_BAND,
+    discover_legacy_arm_run,
+    discover_overlay_runs,
+)
 
 DEFAULT_REF = 'git:bccde74:results.tsv'
 DEFAULT_OUT = REPO_ROOT / 'progress.png'
 FRONTIER_KINDS = {'baseline', 'full'}
 ARM_X_MAX = 200.0  # cap all phase-1 arm curves and scatter at this round
-A3_PLOT_X = 20.0  # all A*-sweep marks pinned here (aligned with phase-1 budget)
+A3_PLOT_X = 20.0  # unused when A3 sweep runs are excluded from overlay
+# Column-2 overrides: A6/A7 use legacy/quarantine runs (not clean batch 162509).
+COL2_LEGACY_ARMS = ('A6', 'A7')
+MANUAL_LABEL = 'manual'
+MANUAL_X_MAX = ARM_X_MAX
 
 COLORS = {
     'jun22': '#2980b9',
     'A0': '#e74c3c', 'A1': '#9b59b6', 'A2': '#f39c12',
-    'A4': '#0284c7', 'A5': '#34495e', 'A6': '#059669', 'A7': '#95a5a6',
+    'A4': '#0284c7', 'A5': '#34495e', 'A6': '#059669', 'A7': '#95a5a6', 'A8': '#7c3aed', 'A8s': '#a855f7', 'A9': '#dc2626',
 }
 
 
@@ -121,27 +130,32 @@ def _assign_exp_ids(b4: pd.DataFrame) -> pd.DataFrame:
 
 
 def discover_runs(base: Path) -> dict[str, Path]:
-    '''Map arm label -> latest run_dir.'''
-    found: dict[str, tuple[float, Path]] = {}
-    if not base.exists():
-        return {}
-    for p in base.iterdir():
-        if not p.is_dir():
-            continue
-        m = re.match(r'^(A\d+)(?:_A3)?_', p.name)
-        if not m:
-            continue
-        arm = m.group(1)
-        is_a3 = '_A3_' in p.name
-        label = f'{arm}_A3' if is_a3 else arm
-        ts = p.stat().st_mtime
-        prev = found.get(label)
-        if prev is None or ts > prev[0]:
-            found[label] = (ts, p)
-    return {k: v[1] for k, v in found.items()}
+    '''Map arm label -> latest eligible run_dir (skips quarantine/contaminated batches).'''
+    return discover_overlay_runs(base)
+
+
+def jun22_as_arm(
+    ref_b4: pd.DataFrame,
+    x_max: float = MANUAL_X_MAX,
+) -> tuple[pd.DataFrame, pd.DataFrame, float, pd.DataFrame]:
+    '''Map jun22 manual-loop B4 rows onto the arms round axis (round := exp_id).'''
+    b4 = ref_b4[ref_b4['exp_id'] <= x_max].copy()
+    b4['round'] = b4['exp_id'].astype(int)
+    keep = b4[b4['status'] == 'keep'].copy()
+    disc = b4[b4['status'] == 'discard'].copy()
+    frontier = keep.copy()
+    frontier['status'] = 'official_best'
+    frontier['score_kind'] = 'full'
+    scatter = disc.copy()
+    scatter['status'] = 'valid_stepping_stone'
+    scatter['score_kind'] = 'search'
+    x_end = min(float(b4['exp_id'].max()) + 1.0 if len(b4) else 0.0, x_max)
+    return frontier, scatter, x_end, b4
 
 
 def _arm_color(label: str) -> str:
+    if label == MANUAL_LABEL:
+        return COLORS['jun22']
     return COLORS.get(label.split('_')[0], '#333333')
 
 
@@ -224,7 +238,7 @@ def _frontier_plateau_deviation(
 
 def self_check(arm: str, frontier: pd.DataFrame) -> list[str]:
     warns: list[str] = []
-    if _is_a3(arm):
+    if _is_a3(arm) or arm == MANUAL_LABEL:
         return warns
     if frontier.empty:
         warns.append(f'{arm}: no official_best frontier rows')
@@ -486,10 +500,9 @@ def _plot_arms_point_rate(
     for label, (frontier, scatter, x_end, b4) in arm_data.items():
         _plot_arm_series(ax, label, frontier, scatter, 'point_rate', x_end, b4)
     ax.axhline(0.50, color='#888', linestyle='--', linewidth=0.8, alpha=0.5)
-    ax.axvline(A3_PLOT_X, color='#bbbbbb', linestyle=':', linewidth=0.8, alpha=0.6)
     _set_arms_xlim(ax, arm_data)
     ax.set_ylabel('B4 point_rate')
-    ax.set_title('evolver arms — solid=phase-1, ×=A*-sweep @ round 20')
+    ax.set_title('evolver arms — phase-1 frontier + scatter')
     ax.legend(loc='lower right', fontsize=6, ncol=2)
     ax.grid(True, alpha=0.2)
 
@@ -501,9 +514,8 @@ def _plot_arms_search(
     for label, (frontier, scatter, x_end, b4) in arm_data.items():
         _plot_arm_series(ax, label, frontier, scatter, 'search_score', x_end, b4)
     ax.axhline(0.52, color='#888', linestyle='--', linewidth=0.8, alpha=0.5)
-    ax.axvline(A3_PLOT_X, color='#bbbbbb', linestyle=':', linewidth=0.8, alpha=0.6)
     _set_arms_xlim(ax, arm_data)
-    ax.set_xlabel('round # (phase-1); A*-sweep pinned at x=20')
+    ax.set_xlabel('round # (phase-1)')
     ax.set_ylabel('search_score (composite − complexity)')
     ax.legend(loc='lower right', fontsize=6, ncol=2)
     ax.grid(True, alpha=0.2)
@@ -514,8 +526,6 @@ def main() -> int:
     parser.add_argument('--reference', default=DEFAULT_REF)
     parser.add_argument('--runs', type=Path, default=RUN_ROOT)
     parser.add_argument('--out', type=Path, default=DEFAULT_OUT)
-    parser.add_argument('--no-a3', action='store_true',
-                        help='exclude A3 sweep runs')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
 
@@ -528,19 +538,33 @@ def main() -> int:
     if not runs:
         print(f'no arm run dirs under {args.runs}', flush=True)
 
+    for arm in COL2_LEGACY_ARMS:
+        legacy = discover_legacy_arm_run(args.runs, arm)
+        if legacy is not None:
+            runs[arm] = legacy
+            print(f'[col2 legacy] {arm} -> {legacy.name}', flush=True)
+
     arm_data: dict[str, tuple[pd.DataFrame, pd.DataFrame, float, pd.DataFrame]] = {}
     all_warns: list[str] = []
     for label, run_dir in sorted(runs.items()):
-        if args.no_a3 and '_A3' in label:
+        if '_A3' in label:
             continue
         b4, frontier, scatter, x_end = load_arm_b4(run_dir)
-        arm_data[label] = (frontier, scatter, x_end, b4)
+        arm_data[label] = (frontier, scatter, _cap_x_end(x_end), b4)
         all_warns.extend(self_check(label, frontier))
         print(
             f'{label}: frontier={len(frontier)} scatter={len(scatter)} '
-            f'x_end={x_end:.0f} dir={run_dir.name}',
+            f'x_end={_cap_x_end(x_end):.0f} dir={run_dir.name}',
             flush=True,
         )
+
+    mf, ms, mx, mb4 = jun22_as_arm(ref_b4, MANUAL_X_MAX)
+    arm_data[MANUAL_LABEL] = (mf, ms, mx, mb4)
+    print(
+        f'{MANUAL_LABEL}: frontier={len(mf)} scatter={len(ms)} x_end={mx:.0f} '
+        f'source=jun22_manual_loop (cols 2–3)',
+        flush=True,
+    )
 
     for w in all_warns:
         print(f'WARN: {w}', flush=True)

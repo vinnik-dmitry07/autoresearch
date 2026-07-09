@@ -14,6 +14,7 @@ agent's DONE/PLATEAU never ends the outer run.
 from __future__ import annotations
 
 import re
+import shutil
 import time
 from typing import Any, Callable
 
@@ -27,7 +28,14 @@ from .observe import Observer
 from .population import DEFAULT_DESCRIPTOR_COLUMNS, parse_feature_descriptor
 from .protect import VersionControl
 from .select import Selector, make_selector
+from .leak_gate import gate_scan, snapshot_digest
 from .store import INVALID, OFFICIAL_BEST, STEPPING_STONE, Candidate, Store
+from .usage_limit import (
+    is_cursor_auto_stop_flag,
+    pause_for_cursor_auto_stop_flag,
+    session_limit_message,
+    wait_for_usage_reset,
+)
 from .util import atomic_write_json, log, read_json
 import random
 
@@ -60,6 +68,7 @@ class Loop:
         observer: Observer | None = None,
         engine: EvolutionEngine | None = None,
         meta_agent: Agent | None = None,
+        meta_agent_factory: Callable[[Config], Agent] | None = None,
         rng: random.Random | None = None,
     ) -> None:
         self.config = config
@@ -80,10 +89,11 @@ class Loop:
             config.convergence_enabled, config.min_rounds, config.convergence_patience,
         )
         self.attribution = Attribution(self.paths.run_dir / 'attribution.jsonl')
-        self.rng = rng or random.Random(20260627)
+        self.rng = rng or random.Random(config.rng_seed)
         self._agent = agent
         self._agent_factory = agent_factory
         self._meta_agent = meta_agent
+        self._meta_agent_factory = meta_agent_factory
         self.meta: MetaController | None = None
         self.state: dict[str, Any] = {}
         self.skill = self._load_skill()
@@ -105,6 +115,14 @@ class Loop:
             'Phase 1 wires CursorAgent through agent_factory.'
         )
 
+    def _meta_instance(self) -> Agent:
+        if self._meta_agent is not None:
+            return self._meta_agent
+        if self._meta_agent_factory is not None:
+            self._meta_agent = self._meta_agent_factory(self.config)
+            return self._meta_agent
+        return self._agent_instance()
+
     # --- state ---------------------------------------------------------------------
 
     def _save_state(self) -> None:
@@ -118,6 +136,10 @@ class Loop:
                 existing = read_json(self.paths.state_json, default=None)
         if existing:
             self.state = existing
+            if self.config.max_rounds > int(self.state.get('max_rounds', 0)):
+                self.state['max_rounds'] = self.config.max_rounds
+            if self.state.get('finished') and self.state['round'] < self.config.max_rounds:
+                self.state['finished'] = False
             self.best_commit = self.state.get('best_commit') or self.vc.current_commit()
             log(f'resuming run {self.state.get("run_id")} at round {self.state.get("round")}')
             self.vc.reset_to_base(self.best_commit)
@@ -142,6 +164,12 @@ class Loop:
             'started_at': time.time(),
             'evo_count': 0,
             'last_official_round': 0,
+            'rng_seed': self.config.rng_seed,
+            'meta_slots_attempted': 0,
+            'meta_slots_completed': 0,
+            'meta_slots_committed': 0,
+            'meta_slots_skipped_quota': 0,
+            'meta_cost_usd': 0.0,
         }
         self._seed_root(base)
         self._save_state()
@@ -176,8 +204,11 @@ class Loop:
     # --- termination ---------------------------------------------------------------
 
     def _terminate_reason(self) -> str | None:
-        if (self.paths.run_dir / 'stop.flag').exists():
-            return 'operator stop flag'
+        stop = self.paths.run_dir / 'stop.flag'
+        if stop.exists():
+            text = stop.read_text(encoding='utf-8')
+            if not is_cursor_auto_stop_flag(text):
+                return 'operator stop flag'
         if self.engine.exhausted():
             return 'sweep complete'
         if self.state['round'] >= self.config.max_rounds:
@@ -186,21 +217,45 @@ class Loop:
             return 'cost_cap reached'
         return self.convergence.reason(self.state)
 
+    def _pause_for_cursor_auto_stop_if_needed(self) -> None:
+        stop = self.paths.run_dir / 'stop.flag'
+        if not stop.exists():
+            return
+        text = stop.read_text(encoding='utf-8')
+        if not is_cursor_auto_stop_flag(text):
+            return
+        log('USAGE LIMIT: cursor auto threshold — pausing until reset')
+        pause_for_cursor_auto_stop_flag(text)
+        stop.unlink(missing_ok=True)
+        log('USAGE LIMIT: cursor auto reset — resuming run')
+
+    def _run_agent_with_usage_wait(self, agent: Agent, ctx: AgentContext) -> AgentResult:
+        while True:
+            result = agent.run(ctx)
+            limit_msg = session_limit_message(
+                result.error, result.summary, result.agent_stdout,
+            )
+            if result.status == COMPLETED or not limit_msg:
+                return result
+            log(f'  USAGE LIMIT: agent session blocked — {limit_msg}')
+            wait_for_usage_reset(error=limit_msg, usage_reset_at=result.usage_reset_at)
+
     # --- main loop -----------------------------------------------------------------
 
     def run(self, resume: bool = False) -> int:
         self._init_state(resume)
         if self.config.meta_every > 0:
             self.meta = MetaController(
-                self.config, self._meta_agent or self._agent_instance(), self.attribution,
+                self.config, self._meta_instance(), self.attribution,
             )
         if self.config.hygiene_enabled:
             self.hygiene.backup('run_start')
         log(f'run {self.config.run_id} | run_dir={self.paths.run_dir}')
         log(f'base_commit={self.best_commit[:10]} best_search={self.state["best_search"]:.5f} '
-            f'max_rounds={self.config.max_rounds} K={self.config.k} '
+            f'max_rounds={self.config.max_rounds} K={self.config.k} rng_seed={self.config.rng_seed} '
             f'engine={self.engine.name} selector={self.selector.name}')
         while True:
+            self._pause_for_cursor_auto_stop_if_needed()
             reason = self._terminate_reason()
             if reason is not None:
                 log(f'TERMINATE: {reason}')
@@ -212,6 +267,12 @@ class Loop:
         self.store.regenerate_results()
         log(f'done. best_id={self.state["best_id"]} best_search={self.state["best_search"]:.5f} '
             f'rounds={self.state["round"]} cost={self.state["cost_usd"]:.4f} evo={self.state["evo_count"]}')
+        if self.config.meta_every > 0:
+            log(f'meta: attempted={self.state.get("meta_slots_attempted", 0)} '
+                f'completed={self.state.get("meta_slots_completed", 0)} '
+                f'committed={self.state.get("meta_slots_committed", 0)} '
+                f'skipped_quota={self.state.get("meta_slots_skipped_quota", 0)} '
+                f'cost={self.state.get("meta_cost_usd", 0.0):.4f}')
         return 0
 
     def _round(self) -> None:
@@ -256,11 +317,49 @@ class Loop:
         self.attribution.record_round(round_idx, self.state['best_search'])
         if not self.meta.due(round_idx):
             return
+        self.state['meta_slots_attempted'] = int(self.state.get('meta_slots_attempted', 0)) + 1
         phi = self.observer.summarize(self.store, self.state)
-        new_commit = self.meta.run(round_idx, phi, self.best_commit, self.state['best_search'])
+        new_commit, meta_result = self.meta.run(
+            round_idx, phi, self.best_commit, self.state['best_search'],
+        )
+        if meta_result is None and self.meta.quota_exhausted:
+            self.state['meta_slots_skipped_quota'] = (
+                int(self.state.get('meta_slots_skipped_quota', 0)) + 1
+            )
+            self._save_state()
+            return
+        if meta_result is not None:
+            meta_cost = meta_result.cost_usd
+            if (
+                meta_result.status == COMPLETED
+                and meta_cost <= 0
+                and self.config.meta_session.max_budget_usd > 0
+            ):
+                meta_cost = self.config.meta_session.max_budget_usd
+            if meta_result.status == COMPLETED:
+                meta_cost += self.config.meta_session.cost_per_session_usd
+                self.state['meta_slots_completed'] = (
+                    int(self.state.get('meta_slots_completed', 0)) + 1
+                )
+            if meta_cost > 0:
+                self.state['cost_usd'] += meta_cost
+                self.state['meta_cost_usd'] = (
+                    float(self.state.get('meta_cost_usd', 0.0)) + meta_cost
+                )
+                self.observer.append_cost({
+                    'round': round_idx,
+                    'candidate_id': 'meta',
+                    'tokens': meta_result.tokens,
+                    'cost_usd': meta_cost,
+                    'eval_seconds': 0.0,
+                    'status': meta_result.status,
+                })
         if new_commit != self.best_commit:
             self.best_commit = new_commit
             self.state['best_commit'] = new_commit
+            self.state['meta_slots_committed'] = (
+                int(self.state.get('meta_slots_committed', 0)) + 1
+            )
             self.skill = self._load_skill()  # mechanism may have changed the inner contract
             log(f'  META advanced mechanism -> {new_commit[:10]}')
             self._save_state()
@@ -285,6 +384,8 @@ class Loop:
         accepted = False
         b_descriptor: list[float] | None = None
         parent_snap = self.store.snapshot_text(parent.id)
+        leak_skipped = False
+        snapshot_hash_at_gate = ''
         try:
             proposal = self.engine.propose_snapshot(self.store, self.state, self.rng)
             if proposal is not None:
@@ -296,6 +397,15 @@ class Loop:
                 patch = self.vc.diff_allowlist(base)
                 snapshot_text = self.vc.read_repo_file(self.allow_rel)
                 result = AgentResult(status=COMPLETED, summary='sweep variant')
+                if self.config.leak_policy.enabled:
+                    gate_hits = gate_scan('', snapshot_text)
+                    if gate_hits:
+                        leak_skipped = True
+                        reason = f'leak gate: {gate_hits[0]}'
+                        log(f'  LEAK GATE {cid} (sweep): {gate_hits[0]}')
+                        self._record_leak_hit(round_idx, gate_hits)
+                    else:
+                        snapshot_hash_at_gate = snapshot_digest(snapshot_text)
             elif self.config.use_worktrees:
                 result, patch, snapshot_text = self._propose_in_worktree(
                     parent_snap, base, phi, round_idx, parent, agent,
@@ -312,8 +422,9 @@ class Loop:
                     phi=phi,
                     round_idx=round_idx,
                     parent_id=parent.id,
+                    run_dir=self.paths.run_dir,
                 )
-                result = agent.run(ctx)
+                result = self._run_agent_with_usage_wait(agent, ctx)
                 if result.status == COMPLETED:
                     self.vc.reset_all_but_allowlist(base)
                     patch = self.vc.diff_allowlist(base)
@@ -322,10 +433,21 @@ class Loop:
             cost = result.cost_usd
             if result.status != COMPLETED:
                 reason = f'agent {result.status}: {result.error}'.strip()
-            else:
+            elif self.config.leak_policy.enabled:
+                stdout = getattr(result, 'agent_stdout', '') or ''
+                gate_hits = gate_scan(stdout, snapshot_text)
+                if gate_hits:
+                    leak_skipped = True
+                    reason = f'leak gate: {gate_hits[0]}'
+                    log(f'  LEAK GATE {cid}: {gate_hits[0]}')
+                    self._record_leak_hit(round_idx, gate_hits)
+                elif patch.strip():
+                    snapshot_hash_at_gate = snapshot_digest(snapshot_text)
+            if not leak_skipped and result.status == COMPLETED and not reason:
                 if not patch.strip():
                     reason = 'empty diff'
                 else:
+                    self._clean_eval_scratch(cid)
                     ok, pre_reason = self.evaluator.precheck()
                     if not ok:
                         reason = pre_reason
@@ -337,7 +459,7 @@ class Loop:
                             status = STEPPING_STONE
                             eval_seconds += search.eval_seconds
                             reason = f'search_alpha={search.search_score:.5f}'
-                            if search.search_score >= self.state['best_search'] + self.config.holdout_trigger_delta:
+                            if self._should_run_promotion_track(search):
                                 holdout = self.evaluator.run_holdout()
                                 full = self.evaluator.run_full()
                                 if holdout is not None and full is not None:
@@ -348,9 +470,15 @@ class Loop:
                                         self.config.search_delta,
                                     )
                                     if verdict.accept:
-                                        status = OFFICIAL_BEST
-                                        reason = verdict.reason
-                                        accepted = self._promote(full)
+                                        on_disk = self.vc.read_repo_file(self.allow_rel)
+                                        if snapshot_hash_at_gate and snapshot_digest(on_disk) != snapshot_hash_at_gate:
+                                            status = INVALID
+                                            reason = 'promote blocked: snapshot changed after leak gate'
+                                            log(f'  PROMOTE BLOCKED {cid}: snapshot hash mismatch')
+                                        else:
+                                            status = OFFICIAL_BEST
+                                            reason = verdict.reason
+                                            accepted = self._promote(full)
                                     else:
                                         reason = verdict.reason
                             # Shadow descriptor: record b(x) for every valid candidate.
@@ -372,9 +500,12 @@ class Loop:
         )
         if b_descriptor is not None:
             cand.b_descriptor = b_descriptor
-        self.store.add(cand, patch=patch, snapshot=snapshot_text)
-        if status == OFFICIAL_BEST:
-            self.store.pin_lineage(cand.id, round_idx)
+        if not leak_skipped:
+            self.store.add(cand, patch=patch, snapshot=snapshot_text)
+            if status == OFFICIAL_BEST:
+                self.store.pin_lineage(cand.id, round_idx)
+        else:
+            log(f'  {cid}: leak invalid — no archive/results row')
         self.state['cost_usd'] += cost + self.config.session.cost_per_session_usd
         self.observer.append_cost({
             'round': round_idx, 'candidate_id': cid, 'tokens': tokens,
@@ -416,6 +547,12 @@ class Loop:
         tag = self.vc.tag_evo(self.state['evo_count'])
         log(f'  PROMOTE official_best -> {new_commit[:10]} tag={tag} search={full.search_score:.5f}')
         return True
+
+    def _should_run_promotion_track(self, search: Scores) -> bool:
+        '''Mirror triage.bat full gate: Δsearch≥trigger OR ΔB4≥b4_trigger (jun22 B4-first).'''
+        if search.search_score >= self.state['best_search'] + self.config.holdout_trigger_delta:
+            return True
+        return search.point_rate_b4 >= self.state['best_b4'] + self.config.holdout_trigger_b4_delta
 
     def _build_candidate(
         self,
@@ -493,11 +630,29 @@ class Loop:
                 phi=phi,
                 round_idx=round_idx,
                 parent_id=parent.id,
+                run_dir=self.paths.run_dir,
             )
-            result = agent.run(ctx)
+            result = self._run_agent_with_usage_wait(agent, ctx)
             patch = ''
             if result.status == COMPLETED:
                 patch = VersionControl(wt, self.config.allowlist).diff_allowlist(base)
             allow_path = wt / self.allow_rel
             snapshot = allow_path.read_text(encoding='utf-8') if allow_path.exists() else ''
         return result, patch, snapshot
+
+    def _clean_eval_scratch(self, cid: str) -> None:
+        '''Drop stale triage artifacts before scorer runs (S6 side-effect isolation).'''
+        triage = self.config.repo_root / 'durak' / 'triage_parts'
+        if triage.exists():
+            shutil.rmtree(triage, ignore_errors=True)
+        scratch = self.paths.run_dir / '_eval_scratch' / cid
+        scratch.mkdir(parents=True, exist_ok=True)
+
+    def _record_leak_hit(self, round_idx: int, hits: list[str]) -> None:
+        count = int(self.state.get('leak_hits', 0)) + 1
+        self.state['leak_hits'] = count
+        cap = self.config.leak_policy.stop_after_hits
+        if cap > 0 and count >= cap:
+            stop = self.paths.run_dir / 'stop.flag'
+            stop.write_text(f'leak gate: {hits[0]}\n', encoding='utf-8')
+            log(f'LEAK STOP: wrote {stop} after {count} hit(s)')

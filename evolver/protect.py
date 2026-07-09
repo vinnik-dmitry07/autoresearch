@@ -68,6 +68,12 @@ class VersionControl:
         '''Diff only the allowlist paths vs base (the candidate patch).'''
         return self._git('diff', base, '--', *self.allowlist).stdout
 
+    def diff_paths(self, base: str, *paths: str) -> str:
+        '''Diff specific repo-relative paths vs base.'''
+        if not paths:
+            return ''
+        return self._git('diff', base, '--', *paths, check=False).stdout
+
     def diff_versus_commit(self, base: str) -> str:
         '''Full tracked diff vs base plus NUL-aware diffs for untracked files.'''
         parts = [self._git('diff', base).stdout]

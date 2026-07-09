@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Дурак — B2 Agent</title>
+  <title>Durak — B2 Agent</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
       <div class="brand">
         <span class="brand-icon">♠</span>
         <div>
-          <h1>Подкидной дурак</h1>
-          <p>Против агента B2 — лучшая эвристика</p>
+          <h1>Throw-in Durak</h1>
+          <p>Against the B2 agent — best heuristic</p>
         </div>
       </div>
       <div class="topbar-actions">
@@ -25,7 +25,7 @@
           Seed
           <input id="seed" type="number" min="0" placeholder="random">
         </label>
-        <button id="new-game" class="btn btn-primary">Новая игра</button>
+        <button id="new-game" class="btn btn-primary">New Game</button>
       </div>
     </header>
 
@@ -41,26 +41,26 @@
       <section class="center-panel">
         <div class="info-strip">
           <div class="info-pill">
-            <span class="label">Колода</span>
+            <span class="label">Deck</span>
             <strong id="deck-count">24</strong>
           </div>
           <div class="info-pill trump-pill">
-            <span class="label">Козырь</span>
+            <span class="label">Trump</span>
             <div id="trump-card" class="card trump-card mini"></div>
           </div>
           <div class="info-pill">
-            <span class="label">Роль</span>
+            <span class="label">Role</span>
             <strong id="role">—</strong>
           </div>
         </div>
 
         <div id="table" class="battle-table"></div>
-        <div id="status" class="status-banner">Нажмите «Новая игра»</div>
+        <div id="status" class="status-banner">Click “New Game”</div>
       </section>
 
       <section class="player">
         <div class="player-label you">
-          <span>Вы</span>
+          <span>You</span>
           <span id="your-role" class="badge muted">—</span>
         </div>
         <div id="your-hand" class="hand-row"></div>
@@ -69,16 +69,16 @@
     </main>
 
     <aside class="log-panel">
-      <h2>Ход игры</h2>
+      <h2>Game Log</h2>
       <ul id="log"></ul>
     </aside>
   </div>
 
   <div id="overlay" class="overlay hidden">
     <div class="modal">
-      <h2 id="result-title">Игра окончена</h2>
+      <h2 id="result-title">Game Over</h2>
       <p id="result-text"></p>
-      <button id="play-again" class="btn btn-primary">Сыграть ещё</button>
+      <button id="play-again" class="btn btn-primary">Play Again</button>
     </div>
   </div>
 

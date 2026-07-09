@@ -50,7 +50,7 @@ function renderTable(state) {
   if (!state.table.length) {
     const empty = document.createElement('div');
     empty.className = 'status-banner';
-    empty.textContent = 'Стол пуст';
+    empty.textContent = 'Table is empty';
     table.appendChild(empty);
     return;
   }
@@ -93,8 +93,8 @@ function renderLog(lines) {
 
 function roleText(state) {
   if (state.gameOver) return '—';
-  if (!state.waitingHuman) return state.youAttack ? 'атакуете' : 'защищаетесь';
-  return state.role === 'attack' ? 'ваш ход — атака' : 'ваш ход — защита';
+  if (!state.waitingHuman) return state.youAttack ? 'attacking' : 'defending';
+  return state.role === 'attack' ? 'your turn — attack' : 'your turn — defend';
 }
 
 function render(state) {
@@ -102,7 +102,7 @@ function render(state) {
   $('#opp-count').textContent = state.opponentCards;
   $('#trump-card').replaceChildren(cardEl(state.trump, { mini: true }));
   $('#role').textContent = roleText(state);
-  $('#your-role').textContent = state.youAttack ? 'атака' : 'защита';
+  $('#your-role').textContent = state.youAttack ? 'attack' : 'defense';
 
   renderCardBacks(state.opponentCards);
   renderTable(state);
@@ -111,21 +111,21 @@ function render(state) {
   renderLog(state.log);
 
   if (state.gameOver) {
-    const titles = { win: 'Победа!', loss: 'Вы дурак', draw: 'Ничья' };
+    const titles = { win: 'Victory!', loss: 'You lost', draw: 'Draw' };
     const texts = {
-      win: 'Вы первым избавились от всех карт.',
-      loss: 'Агент B2 оказался сильнее в этой партии.',
-      draw: 'Обе руки опустели одновременно.',
+      win: 'You were the first to get rid of all your cards.',
+      loss: 'Agent B2 was stronger in this game.',
+      draw: 'Both hands emptied at the same time.',
     };
-    $('#result-title').textContent = titles[state.result] || 'Игра окончена';
+    $('#result-title').textContent = titles[state.result] || 'Game over';
     $('#result-text').textContent = texts[state.result] || '';
     $('#overlay').classList.remove('hidden');
-    $('#status').textContent = titles[state.result] || 'Игра окончена';
+    $('#status').textContent = titles[state.result] || 'Game over';
   } else {
     $('#overlay').classList.add('hidden');
     $('#status').textContent = state.waitingHuman
-      ? (state.role === 'attack' ? 'Выберите карту для атаки или завершите ход' : 'Отбейте карты или возьмите')
-      : 'AI думает…';
+      ? (state.role === 'attack' ? 'Choose a card to attack or end your turn' : 'Defend with a card or take')
+      : 'AI is thinking…';
   }
 }
 
@@ -159,5 +159,5 @@ $('#new-game').addEventListener('click', newGame);
 $('#play-again').addEventListener('click', newGame);
 
 newGame().catch(() => {
-  $('#status').textContent = 'Запустите сервер: durak\\build\\web_server.exe';
+  $('#status').textContent = 'Start the server: durak\\build\\web_server.exe';
 });

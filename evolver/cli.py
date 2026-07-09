@@ -9,7 +9,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .config import Config, find_repo_root, load_config
+from .config import Config, find_repo_root, load_config, overlay_claude_meta_session
 from .evaluate import read_best_from_results
 from .util import log, read_json
 
@@ -30,38 +30,60 @@ def _apply_results_baseline(config: Config) -> None:
         log(f'baseline from results.tsv: search={best[0]:.5f} b4={best[1]:.5f} lower_ci={best[2]:.5f}')
 
 
+def _resolve_repo_root(args: argparse.Namespace) -> Path:
+    if getattr(args, 'repo_root', None):
+        return Path(args.repo_root).resolve()
+    return find_repo_root()
+
+
 def _cmd_run(args: argparse.Namespace) -> int:
-    from .agents import make_agent
+    from .agents import make_agent, make_meta_agent
     from .loop import Loop
 
-    repo_root = find_repo_root()
+    repo_root = _resolve_repo_root(args)
     overrides: dict[str, object] = {}
     if args.max_rounds is not None:
         overrides['max_rounds'] = args.max_rounds
     if args.k is not None:
         overrides['K'] = args.k
+    if args.rng_seed is not None:
+        overrides['rng_seed'] = args.rng_seed
     if args.run_dir is not None:
         overrides['run_dir'] = args.run_dir
     config = load_config(repo_root=repo_root, run_id=args.run_id, overrides=overrides)
-    _apply_results_baseline(config)
-    return Loop(config, agent_factory=make_agent).run()
+    arm_tpl = overlay_claude_meta_session(config)
+    if arm_tpl:
+        log(f'  meta session overlay: scripts/ladder_configs/{arm_tpl}.json (claude_cli)')
+    if not getattr(args, 'no_results_baseline', False):
+        _apply_results_baseline(config)
+    return Loop(
+        config, agent_factory=make_agent, meta_agent_factory=make_meta_agent,
+    ).run()
 
 
 def _cmd_continue(args: argparse.Namespace) -> int:
-    from .agents import make_agent
+    from .agents import make_agent, make_meta_agent
     from .loop import Loop
 
-    repo_root = find_repo_root()
+    repo_root = _resolve_repo_root(args)
     run_dir = Path(args.run_dir).resolve() if args.run_dir else _latest_run_dir(repo_root)
     if run_dir is None or not run_dir.exists():
         log('no run to continue; start one with `run`')
         return 1
-    config = load_config(repo_root=repo_root, overrides={'run_dir': str(run_dir)})
-    return Loop(config, agent_factory=make_agent).run(resume=True)
+    overrides: dict[str, object] = {'run_dir': str(run_dir)}
+    if args.max_rounds is not None:
+        overrides['max_rounds'] = args.max_rounds
+    config = load_config(repo_root=repo_root, overrides=overrides)
+    arm_tpl = overlay_claude_meta_session(config)
+    if arm_tpl:
+        log(f'  meta session overlay: scripts/ladder_configs/{arm_tpl}.json (claude_cli)')
+    return Loop(
+        config, agent_factory=make_agent, meta_agent_factory=make_meta_agent,
+    ).run(resume=True)
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    repo_root = find_repo_root()
+    repo_root = _resolve_repo_root(args)
     run_dir = Path(args.run_dir).resolve() if args.run_dir else _latest_run_dir(repo_root)
     if run_dir is None or not run_dir.exists():
         log('no runs found')
@@ -75,7 +97,7 @@ def _cmd_status(args: argparse.Namespace) -> int:
 
 
 def _cmd_stop(args: argparse.Namespace) -> int:
-    repo_root = find_repo_root()
+    repo_root = _resolve_repo_root(args)
     run_dir = Path(args.run_dir).resolve() if args.run_dir else _latest_run_dir(repo_root)
     if run_dir is None or not run_dir.exists():
         log('no run to stop')
@@ -92,20 +114,29 @@ def build_parser() -> argparse.ArgumentParser:
     run = sub.add_parser('run', help='start a new run')
     run.add_argument('--run-id', default=None)
     run.add_argument('--run-dir', default=None)
+    run.add_argument('--repo-root', default=None, help='git worktree root (default: cwd repo)')
+    run.add_argument('--no-results-baseline', action='store_true',
+                     help='do not raise baseline from repo results.tsv')
     run.add_argument('--max-rounds', type=int, default=None)
     run.add_argument('--k', type=int, default=None)
-    run.set_defaults(func=_cmd_run)
+    run.add_argument('--rng-seed', type=int, default=None, help='harness RNG seed (parent/sweep selection)')
+    run.set_defaults(func=_cmd_run, no_results_baseline=False)
 
     cont = sub.add_parser('continue', help='resume the latest (or given) run')
     cont.add_argument('--run-dir', default=None)
+    cont.add_argument('--repo-root', default=None)
+    cont.add_argument('--max-rounds', type=int, default=None,
+                      help='raise round budget when extending a finished run')
     cont.set_defaults(func=_cmd_continue)
 
     status = sub.add_parser('status', help='print run state')
     status.add_argument('--run-dir', default=None)
+    status.add_argument('--repo-root', default=None)
     status.set_defaults(func=_cmd_status)
 
     stop = sub.add_parser('stop', help='request an external halt at the next round boundary')
     stop.add_argument('--run-dir', default=None)
+    stop.add_argument('--repo-root', default=None)
     stop.set_defaults(func=_cmd_stop)
     return parser
 

@@ -1,0 +1,34 @@
+{
+  "autoMemoryEnabled": false,
+  "env": {
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"
+  },
+  "permissions": {
+    "deny": [
+      "Read(/**/.claude/**)",
+      "Read(/**/memory/**)",
+      "Read(/**/family_map.md)",
+      "Read(*family_map.md)",
+      "Read(**\\family_map.md)",
+      "Read(/**/meta_skill.md)",
+      "Read(/**/durak/**)",
+      "Read(**\\durak\\**)",
+      "Read(/**/strategy_heuristic.cpp)",
+      "Read(**\\strategy_heuristic.cpp)",
+      "Read(/**/program.md)",
+      "Read(/**/results.tsv)",
+      "Write(**)",
+      "NotebookEdit(**)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "ToolSearch(*)",
+      "Bash(*)"
+    ],
+    "allow": [
+      "Read(/**/evolve/mechanism/evolve_skill.md)",
+      "Edit(/**/evolve/mechanism/evolve_skill.md)"
+    ]
+  }
+}

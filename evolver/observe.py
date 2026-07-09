@@ -113,9 +113,10 @@ class Observer:
                 'DE-ANCHOR (plateau): drop the stale scalar; steer by behavioral difference;',
                 'submit from a DIFFERENT heuristic family than the last attempts.',
             ]
-        if self.config.meta_every > 0:
+        if self.config.meta_every > 0 and not self.config.meta_strict_self_contained:
             # family_map.md is surfaced ONLY when the meta layer is active, so the
             # Phase-1 baseline Phi stays byte-identical regardless of the file.
+            # Strict self-contained meta (A8s) embeds taxonomy in evolve_skill.md instead.
             family_map = load_family_map(self.config)
             if family_map:
                 head = family_map.splitlines()[:6]
