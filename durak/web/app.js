@@ -138,10 +138,28 @@ async function api(path, options = {}) {
   return res.json();
 }
 
+function randomSeed() {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0];
+}
+
+function resolveSeed(raw) {
+  if (!raw) return { seed: randomSeed(), random: true };
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return { seed: randomSeed(), random: true };
+  return { seed: Math.trunc(n), random: false };
+}
+
 async function newGame() {
-  const seedRaw = $('#seed').value.trim();
-  const body = seedRaw ? { seed: Number(seedRaw) } : {};
-  const state = await api('/api/new', { method: 'POST', body: JSON.stringify(body) });
+  const input = $('#seed');
+  const { seed, random } = resolveSeed(input.value.trim());
+  const state = await api('/api/new', {
+    method: 'POST',
+    body: JSON.stringify({ seed }),
+  });
+  if (state.seed != null) input.value = String(state.seed);
+  else if (random) input.value = String(seed);
   render(state);
 }
 

@@ -52,6 +52,7 @@ private:
     Observation human_obs_{};
     std::optional<GameResult> result_{};
     std::vector<std::string> log_;
+    std::uint64_t deck_seed_ = 0;
 };
 
 }  // namespace durak

@@ -1,8 +1,10 @@
 #include <cstdlib>
 #include <cstring>
+#include <chrono>
 #include <mutex>
 #include <string>
 
+#include "eval.hpp"
 #include "httplib.h"
 #include "play_session.hpp"
 
@@ -13,13 +15,20 @@ namespace {
 std::mutex g_mtx;
 PlaySession g_session;
 
-std::uint64_t parse_seed(const std::string& body) {
+bool try_parse_seed(const std::string& body, std::uint64_t& seed) {
     const char* key = "\"seed\"";
     const std::size_t pos = body.find(key);
-    if (pos == std::string::npos) return 0;
+    if (pos == std::string::npos) return false;
     const std::size_t colon = body.find(':', pos);
-    if (colon == std::string::npos) return 0;
-    return std::strtoull(body.c_str() + colon + 1, nullptr, 10);
+    if (colon == std::string::npos) return false;
+    seed = std::strtoull(body.c_str() + colon + 1, nullptr, 10);
+    return true;
+}
+
+std::uint64_t fresh_seed() {
+    const auto t = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    static std::uint64_t ctr = 0;
+    return splitmix(static_cast<std::uint64_t>(t) ^ (++ctr * 0x9E3779B97F4A7C15ull)) & 0xFFFFFFFFu;
 }
 
 int parse_index(const std::string& body) {
@@ -52,7 +61,9 @@ int main(int argc, char** argv) {
 
     svr.Post("/api/new", [](const httplib::Request& req, httplib::Response& res) {
         std::lock_guard lock(g_mtx);
-        g_session.new_game(parse_seed(req.body), 0);
+        std::uint64_t seed = 0;
+        if (!try_parse_seed(req.body, seed)) seed = fresh_seed();
+        g_session.new_game(seed, 0);
         res.set_content(g_session.to_json(), "application/json; charset=utf-8");
     });
 

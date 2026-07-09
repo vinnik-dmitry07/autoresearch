@@ -16,9 +16,10 @@ constexpr int MAX_BATTLES = 4000;
 
 void PlaySession::new_game(std::uint64_t seed, int human_seat) {
     human_ = human_seat & 1;
-    st_ = durak::new_game(seed);
+    deck_seed_ = seed ? seed : 1;
+    st_ = durak::new_game(deck_seed_);
     st_.attacker = first_attacker(st_);
-    rng_ = Rng(seed ? seed + 1 : 1);
+    rng_ = Rng(deck_seed_ + 1);
     in_battle_ = false;
     battle_took_ = false;
     step_ = Step::BetweenBattles;
@@ -311,6 +312,7 @@ std::string PlaySession::to_json() const {
 
     std::ostringstream os;
     os << '{';
+    os << "\"seed\":" << deck_seed_ << ',';
     os << "\"trump\":" << card_json(trump) << ',';
     os << "\"deck\":" << st_.deck_count << ',';
     os << "\"youAttack\":" << (st_.attacker == human_ ? "true" : "false") << ',';

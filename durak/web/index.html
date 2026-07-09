@@ -21,11 +21,16 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <label class="seed-field">
-          Seed
-          <input id="seed" type="number" min="0" placeholder="random">
-        </label>
-        <button id="new-game" class="btn btn-primary">New Game</button>
+        <div class="game-controls">
+          <label class="seed-field">
+            <span class="seed-label">Seed</span>
+            <input id="seed" type="text" inputmode="numeric" placeholder="Random" autocomplete="off" spellcheck="false">
+          </label>
+          <button id="new-game" class="btn btn-primary" type="button">
+            <span class="btn-icon" aria-hidden="true">↻</span>
+            New Game
+          </button>
+        </div>
       </div>
     </header>
 
@@ -42,15 +47,15 @@
         <div class="info-strip">
           <div class="info-pill">
             <span class="label">Deck</span>
-            <strong id="deck-count">24</strong>
+            <strong id="deck-count" class="value">24</strong>
           </div>
           <div class="info-pill trump-pill">
             <span class="label">Trump</span>
-            <div id="trump-card" class="card trump-card mini"></div>
+            <div id="trump-card" class="value trump-value"></div>
           </div>
-          <div class="info-pill">
+          <div class="info-pill role-pill">
             <span class="label">Role</span>
-            <strong id="role">—</strong>
+            <p id="role" class="value">—</p>
           </div>
         </div>
 
