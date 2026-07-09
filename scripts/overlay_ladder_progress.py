@@ -22,6 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -45,11 +46,11 @@ COL2_LEGACY_ARMS = ('A6', 'A7')
 MANUAL_LABEL = 'manual'
 MANUAL_X_MAX = ARM_X_MAX
 
-COLORS = {
-    'jun22': '#2980b9',
-    'A0': '#e74c3c', 'A1': '#9b59b6', 'A2': '#f39c12',
-    'A4': '#0284c7', 'A5': '#34495e', 'A6': '#059669', 'A7': '#95a5a6', 'A8': '#7c3aed', 'A8s': '#a855f7', 'A9': '#dc2626',
-}
+_TAB10 = [mcolors.to_hex(plt.cm.tab10(i)) for i in range(10)]
+_ARM_ORDER = ('A0', 'A1', 'A2', 'A4', 'A5', 'A6', 'A7', 'A8', 'A8s', 'A9')
+COLORS = {arm: _TAB10[i] for i, arm in enumerate(_ARM_ORDER)}
+COLORS['manual'] = '#000000'
+COLORS['jun22'] = '#000000'
 
 
 def load_reference(path_spec: str) -> pd.DataFrame:
@@ -155,7 +156,7 @@ def jun22_as_arm(
 
 def _arm_color(label: str) -> str:
     if label == MANUAL_LABEL:
-        return COLORS['jun22']
+        return COLORS['manual']
     return COLORS.get(label.split('_')[0], '#333333')
 
 

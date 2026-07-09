@@ -1194,7 +1194,7 @@ def prepare_phase1_continue(
 
     cfg_path = wt / 'evolve/config.json'
     cfg = json.loads(cfg_path.read_text(encoding='utf-8'))
-    cfg['max_rounds'] = max(max_rounds, int(cfg.get('max_rounds') or 0) + 1)
+    cfg['max_rounds'] = max(max_rounds, int(cfg.get('max_rounds') or 0))
     if disable_convergence:
         cfg.setdefault('convergence', {})['enabled'] = False
     write_json(cfg_path, cfg)
