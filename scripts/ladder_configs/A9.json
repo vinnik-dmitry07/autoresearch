@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "arm": "A9",
-  "max_rounds": 60,
+  "max_rounds": 70,
   "K": 2,
   "cost_cap_usd": 80.0,
   "rng_seed": 20260627,
