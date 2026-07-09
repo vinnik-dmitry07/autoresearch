@@ -1,44 +1,44 @@
 > **Design history — not a live verdict.** Early autonomous-loop review (2026).
 > Frozen numbers and phase verdicts: `system/README.md` + `knowledge/DEPLOY_BOOK_SCOPE.md`.
 
-Моё мнение: **система стала очень хорошей как skeptical research stack**, но ещё **не готова как автономный “AI-исследователь пока я сплю”** без дополнительных предохранителей.
+My opinion: **the system has become very good as a skeptical research stack**, but it is still **not ready to be an autonomous “AI researcher while I sleep”** without additional safeguards.
 
-Я бы оценил так:
+I would rate it as follows:
 
-**8/10 как исследовательская система.**
-**5–6/10 как ночной autonomous loop.**
+**8/10 as a research system.**
+**5–6/10 as a nighttime autonomous loop.**
 
-## Что в ней реально сильное
+## What is genuinely strong about it
 
-Главное достоинство — правильная архитектура: `lib.py` объявлен как единый leaf-модуль, где живёт канонический движок, P&L, метрики, PSR/DSR/bootstrap, portfolio math и независимый путь сверки через vectorbt. Это именно то, что нужно, чтобы не плодить несколько бэктест-движков с разными результатами. 
+The main strength is the right architecture: `lib.py` is declared as the single leaf module containing the canonical engine, P&L, metrics, PSR/DSR/bootstrap, portfolio math, and an independent reconciliation path through vectorbt. This is exactly what is needed to avoid spawning multiple backtest engines with different results.
 
-Второе сильное место — `data.py`: в нём явно зашита честность про survivorship bias. Структурный список включает делистнутые/поглощённые пары, yfinance помечен как бесплатный biased fallback, а Sharadar — как путь к survivorship-free и point-in-time данным. Это очень правильный дизайн. 
+The second strength is `data.py`: it explicitly encodes honesty about survivorship bias. The structural list includes delisted/acquired pairs, yfinance is labeled as a free biased fallback, and Sharadar is treated as the path to survivorship-free and point-in-time data. This is very good design.
 
-Третье — `evaluate.py`: там есть именно та батарея, которая нужна для такой стратегии: cost curve, delay decay, subperiods, regimes, capacity, artifact flags, gates, PBO/DSR/MinTRL и Quality Score. Это не просто “посчитать Sharpe”, а полноценный reviewer. 
+The third strength is `evaluate.py`: it has exactly the battery needed for this kind of strategy — cost curve, delay decay, subperiods, regimes, capacity, artifact flags, gates, PBO/DSR/MinTRL, and Quality Score. This is not just “calculate Sharpe”; it is a full reviewer.
 
-Четвёртое — `research.py`: он собирает baseline, vectorbt verification, CV, robustness, ablation, random-direction control, reliability, synthetic-null, cost/capacity ladder и quality score в один end-to-end audit. Это уже похоже на настоящий research harness. 
+The fourth strength is `research.py`: it combines baseline, vectorbt verification, CV, robustness, ablation, random-direction control, reliability, synthetic null, cost/capacity ladder, and quality score into one end-to-end audit. This already looks like a real research harness.
 
-## Главная мысль
+## Main idea
 
-Система правильно движется от:
-
-```text
-“AI, найди стратегию с большим Sharpe”
-```
-
-к:
+The system is correctly moving from:
 
 ```text
-“AI, предложи гипотезу, прогони через независимый audit, докажи, что это не артефакт”
+“AI, find a strategy with high Sharpe”
 ```
 
-Это ровно правильное направление.
+to:
 
-## Что я бы исправил перед ночным AI
+```text
+“AI, propose a hypothesis, run it through an independent audit, and prove that it is not an artifact”
+```
 
-Я бы сделал 5 вещей.
+That is exactly the right direction.
 
-1. **Зафиксировать baseline lock-файл.**
+## What I would fix before nighttime AI
+
+I would do 5 things.
+
+1. **Lock the baseline with a baseline lock file.**
 
 ```text
 BASELINE_LOCK.json
@@ -50,22 +50,22 @@ BASELINE_LOCK.json
   vectorbt max_diff
 ```
 
-Любое изменение кода должно сравниваться с ним.
+Any code change should be compared against it.
 
-2. **Разделить gates на report gates и trading gates.**
+2. **Separate gates into report gates and trading gates.**
 
 ```text
 report_gate:
-  может смотреть всю историю, нужен для анализа
+  may look at the full history, used for analysis
 
 trading_gate:
-  только walk-forward / train-only,
-  используется для построения книги
+  walk-forward / train-only only,
+  used to build the book
 ```
 
-3. **Добавить experiment registry.**
+3. **Add an experiment registry.**
 
-Каждый ночной прогон должен писать:
+Every nighttime run should write:
 
 ```text
 experiment_id
@@ -77,11 +77,11 @@ metrics
 reason accepted/rejected
 ```
 
-Без этого AI будет переоткрывать одни и те же идеи.
+Without this, the AI will rediscover the same ideas again and again.
 
-4. **Сделать verifier обязательным после любого изменения `lib.py`.**
+4. **Make the verifier mandatory after any change to `lib.py`.**
 
-Минимум:
+Minimum:
 
 ```text
 py_compile
@@ -92,57 +92,56 @@ baseline regression diff
 no import cycles
 ```
 
-5. **Запретить ночному агенту менять `lib.py` напрямую.**
+5. **Forbid the nighttime agent from changing `lib.py` directly.**
 
-Пусть он создаёт новые эксперименты в `experiments/`, `overlays/`, `candidate_rules/`, но ядро меняет только через отдельный review.
+Let it create new experiments in `experiments/`, `overlays/`, and `candidate_rules/`, but let the core change only through a separate review.
 
-## Мой verdict
+## My verdict
 
-Система **хорошая и взрослая**. Она уже намного лучше типичного quant research кода, потому что у неё есть:
+The system is **good and mature**. It is already much better than typical quant research code because it has:
 
-* единый канонический engine;
-* независимая сверка через vectorbt;
-* явная работа с survivorship bias;
+* a single canonical engine;
+* independent verification through vectorbt;
+* explicit handling of survivorship bias;
 * ex-ante candidate discipline;
 * robustness / ablation / delay / cost checks;
 * PBO / DSR / bootstrap;
 * separate hunt / evaluate / book / research layers.
 
-Но для “AI пока я сплю” ей не хватает **операционного слоя безопасности**: baseline lock, experiment registry, strict write permissions, CI/regression tests и walk-forward-only gates.
+But for “AI while I sleep,” it lacks an **operational safety layer**: baseline lock, experiment registry, strict write permissions, CI/regression tests, and walk-forward-only gates.
 
-Мой короткий вывод:
+My short conclusion:
 
-> Как research stack — да, это уже сильная система.
-> Как автономный ночной исследователь — почти, но сначала нужно закрыть selection look-ahead, import consistency, unused cost parameters и PIT-data TODO. После этого можно запускать ночные loops, но только с правом предлагать PR/эксперименты, а не silently менять baseline.
+> As a research stack — yes, this is already a strong system.
+> As an autonomous nighttime researcher — almost, but first it needs to close selection look-ahead, import consistency, unused cost parameters, and PIT-data TODOs. After that, nighttime loops can be launched, but only with permission to propose PRs/experiments, not to silently change the baseline.
 
+I’ll answer as a quant research systems engineer, an ACM Software System Award laureate for reliable research platforms.
 
-Отвечу как инженер quant research systems, лауреат ACM Software System Award за надёжные исследовательские платформы.
+Yes. I would formalize this not as “the AI should search for Sharpe,” but as a **multi-criteria system for improving the research pipeline**.
 
-Да. Я бы формализовал это не как “AI должен искать Sharpe”, а как **многокритериальную систему улучшения исследовательского конвейера**.
+The main rule:
 
-Главное правило:
+> Every change must improve at least one item from the list and not worsen the others beyond the allowed limit.
 
-> Любое изменение должно улучшать хотя бы один пункт из списка и не ухудшать остальные сверх допустимого лимита.
-
-То есть не:
-
-```text
-нашёл стратегию с Sharpe выше
-```
-
-а:
+So not:
 
 ```text
-изменение ускорило audit на 35%,
-не изменило baseline metrics больше tolerance,
-сохранило vectorbt diff,
-не усилило selection bias,
-оставило результат воспроизводимым
+found a strategy with higher Sharpe
 ```
 
-У вас уже есть хорошая база для этого: `lib.py` содержит единый canonical engine и независимую сверку, `evaluate.py` — reliability battery с cost/delay/subperiod/regime/DSR/PBO/bootstrap-проверками, `hunt.py` — ex-ante prefilter и OOS/multiple-testing discipline, а `research.py` собирает end-to-end skeptical audit.    
+but:
 
-Я бы превратил ваши 10 пунктов в **Change Acceptance Scorecard**:
+```text
+the change sped up the audit by 35%,
+did not change baseline metrics beyond tolerance,
+preserved the vectorbt diff,
+did not increase selection bias,
+kept the result reproducible
+```
+
+You already have a good foundation for this: `lib.py` contains the single canonical engine and independent verification, `evaluate.py` has a reliability battery with cost/delay/subperiod/regime/DSR/PBO/bootstrap checks, `hunt.py` has ex-ante prefiltering and OOS/multiple-testing discipline, and `research.py` assembles an end-to-end skeptical audit.
+
+I would turn your 10 points into a **Change Acceptance Scorecard**:
 
 ```text
 Change must improve:
@@ -158,9 +157,9 @@ Change must improve:
   hypothesis quality
 ```
 
-Но важно: не все пункты должны быть “оптимизируемыми”. Некоторые должны быть **hard gates**.
+But importantly: not every item should be “optimizable.” Some should be **hard gates**.
 
-Например:
+For example:
 
 ```text
 HARD GATES:
@@ -180,15 +179,15 @@ SOFT OBJECTIVES:
   robustness margin
 ```
 
-Иначе агент начнёт “улучшать” скорость ценой честности, или качество гипотез ценой reward hacking.
+Otherwise, the agent will start “improving” speed at the cost of honesty, or hypothesis quality at the cost of reward hacking.
 
-Практически я бы добавил файл вроде:
+Practically, I would add a file like:
 
 ```text
 SYSTEM_OBJECTIVES.yaml
 ```
 
-с такой логикой:
+with logic like this:
 
 ```yaml
 hard_gates:
@@ -235,7 +234,7 @@ soft_objectives:
     direction: maximize_novel_valid_hypotheses
 ```
 
-Для вашего night-loop я бы сделал итоговый вердикт изменения таким:
+For your night loop, I would make the final verdict on a change look like this:
 
 ```text
 ACCEPT:
@@ -257,9 +256,9 @@ QUARANTINE:
   touches lib.py / accounting / data logic / gates
 ```
 
-Особенно важный момент: **качество гипотез не должно измеряться только результатом**.
+A particularly important point: **hypothesis quality should not be measured only by the result**.
 
-Хорошая гипотеза должна иметь:
+A good hypothesis should have:
 
 ```text
 1. Economic reason
@@ -271,21 +270,21 @@ QUARANTINE:
 7. Clear rejection condition
 ```
 
-Например, плохая гипотеза:
+For example, a bad hypothesis:
 
 ```text
-Попробовать 200 разных z_win и выбрать лучший Sharpe.
+Try 200 different z_win values and choose the best Sharpe.
 ```
 
-Хорошая гипотеза:
+A good hypothesis:
 
 ```text
-У dual-class пар с устойчивой voting/control discount mean reversion должна быть выше
-после corporate-event фильтра. Проверка: train-only classification, OOS Sharpe,
-delay decay, cost ladder, random-direction control, DSR adjustment.
+Dual-class pairs with a stable voting/control discount should exhibit stronger
+mean reversion after a corporate-event filter. Check: train-only classification,
+OOS Sharpe, delay decay, cost ladder, random-direction control, DSR adjustment.
 ```
 
-Итоговая формулировка для системы могла бы быть такой:
+The final system formulation could be:
 
 ```text
 The system is not allowed to maximize trading performance directly.
@@ -299,6 +298,6 @@ Every accepted change must pass hard safety gates and produce an auditable
 before/after report.
 ```
 
-Я бы поставил это как **верхний invariant** для ночного агента:
+I would set this as the **top-level invariant** for the nighttime agent:
 
-> Агент не оптимизирует Sharpe. Агент оптимизирует доверие к исследовательскому процессу.
+> The agent does not optimize Sharpe. The agent optimizes trust in the research process.

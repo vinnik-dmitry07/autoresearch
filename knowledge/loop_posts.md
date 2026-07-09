@@ -1,73 +1,56 @@
-> **Design history — not a live verdict.** External methodology notes (unrelated to frozen deploy verdicts).
+> **Design history — not a live verdict.** External methodology notes unrelated to frozen deployment verdicts.
 
-Loop Engineering вместо Prompt Engineering от создателей басен и мифов 👍
+# Loop Engineering instead of Prompt Engineering from the creators of Fable and Mythos 👍
 
+While we wait for the little issues between Anthropic and officials to be resolved ([Anthropic access update](https://www.anthropic.com/news/fable-mythos-access)), let’s turn to something eternal: the methodology of loop engineering.
 
+Alongside the release of the Mythos and Fable models themselves, the creators of Anthropic’s harness shared a new pattern for working with coding agents. They called it [**Loop Engineering**](https://x.com/RLanceMartin/article/2064397389189071163). It is presented as an evolution of Prompt Engineering, but it complements Context Engineering.
 
-Пока мы ждём решения вопросиков между Anthropic и чиновниками (https://www.anthropic.com/news/fable-mythos-access), обратимся к вечному - методологии циклического инжениринга.
+In reality, this is a similar concept to Karpathy-style approaches to agent self-improvement through feedback from the environment. Why does this work? If you remember, in the technical reports for R1 models, the DeepSeek team used RLVR for training ([discussion](https://t.me/dealerAI/1092)). The models are placed in an environment where the reward is obtained automatically, without external models. As an example of such an environment, they used a compiler. In other words, the language model was originally tuned with RL for this kind of behavior.
 
+But let’s return to how this is natively embedded into a harness.
 
+The approach has three pillars:
 
-Вместе с выходом самих моделей Mythos и Fable, создатели harness от Anthropic поделились новым паттерном для работы с кодинг агентами. Назвали его Loop Engineering (https://x.com/RLanceMartin/article/2064397389189071163) он преподносится, как развитие Prompt Engineering, но дополняет Context Engineering.
+## 1. Self-correction loop
 
+The model performs an action → receives feedback from the environment, for example the code failed tests → corrects itself → repeats the cycle until it satisfies the defined criterion, for example until all tests pass.
 
+This is familiar and resembles the ReAct loop: receive a task, make a plan, take an action, evaluate what happened, adjust the plan, and repeat. But the authors again raise the problem with the ReAct approach: it can become an echo chamber, because the model is evaluating itself, and, as the authors themselves admit, models are bad at evaluating their own work; see overconfidence bias. 🚬
 
-На самом деле, это схожий концепт с подходами Карпаты по самоусовершенствованию агентов за счёт обратной связи среды. Кстати, почему это работает? Если вспомнить, модели R1 в тех.репортах от команды DeepSeek используют RLVR для обучения. Они помещаются в среду, где награда получается автоматом, без внешних моделек.  (https://t.me/dealerAI/1092) И в качестве такой среды, для примера, брался компилятор. Т.е. изначально LMку тюнили под такое поведение с RL. 
+We have raised this topic more than once in this channel and have also turned to colleagues in the field ([related post](https://t.me/dealerAI/1775)). That is why they introduce both environment-based evaluations, such as compilers and unit tests, and subagents in the form of other evaluator models.
 
+## 2. Memory
 
+A module that allows knowledge to accumulate between stages and even between sessions, and then be reused in the future. The model can write to memory as Markdown files in the repository: extracted lessons, successful patterns, and even failed moves. I remember [Manus](https://t.me/dealerAI/1351) doing the latter.
 
-Но вернемся к тому, как это нативно встраивается в harness. 
+In future sessions, the model can consult this memory and begin work from a higher level, without repeating previous mistakes. This mechanism implements a five-stage approach:
 
+fail → investigate → verify → distill → consult
 
+In other words: make a mistake → investigate the cause → verify the hypothesis about why the mistake happened → write the correct conclusion into memory → consult that memory for previously saved moves.
 
-Веделяются три столпа подхода:
+Overall, it resembles our own behavior. You make a mistake, scratch your head, understand why you were wrong, remember what to do and what not to do, and move on. When you encounter a similar situation later, you already know what to do and how. 🧠
 
+## 3. Rubrics and goal
 
+Overall, the authors do not treat this as something native in the model. In practice, a rubric is an evaluation, and a goal is the task. But here they move away from evaluative judgments — score, rank, better/worse — toward clear, verifiable criteria: tests passed, build completed without errors, answer matches expected output, and so on. The criterion for reaching the goal is the rubric.
 
-1. Self-correction loop. Модель выполняет действие → получает обратную связь от окружения (например, код не прошел тест) → самоисправляется → и повторяет цикл, пока не удовлетворит заданному критерию (например, все тесты не будут пройдены). Все знакомо и напоминает ReAct цикл: получил задачу, сделал план, провел действие, оценил че там наделал, скорректировал план, и по кругу. Но авторы снова тут поднимают проблему ReAct подхода, как эхо камеры - тк происходит самооценка, а модель, по признанию самих же авторов, сама себя оценивает плохо (см. overconfidence bias). 🚬
+And finally, the advice of the day: invest not in “super-prompters,” but in engineers who design agent systems. This is a strategic shift from exploitation to architecture. The core skills become context engineering and loop engineering for complex multi-step tasks, while prompting remains useful for simple, fast, one-step scenarios.
 
- Мы кстати не раз поднимали эту тему в данном канале и обращались к соседям по цеху (https://t.me/dealerAI/1775). Поэтому вводятся, как оценки от среды (компиляторы, юнит-тесты и тп), так и саб агенты в лице иных моделей оценщиков. 
+Source beyond X: [Fable 5 loop design guide](https://explainx.ai/blog/fable-5-loop-design-self-correction-memory-guide-2026).
 
+Prompt engineering is no longer fashionable. Welcome: loop engineering.
 
+Today’s [viral tweet](https://x.com/steipete/status/2063697162748260627?s=46&t=pKf_FxsPGBd_YMIWTA8xgg) from the creator of OpenClaw:
 
-2. Память. Модуль, который позволяет знаниям накапливаться между этапами и даже сессиями, и использоваться в будущем. Модель может записывать в память, как md-файлы в репозитории: извлеченные уроки, удачные паттерны и даже неудачные ходы. Помню, что последнее делал Manus (https://t.me/dealerAI/1351). В следующих сессиях она может обратиться к этой памяти, чтобы начать работу с более высокого уровня, не повторяя прошлых ошибок. Этот механизм реализует пятиэтапный подход: fail (ошибся) → investigate (исследование причин ошибки) → verify (проверка гипотезы почему ошибся) → distill (запись верного суждения об этом в память) → consult (обращение к памяти за ранее сохраненными ходами). В целом, напоминает наше поведение. Произвёл ошибку, почесал репу, понял почему ошибся, запомнил, как надо и не надо делать, пошёл дальше, когда столкнулся с подобной ситуацией, уже научен что и как. 🧠
+> Reminder: you no longer need to prompt coding agents. You should design loops that prompt your agents.
 
+Literally a month ago, Boris Cherny, the creator of Claude Code, said something similar. He noted that Claude has been writing 100% of his code for half a year, and [stated](https://www.linkedin.com/posts/othmane-khadri-b48162236_my-job-is-to-write-loops-not-prompt-claude-activity-7469316416534552577-vswz):
 
+> I no longer write prompts. I run loops that prompt agents and figure out what to do. My job is to write loops. We will see this shift throughout the rest of the year.
 
-3. Рубрики и цель. В целом, не нативное понимание этого у авторов, по факту рубрика - оценка, цель это задача. Но тут переходят от оценочного суждения (скор, ранг, лучше/хуже), к четким проверяемым критериям: прошел тесты, без ошибок сборка встала, ответ совпадает и тп. И критерий достижения цели и есть рубрики.
-
-
-
-И напоследок, совет дня. Инвестируйте не в "супер-промптеров", а в инженеров по проектированию агентных систем. Это стратегический сдвиг от эксплуатации к архитектуре. При этом основными скиллами становятся как контекст, так и loop инженеринг (для сложных многошаговых задач), а промптингу остаются простые, быстрые, одношаговые сценарии.
-
-
-
-Источник помимо x. (https://explainx.ai/blog/fable-5-loop-design-self-correction-memory-guide-2026)
-
-
-
-Промпт инжиниринг это больше не модно. Встречаем: loop инжиниринг.
-
-
-
-Сегодняшний завирусившийся твит (https://x.com/steipete/status/2063697162748260627?s=46&t=pKf_FxsPGBd_YMIWTA8xgg) создателя OpenClaw: 
-
-
-
-Напоминание: вам больше не нужно промптить кодинг агентов. Вы должны дизайнить циклы которые промптят ваших агентов. 
-
-
-
-Буквально месяц назад на эту тему также высказывался Борис Черный, создатель Claude Code. Он сказал, что 100% кода за него уже пол года пишет Claude, и заявил (https://www.linkedin.com/posts/othmane-khadri-b48162236_my-job-is-to-write-loops-not-prompt-claude-activity-7469316416534552577-vswz): 
-
-
-
-Я больше не пишу промпты. Я запускаю циклы, которые промптят агентов и разбираются, что делать. Моя работа – писать циклы (loops). И такой переход мы будем наблюдать в течение всего оставшегося года.
-
-
-
-То есть, по сути, вайбкодинг – это больше не про то, чтобы давать одному агенту одну задачу за раз и промптить каждый шаг. Это про то, чтобы давать системе задачу, над которой она работает в цикле: сама делегирует подзадачи агентам, сама проверяет исполнение, находит ошибки, отправляет их на исправление, и так по кругу, пока не будет достигнута одна финальная цель.
-
+In other words, vibe coding is no longer about giving a single agent one task at a time and prompting every step. It is about giving a system a task that it works on in a loop: it delegates subtasks to agents, checks execution, finds errors, sends them back for correction, and repeats the cycle until one final goal is reached.
 
 
 
