@@ -42,6 +42,29 @@ class TestAvailability(unittest.TestCase):
         self.assertTrue(cpp_available(), 'vliw_machine.dll is missing; run build.bat')
 
 
+class TestKernelCache(unittest.TestCase):
+    def test_helper_change_busts_cache(self):
+        from perf_takehome import KernelBuilder, _KERNEL_CACHE, get_kernel
+
+        print('  get_kernel cache key covers helpers', flush=True)
+        kb1 = get_kernel(3, 15, 8, 2, emit_debug=False)
+        orig = KernelBuilder._emit_rounds_nodebug
+
+        def wrapped(*args, **kwargs):
+            return orig(*args, **kwargs)
+
+        KernelBuilder._emit_rounds_nodebug = wrapped
+        try:
+            kb2 = get_kernel(3, 15, 8, 2, emit_debug=False)
+            self.assertIsNot(kb1, kb2)
+        finally:
+            KernelBuilder._emit_rounds_nodebug = orig
+            _KERNEL_CACHE.clear()
+        kb3 = get_kernel(3, 15, 8, 2, emit_debug=False)
+        kb4 = get_kernel(3, 15, 8, 2, emit_debug=False)
+        self.assertIs(kb3, kb4)
+
+
 class TestEncodeSlot(unittest.TestCase):
     def test_alu_and_const(self):
         keys: list = []
@@ -478,6 +501,7 @@ class TestFastVsPython(unittest.TestCase):
         self.assertEqual(py.cycle, cpp.cycle)
         self.assertEqual(list(py.mem), cpp.mem[:])
         self.assertEqual(py.cores[0].scratch[:scratch_n], cpp.cores[0].scratch[:scratch_n])
+        self.assertEqual(py.cores[0].trace_buf, cpp.cores[0].trace_buf)
         self.assertEqual(int(py.cores[0].state.value), int(cpp.cores[0].state.value))
         return py, cpp
 
@@ -628,6 +652,63 @@ class TestFastVsPython(unittest.TestCase):
     def test_coreid(self):
         program = [{'flow': [('coreid', 0)]}, {'flow': [('halt',)]}]
         self._agree([0] * 8, program)
+
+    def _both_raise(self, mem, program, py_exc):
+        py = _make(PythonMachine, mem, program)
+        cpp = _make(FastMachine, mem, program)
+        with self.assertRaises(py_exc):
+            py.run()
+        with self.assertRaises(RuntimeError):
+            cpp.run()
+
+    def test_oob_load_raises(self):
+        program = [
+            {'load': [('const', 0, 99)]},
+            {'load': [('load', 1, 0)]},
+            {'flow': [('halt',)]},
+        ]
+        self._both_raise([0] * 8, program, IndexError)
+
+    def test_oob_store_raises(self):
+        program = [
+            {'load': [('const', 0, 99)]},
+            {'load': [('const', 1, 1)]},
+            {'store': [('store', 0, 1)]},
+            {'flow': [('halt',)]},
+        ]
+        self._both_raise([0] * 8, program, IndexError)
+
+    def test_oob_vector_scratch_write_raises(self):
+        program = [
+            {'load': [('const', 0, 1)]},
+            {'valu': [('+', 1530, 0, 0)]},
+            {'flow': [('halt',)]},
+        ]
+        self._both_raise([0] * 8, program, IndexError)
+
+    def test_div_mod_cdiv_by_zero_raise(self):
+        for op in ('//', '%', 'cdiv'):
+            program = [
+                {'load': [('const', 0, 10)]},
+                {'load': [('const', 1, 0)]},
+                {'alu': [(op, 2, 0, 1)]},
+                {'flow': [('halt',)]},
+            ]
+            self._both_raise([0] * 8, program, ZeroDivisionError)
+
+    def test_trace_write_reaches_python(self):
+        program = [
+            {'load': [('const', 0, 42)]},
+            {'flow': [('trace_write', 0)]},
+            {'flow': [('trace_write', 0)]},
+            {'flow': [('halt',)]},
+        ]
+        py, cpp = self._agree([0] * 8, program)
+        self.assertEqual(py.cores[0].trace_buf, [42, 42])
+        self.assertEqual(cpp.cores[0].trace_buf, [42, 42])
+        py2, cpp2 = self._agree([0] * 8, program, pause=False, debug=False)
+        self.assertEqual(py2.cores[0].trace_buf, [42, 42])
+        self.assertEqual(cpp2.cores[0].trace_buf, [42, 42])
 
     def test_mem_view_roundtrip(self):
         program = [{'flow': [('halt',)]}]

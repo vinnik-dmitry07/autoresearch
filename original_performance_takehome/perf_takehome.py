@@ -531,6 +531,32 @@ class KernelBuilder:
 
 
 _KERNEL_CACHE: dict[tuple, KernelBuilder] = {}
+_KERNEL_SRC_METHODS = (
+    'build_kernel',
+    '_emit_rounds_nodebug',
+    'build_hash',
+    'add',
+    'add_rows',
+    '_repeat_body',
+    'alloc_scratch',
+    'scratch_const',
+    'ensure_encoded',
+    '_fill_round_depths',
+    'billed_phases',
+    'billed_depths',
+)
+
+
+def _kernel_src_token() -> tuple:
+    codes = tuple(getattr(KernelBuilder, name).__code__.co_code for name in _KERNEL_SRC_METHODS)
+    from vliw_native import encode_kernel_rows, repeat_encoded_body, stamp_encoded_iters
+
+    enc = (
+        encode_kernel_rows.__code__.co_code,
+        repeat_encoded_body.__code__.co_code,
+        stamp_encoded_iters.__code__.co_code,
+    )
+    return codes + enc + (tuple(HASH_STAGES),)
 
 
 def get_kernel(
@@ -540,7 +566,7 @@ def get_kernel(
     rounds: int,
     emit_debug: bool = True,
 ) -> KernelBuilder:
-    src = hash(KernelBuilder.build_kernel.__code__.co_code)
+    src = hash(_kernel_src_token())
     key = (src, forest_height, n_nodes, batch_size, rounds, emit_debug)
     kb = _KERNEL_CACHE.get(key)
     if kb is None:

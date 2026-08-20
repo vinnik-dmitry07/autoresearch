@@ -168,6 +168,10 @@ void test_decode_op_tables() {
 }
 
 void test_slot_limits() {
+    CHECK_EQ(vliw::kMaxSlotsPerBundle, 12 + 6 + 2 + 2 + 1 + 64);
+    CHECK_EQ(vliw::kMaxScratchWrites, 12 + kVlen * (6 + 2 + 1));
+    CHECK_EQ(vliw::kMaxMemWrites, kVlen * 2);
+
     Program alu;
     alu.begin_bundle();
     for (int i = 0; i < 12; ++i) alu.add(Engine::Alu, kAdd, 0, 0, 0);
@@ -293,10 +297,8 @@ void test_alu_table() {
         {kMul, 7, 6},
         {kMul, 0x80000000u, 2},
         {kDiv, 10, 3},
-        {kDiv, 10, 0},
         {kCdiv, 10, 3},
         {kCdiv, 0xFFFFFFFFu, 2},
-        {kCdiv, 5, 0},
         {kXor, 0xF0, 0x0F},
         {kAnd, 0xF0, 0x18},
         {kOr, 0xF0, 0x0F},
@@ -306,7 +308,6 @@ void test_alu_table() {
         {kShr, 16, 2},
         {kShr, 16, 32},
         {kMod, 10, 3},
-        {kMod, 10, 0},
         {kLt, 1, 2},
         {kLt, 2, 1},
         {kEq, 7, 7},
@@ -323,6 +324,45 @@ void test_alu_table() {
             CHECK_EQ(m.cores()[0].scratch[2], ref_alu(c.op, c.a, c.b));
         }
     });
+}
+
+void test_div_zero_checked_throws_fast_is_zero() {
+    const std::uint8_t ops[] = {kDiv, kMod, kCdiv};
+    for (std::uint8_t op : ops) {
+        Program p;
+        one(p, Engine::Load, kConst, 0, 10);
+        one(p, Engine::Load, kConst, 1, 0);
+        one(p, Engine::Alu, op, 2, 0, 1);
+        const std::uint32_t mem0[] = {0};
+        CHECK_THROWS(run_prog(p, mem0, Path::Checked));
+        auto fast = run_prog(p, mem0, Path::Fast);
+        CHECK_EQ(fast.cores()[0].scratch[2], 0);
+        auto linear = run_prog(p, mem0, Path::Linear);
+        CHECK_EQ(linear.cores()[0].scratch[2], 0);
+    }
+}
+
+void test_checked_oob_matches_oracle() {
+    const std::uint32_t mem0[8] = {};
+    {
+        Program p;
+        one(p, Engine::Load, kConst, 0, 99);
+        one(p, Engine::Load, kLoad, 1, 0);
+        CHECK_THROWS(run_prog(p, mem0, Path::Checked));
+    }
+    {
+        Program p;
+        one(p, Engine::Load, kConst, 0, 99);
+        one(p, Engine::Load, kConst, 1, 1);
+        one(p, Engine::Store, kStore, 0, 1);
+        CHECK_THROWS(run_prog(p, mem0, Path::Checked));
+    }
+    {
+        Program p;
+        one(p, Engine::Load, kConst, 0, 1);
+        one(p, Engine::Valu, kAdd, 1530, 0, 0);
+        CHECK_THROWS(run_prog(p, mem0, Path::Checked));
+    }
 }
 
 void test_deferred_scratch_write() {
@@ -422,6 +462,27 @@ void test_load_offset() {
         one(p, Engine::Load, kLoadOff, 0, 8, 3);
         auto m = run_prog(p, mem, path);
         CHECK_EQ(m.cores()[0].scratch[3], 77);
+    });
+}
+
+void test_peak_bundle_write_buffers() {
+    Program p;
+    p.begin_bundle();
+    for (int i = 0; i < 12; ++i) p.add(Engine::Alu, kAdd, static_cast<std::uint32_t>(i), 0, 0);
+    for (int i = 0; i < 6; ++i) {
+        p.add(Engine::Valu, kAdd, static_cast<std::uint32_t>(32 + i * 8), 0, 0);
+    }
+    p.add(Engine::Load, kVLoad, 80, 0);
+    p.add(Engine::Load, kVLoad, 88, 0);
+    p.add(Engine::Store, kVStore, 0, 80);
+    p.add(Engine::Store, kVStore, 0, 88);
+    p.add(Engine::Flow, kVSelect, 96, 80, 80, 88);
+    p.end_bundle();
+    one(p, Engine::Flow, kHalt);
+    const std::uint32_t mem0[32] = {};
+    each_path([&](Path path) {
+        auto m = run_prog(p, mem0, path);
+        CHECK(m.cycle() >= 1);
     });
 }
 
@@ -806,6 +867,8 @@ int main() {
 
     std::printf("[2/8] alu\n");
     test_alu_table();
+    test_div_zero_checked_throws_fast_is_zero();
+    test_checked_oob_matches_oracle();
     test_deferred_scratch_write();
 
     std::printf("[3/8] valu\n");
@@ -817,6 +880,7 @@ int main() {
     test_scalar_load_store();
     test_load_offset();
     test_vload_vstore();
+    test_peak_bundle_write_buffers();
     test_deferred_mem_write();
 
     std::printf("[5/8] flow\n");

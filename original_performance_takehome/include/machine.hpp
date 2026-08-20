@@ -11,8 +11,7 @@ namespace vliw {
 
 inline constexpr int kVlen = 8;
 inline constexpr int kDefaultScratch = 1536;
-inline constexpr int kMaxScratchWrites = 128;
-inline constexpr int kMaxMemWrites = 32;
+inline constexpr int kNEngines = 6;
 
 enum class Engine : std::uint8_t { Alu = 0, Valu = 1, Load = 2, Store = 3, Flow = 4, Debug = 5 };
 
@@ -69,7 +68,12 @@ enum class Op : std::uint8_t {
     Nop,
 };
 
-inline constexpr int kSlotLimit[] = {12, 6, 2, 2, 1, 64};
+inline constexpr int kSlotLimit[kNEngines] = {12, 6, 2, 2, 1, 64};
+inline constexpr int kMaxSlotsPerBundle =
+    kSlotLimit[0] + kSlotLimit[1] + kSlotLimit[2] + kSlotLimit[3] + kSlotLimit[4] + kSlotLimit[5];
+inline constexpr int kMaxScratchWrites =
+    kSlotLimit[0] + kVlen * (kSlotLimit[1] + kSlotLimit[2] + kSlotLimit[4]);
+inline constexpr int kMaxMemWrites = kVlen * kSlotLimit[3];
 
 // Packed like durak::Move: trivial aggregate, no heap.
 struct Slot {
@@ -114,9 +118,9 @@ private:
     void note_linear(const Bundle& b);
 
     bool open_ = false;
-    int cur_counts_[6] = {};
+    int cur_counts_[kNEngines] = {};
     bool cur_non_debug_ = false;
-    Slot pending_[96]{};
+    Slot pending_[kMaxSlotsPerBundle]{};
     int pending_n_ = 0;
 };
 
@@ -157,8 +161,9 @@ private:
     bool prepare_linear();
     void step_multi(const Bundle& bundle, Core& core, bool checked);
     void exec(const Slot& slot, Core& core, bool checked);
-    void write_scratch(std::uint32_t addr, std::uint32_t val);
-    void write_mem(std::uint32_t addr, std::uint32_t val);
+    void apply_writes(Core& core, bool checked);
+    void write_scratch(std::uint32_t addr, std::uint32_t val, bool checked);
+    void write_mem(std::uint32_t addr, std::uint32_t val, bool checked);
     std::uint32_t read_mem(std::uint32_t addr, bool checked) const;
     std::uint32_t scratch_at(const Core& core, std::uint32_t addr, bool checked) const;
 

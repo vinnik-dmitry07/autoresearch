@@ -28,9 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print('  no _last_profile.json; pass --run', flush=True)
         return 2
-    _print_audit(prof)
-    integ = (prof or {}).get('integrity') or {}
-    if integ.get('suspect_cheat') or integ.get('suspect_skip_hash'):
+    if not _print_audit(prof):
         return 1
     return 0
 

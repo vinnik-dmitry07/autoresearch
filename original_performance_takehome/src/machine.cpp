@@ -15,8 +15,12 @@ namespace {
 [[noreturn]] void fail(const char* msg) { throw std::runtime_error(msg); }
 
 // Unchecked ALU, same spirit as durak::lowest: precondition is a valid op.
-// Div/mod by zero yields 0 instead of UB.
-VLIW_INLINE std::uint32_t eval_alu(std::uint8_t kind, std::uint32_t a1, std::uint32_t a2) {
+// Fast path: div/mod/cdiv by zero yields 0. Checked path matches Python and throws.
+VLIW_INLINE std::uint32_t eval_alu(std::uint8_t kind, std::uint32_t a1, std::uint32_t a2,
+                                   bool checked = false) {
+    if (checked && a2 == 0 && (kind == 3 || kind == 4 || kind == 10)) {
+        fail("alu div/mod by zero");
+    }
     switch (kind) {
         case 0:
             return a1 + a2;
@@ -495,11 +499,11 @@ void Program::add(Engine engine, std::uint8_t raw_op, std::uint32_t dest, std::u
                   std::uint32_t b, std::uint32_t c) {
     if (!open_) begin_bundle();
     const int ei = engine_index(engine);
-    if (ei < 0 || ei > 5) fail("unknown engine");
+    if (ei < 0 || ei >= kNEngines) fail("unknown engine");
     cur_counts_[ei] += 1;
     if (cur_counts_[ei] > kSlotLimit[ei]) fail("slot limit exceeded");
     if (engine != Engine::Debug) cur_non_debug_ = true;
-    if (pending_n_ >= 96) fail("too many slots in one bundle");
+    if (pending_n_ >= kMaxSlotsPerBundle) fail("too many slots in one bundle");
 
     Slot slot;
     slot.op = decode_op(engine, raw_op);
@@ -647,19 +651,20 @@ void Machine::run_checked() {
             core.pc += 1;
             if (bundle.flags & kFlagNonDebug) {
                 has_non_debug = true;
-                if (bundle.flags & kFlagSingle) {
-                    exec_direct(core.scratch, mem_.data(), mem_.size(), core.pc, core.state, core.id,
-                                enable_pause_, bundle.one, &core.trace_buf);
-                    if (enable_debug_ && (bundle.one.op == Op::DebugCompare ||
-                                          bundle.one.op == Op::DebugVCompare)) {
-                        exec(bundle.one, core, true);
-                    }
+                if (bundle.flags & kFlagSingle || bundle.count <= 1) {
+                    n_sw_ = 0;
+                    n_mw_ = 0;
+                    exec(bundle.one, core, true);
+                    apply_writes(core, true);
                 } else {
                     step_multi(bundle, core, true);
                 }
             } else if (enable_debug_) {
                 if (bundle.flags & kFlagSingle || bundle.count <= 1) {
+                    n_sw_ = 0;
+                    n_mw_ = 0;
                     exec(bundle.one, core, true);
+                    apply_writes(core, true);
                 } else {
                     step_multi(bundle, core, true);
                 }
@@ -670,29 +675,40 @@ void Machine::run_checked() {
     }
 }
 
+void Machine::apply_writes(Core& core, bool checked) {
+    for (int i = 0; i < n_sw_; ++i) core.scratch[scratch_wb_[i].addr] = scratch_wb_[i].val;
+    for (int i = 0; i < n_mw_; ++i) {
+        const Write& w = mem_wb_[i];
+        if (w.addr >= mem_.size()) {
+            if (checked || w.addr > (1u << 24)) fail("mem write oob");
+            mem_.resize(static_cast<std::size_t>(w.addr) + 1, 0);
+        }
+        mem_[w.addr] = w.val;
+    }
+    n_sw_ = 0;
+    n_mw_ = 0;
+}
+
 void Machine::step_multi(const Bundle& bundle, Core& core, bool checked) {
     n_sw_ = 0;
     n_mw_ = 0;
     const Slot* const base = program_.slots.data() + bundle.begin;
     for (std::uint16_t i = 0; i < bundle.count; ++i) exec(base[i], core, checked);
-    for (int i = 0; i < n_sw_; ++i) core.scratch[scratch_wb_[i].addr] = scratch_wb_[i].val;
-    for (int i = 0; i < n_mw_; ++i) {
-        const Write& w = mem_wb_[i];
-        if (w.addr >= mem_.size()) {
-            if (w.addr > (1u << 24)) fail("mem write oob");
-            mem_.resize(static_cast<std::size_t>(w.addr) + 1, 0);
-        }
-        mem_[w.addr] = w.val;
-    }
+    apply_writes(core, checked);
 }
 
-void Machine::write_scratch(std::uint32_t addr, std::uint32_t val) {
+void Machine::write_scratch(std::uint32_t addr, std::uint32_t val, bool checked) {
+    if (n_sw_ >= kMaxScratchWrites) fail("scratch write buffer full");
+    if (addr >= static_cast<std::uint32_t>(scratch_size_)) fail("scratch write oob");
+    (void)checked;
     scratch_wb_[n_sw_].addr = addr;
     scratch_wb_[n_sw_].val = val;
     ++n_sw_;
 }
 
-void Machine::write_mem(std::uint32_t addr, std::uint32_t val) {
+void Machine::write_mem(std::uint32_t addr, std::uint32_t val, bool checked) {
+    if (n_mw_ >= kMaxMemWrites) fail("mem write buffer full");
+    if (checked && addr >= mem_.size()) fail("mem write oob");
     mem_wb_[n_mw_].addr = addr;
     mem_wb_[n_mw_].val = val;
     ++n_mw_;
@@ -725,7 +741,8 @@ void Machine::exec(const Slot& slot, Core& core, bool checked) {
         case Op::AluEq: {
             const std::uint32_t a1 = scratch_at(core, slot.a, checked);
             const std::uint32_t a2 = scratch_at(core, slot.b, checked);
-            write_scratch(slot.dest, eval_alu(static_cast<std::uint8_t>(slot.op), a1, a2));
+            write_scratch(slot.dest, eval_alu(static_cast<std::uint8_t>(slot.op), a1, a2, checked),
+                          checked);
             return;
         }
         case Op::ValuAdd:
@@ -746,13 +763,15 @@ void Machine::exec(const Slot& slot, Core& core, bool checked) {
             for (int i = 0; i < kVlen; ++i) {
                 const std::uint32_t a1 = scratch_at(core, slot.a + static_cast<std::uint32_t>(i), checked);
                 const std::uint32_t a2 = scratch_at(core, slot.b + static_cast<std::uint32_t>(i), checked);
-                write_scratch(slot.dest + static_cast<std::uint32_t>(i), eval_alu(kind, a1, a2));
+                write_scratch(slot.dest + static_cast<std::uint32_t>(i),
+                              eval_alu(kind, a1, a2, checked), checked);
             }
             return;
         }
         case Op::ValuBroadcast: {
             const std::uint32_t v = scratch_at(core, slot.a, checked);
-            for (int i = 0; i < kVlen; ++i) write_scratch(slot.dest + static_cast<std::uint32_t>(i), v);
+            for (int i = 0; i < kVlen; ++i)
+                write_scratch(slot.dest + static_cast<std::uint32_t>(i), v, checked);
             return;
         }
         case Op::ValuMadd: {
@@ -760,51 +779,53 @@ void Machine::exec(const Slot& slot, Core& core, bool checked) {
                 const std::uint32_t av = scratch_at(core, slot.a + static_cast<std::uint32_t>(i), checked);
                 const std::uint32_t bv = scratch_at(core, slot.b + static_cast<std::uint32_t>(i), checked);
                 const std::uint32_t cv = scratch_at(core, slot.c + static_cast<std::uint32_t>(i), checked);
-                write_scratch(slot.dest + static_cast<std::uint32_t>(i), av * bv + cv);
+                write_scratch(slot.dest + static_cast<std::uint32_t>(i), av * bv + cv, checked);
             }
             return;
         }
         case Op::Load:
-            write_scratch(slot.dest, read_mem(scratch_at(core, slot.a, checked), checked));
+            write_scratch(slot.dest, read_mem(scratch_at(core, slot.a, checked), checked), checked);
             return;
         case Op::LoadOffset:
             write_scratch(slot.dest + slot.b,
-                          read_mem(scratch_at(core, slot.a + slot.b, checked), checked));
+                          read_mem(scratch_at(core, slot.a + slot.b, checked), checked), checked);
             return;
         case Op::VLoad: {
             const std::uint32_t addr = scratch_at(core, slot.a, checked);
             for (int i = 0; i < kVlen; ++i)
                 write_scratch(slot.dest + static_cast<std::uint32_t>(i),
-                              read_mem(addr + static_cast<std::uint32_t>(i), checked));
+                              read_mem(addr + static_cast<std::uint32_t>(i), checked), checked);
             return;
         }
         case Op::Const:
-            write_scratch(slot.dest, slot.a);
+            write_scratch(slot.dest, slot.a, checked);
             return;
         case Op::Store:
-            write_mem(scratch_at(core, slot.dest, checked), scratch_at(core, slot.a, checked));
+            write_mem(scratch_at(core, slot.dest, checked), scratch_at(core, slot.a, checked),
+                      checked);
             return;
         case Op::VStore: {
             const std::uint32_t addr = scratch_at(core, slot.dest, checked);
             for (int i = 0; i < kVlen; ++i)
                 write_mem(addr + static_cast<std::uint32_t>(i),
-                          scratch_at(core, slot.a + static_cast<std::uint32_t>(i), checked));
+                          scratch_at(core, slot.a + static_cast<std::uint32_t>(i), checked), checked);
             return;
         }
         case Op::Select:
-            write_scratch(slot.dest, scratch_at(core, slot.a, checked) != 0
-                                         ? scratch_at(core, slot.b, checked)
-                                         : scratch_at(core, slot.c, checked));
+            write_scratch(slot.dest,
+                          scratch_at(core, slot.a, checked) != 0 ? scratch_at(core, slot.b, checked)
+                                                                : scratch_at(core, slot.c, checked),
+                          checked);
             return;
         case Op::AddImm:
-            write_scratch(slot.dest, scratch_at(core, slot.a, checked) + slot.b);
+            write_scratch(slot.dest, scratch_at(core, slot.a, checked) + slot.b, checked);
             return;
         case Op::VSelect:
             for (int i = 0; i < kVlen; ++i) {
                 const std::uint32_t cond = scratch_at(core, slot.a + static_cast<std::uint32_t>(i), checked);
                 const std::uint32_t t = scratch_at(core, slot.b + static_cast<std::uint32_t>(i), checked);
                 const std::uint32_t f = scratch_at(core, slot.c + static_cast<std::uint32_t>(i), checked);
-                write_scratch(slot.dest + static_cast<std::uint32_t>(i), cond != 0 ? t : f);
+                write_scratch(slot.dest + static_cast<std::uint32_t>(i), cond != 0 ? t : f, checked);
             }
             return;
         case Op::Halt:
@@ -830,7 +851,7 @@ void Machine::exec(const Slot& slot, Core& core, bool checked) {
             core.pc = static_cast<int>(scratch_at(core, slot.a, checked));
             return;
         case Op::CoreId:
-            write_scratch(slot.dest, static_cast<std::uint32_t>(core.id));
+            write_scratch(slot.dest, static_cast<std::uint32_t>(core.id), checked);
             return;
         case Op::DebugCompare: {
             if (!enable_debug_) return;

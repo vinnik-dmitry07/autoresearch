@@ -88,6 +88,12 @@ def _lib():
     lib.vliw_machine_state.restype = ctypes.c_int
     lib.vliw_machine_scratch.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_size_t)]
     lib.vliw_machine_scratch.restype = ctypes.c_void_p
+    lib.vliw_machine_trace_buf.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.c_size_t),
+    ]
+    lib.vliw_machine_trace_buf.restype = ctypes.c_void_p
     lib.vliw_last_error.restype = ctypes.c_char_p
     _LIB = lib
     return lib
@@ -848,6 +854,13 @@ class FastMachine:
             if addr and n.value:
                 ptr = ctypes.cast(addr, ctypes.POINTER(ctypes.c_uint32))
                 core.scratch = [int(ptr[i]) for i in range(n.value)]
+            tn = ctypes.c_size_t()
+            taddr = lib.vliw_machine_trace_buf(self._m, core.id, ctypes.byref(tn))
+            if taddr and tn.value:
+                tptr = ctypes.cast(taddr, ctypes.POINTER(ctypes.c_uint32))
+                core.trace_buf = [int(tptr[i]) for i in range(tn.value)]
+            else:
+                core.trace_buf = []
 
     def scratch_map(self, core):
         res = {}

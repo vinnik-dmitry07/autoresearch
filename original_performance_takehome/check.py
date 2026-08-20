@@ -32,6 +32,24 @@ TEST_FILES = (
     'tests/frozen_problem.py',
     'tests/test_engine.py',
 )
+# Official freeze files. Whole-file problem.py compare is dead after FastMachine.
+PINNED_SHA256 = {
+    'tests/submission_tests.py': (
+        '8dc5f293dea0cd498a4c9f2ac7a6c5b1e6e24d9f65f795dd04eb3b527635547c'
+    ),
+    'tests/frozen_problem.py': (
+        '14041d538e4af84bb30ca68b728a883418e153266ebfba67fdef5501103f0e29'
+    ),
+}
+SPEC_ATTRS = (
+    'SLOT_LIMITS',
+    'VLEN',
+    'N_CORES',
+    'SCRATCH_SIZE',
+    'BASE_ADDR_TID',
+    'HASH_STAGES',
+)
+HASH_PROBES = (0, 1, 42, 0x7ED55D16, 0xFFFFFFFF, 123456789)
 FULL = (10, 16, 256)
 SMOKE = (3, 2, 8)
 TRACE_SIZE = (5, 4, 16)
@@ -357,29 +375,84 @@ def _print_profile(prof: dict) -> None:
 
 
 def _file_digest(path: Path) -> str:
-    digest = hashlib.sha256()
-    digest.update(path.read_bytes())
-    return digest.hexdigest()[:12]
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _print_audit(prof: dict | None) -> None:
-    print('  audit', flush=True)
-    missing = False
+def _spec_drift() -> list[str]:
+    tests_dir = str(ROOT / 'tests')
+    if tests_dir not in sys.path:
+        sys.path.insert(0, tests_dir)
+    import frozen_problem as frozen
+    import problem as live
+
+    drift: list[str] = []
+    for name in SPEC_ATTRS:
+        if getattr(live, name) != getattr(frozen, name):
+            drift.append(name)
+    if any(live.myhash(x) != frozen.myhash(x) for x in HASH_PROBES):
+        drift.append('myhash')
+    return drift
+
+
+def _audit_report() -> dict:
+    files = []
+    missing: list[str] = []
+    digest_ok = True
     for rel in TEST_FILES:
         path = ROOT / rel
+        want = PINNED_SHA256.get(rel)
         if not path.is_file():
-            missing = True
+            missing.append(rel)
+            digest_ok = False
+            files.append(
+                {'rel': rel, 'digest': None, 'want': want, 'status': 'MISSING'}
+            )
+            continue
+        digest = _file_digest(path)
+        if want is None:
+            status = 'local'
+        elif digest == want:
+            status = 'ok'
+        else:
+            status = 'TAMPER'
+            digest_ok = False
+        files.append(
+            {'rel': rel, 'digest': digest, 'want': want, 'status': status}
+        )
+    drift = _spec_drift()
+    return {
+        'files': files,
+        'missing': missing,
+        'digest_ok': digest_ok,
+        'drift': drift,
+        'frozen_vs_problem': 'same' if not drift else 'differ',
+        'ok': digest_ok and not drift,
+    }
+
+
+def _print_audit(prof: dict | None) -> bool:
+    print('  audit', flush=True)
+    report = _audit_report()
+    for row in report['files']:
+        rel = row['rel']
+        if row['status'] == 'MISSING':
             print(f'    MISSING  {rel}', flush=True)
             continue
-        print(f'    tests  {rel}  sha256={_file_digest(path)}', flush=True)
-    frozen = ROOT / 'tests' / 'frozen_problem.py'
-    problem = ROOT / 'problem.py'
-    if frozen.is_file() and problem.is_file():
-        same = frozen.read_bytes() == problem.read_bytes()
-        print(f'    frozen_vs_problem  {"same" if same else "differ"}', flush=True)
+        short = (row['digest'] or '')[:12]
+        extra = ''
+        if row['status'] == 'TAMPER':
+            extra = f'  want={(row["want"] or "")[:12]}'
+        print(
+            f'    tests  {rel}  sha256={short}  {row["status"]}{extra}',
+            flush=True,
+        )
+    vs = report['frozen_vs_problem']
+    drift = report['drift']
+    tail = f'  {" ".join(drift)}' if drift else ''
+    print(f'    frozen_vs_problem  {vs}{tail}', flush=True)
     if prof is None:
         print('    no profile', flush=True)
-        return
+        return report['ok']
     integ = prof.get('integrity') or {}
     bounds = prof.get('bounds') or {}
     cycles = prof.get('cycles_run') or prof.get('cycles_est')
@@ -393,15 +466,26 @@ def _print_audit(prof: dict | None) -> None:
         f'cheat={integ.get("suspect_cheat")}',
         flush=True,
     )
-    if missing:
+    clean = report['ok']
+    if report['missing']:
         print('    WARN  frozen test files missing', flush=True)
+        clean = False
+    if not report['digest_ok']:
+        print('    WARN  frozen test digest mismatch', flush=True)
+        clean = False
+    if drift:
+        print('    WARN  problem.py spec drifted from frozen_problem.py', flush=True)
+        clean = False
     if cycles is not None and gather_all and int(cycles) < gather_all and not mux:
         print(
             f'    WARN  cycles={cycles} < gather_floor_all_scalar={gather_all} without mux',
             flush=True,
         )
+        clean = False
     if integ.get('suspect_cheat') or integ.get('suspect_skip_hash'):
         print('    WARN  score integrity flags set', flush=True)
+        clean = False
+    return clean
 
 
 def run_profile(height: int, rounds: int, batch: int) -> dict:
@@ -596,7 +680,8 @@ def main(argv: list[str] | None = None) -> int:
             flush=True,
         )
     if args.audit:
-        _print_audit(prof)
+        if not _print_audit(prof):
+            ok = False
     if results.get('full') or results.get('smoke') or prof is not None:
         _append_history(row)
     print(f'done  {_ms(t0):.0f} ms  {"ok" if ok else "FAIL"}', flush=True)

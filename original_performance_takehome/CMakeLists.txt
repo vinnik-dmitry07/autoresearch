@@ -55,6 +55,11 @@ if(VLIW_PYTHON)
     )
     set_tests_properties(engine_py PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
     add_test(
+        NAME audit_py
+        COMMAND ${VLIW_PYTHON} -u ${CMAKE_SOURCE_DIR}/tests/test_audit.py
+    )
+    set_tests_properties(audit_py PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    add_test(
         NAME profiler_metrics_py
         COMMAND ${VLIW_PYTHON} -u ${CMAKE_SOURCE_DIR}/tests/test_profiler_metrics.py
     )
